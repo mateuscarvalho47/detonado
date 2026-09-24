@@ -66,9 +66,7 @@ describe('AuthService.register', () => {
 
     await expect(
       service.register({ email: 'a@b.com', password: '12345678', consent: true }),
-    ).rejects.toThrow(
-      EmailAlreadyTakenError,
-    );
+    ).rejects.toThrow(EmailAlreadyTakenError);
   });
 });
 
