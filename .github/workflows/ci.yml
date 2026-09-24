@@ -15,8 +15,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
@@ -28,6 +26,12 @@ jobs:
 
       - name: Lint
         run: pnpm --filter backend lint && pnpm --filter frontend lint
+
+      - name: Generate Prisma client
+        working-directory: apps/backend
+        run: pnpm exec prisma generate
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci?schema=public
 
       - name: Type-check backend
         working-directory: apps/backend

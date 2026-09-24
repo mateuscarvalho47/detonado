@@ -12,6 +12,14 @@ const GAME = {
   summary: 'A story-driven open world RPG.',
 };
 
+const HLTB = {
+  mainHours: 51.5,
+  mainExtraHours: 102,
+  completionistHours: 170,
+};
+
+const GAME_WITH_HLTB = { ...GAME, hltb: HLTB };
+
 function makeIgdb(overrides: Record<string, unknown> = {}) {
   return {
     searchGames: vi.fn().mockResolvedValue([GAME]),
@@ -28,26 +36,37 @@ function makeRedis(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function makeHltb(overrides: Record<string, unknown> = {}) {
+  return {
+    findByName: vi.fn().mockResolvedValue(HLTB),
+    ...overrides,
+  };
+}
+
 describe('GameService.search', () => {
-  it('returns parsed cache on hit without calling IGDB', async () => {
+  it('returns parsed cache on hit without calling IGDB or HLTB', async () => {
     const redis = makeRedis({ get: vi.fn().mockResolvedValue(JSON.stringify([GAME])) });
     const igdb = makeIgdb();
-    const service = new GameService(igdb as never, redis as never);
+    const hltb = makeHltb();
+    const service = new GameService(igdb as never, redis as never, hltb as never);
 
     const result = await service.search('witcher');
 
     expect(igdb.searchGames).not.toHaveBeenCalled();
+    expect(hltb.findByName).not.toHaveBeenCalled();
     expect(result).toEqual([GAME]);
   });
 
   it('fetches from IGDB on cache miss and stores result with 10-min TTL', async () => {
     const redis = makeRedis();
     const igdb = makeIgdb();
-    const service = new GameService(igdb as never, redis as never);
+    const hltb = makeHltb();
+    const service = new GameService(igdb as never, redis as never, hltb as never);
 
     const result = await service.search('witcher');
 
     expect(igdb.searchGames).toHaveBeenCalledWith('witcher');
+    expect(hltb.findByName).not.toHaveBeenCalled();
     expect(redis.set).toHaveBeenCalledWith('igdb:search:witcher', JSON.stringify([GAME]), {
       EX: 600,
     });
@@ -57,7 +76,8 @@ describe('GameService.search', () => {
   it('uses the exact query string as part of the cache key', async () => {
     const redis = makeRedis();
     const igdb = makeIgdb();
-    const service = new GameService(igdb as never, redis as never);
+    const hltb = makeHltb();
+    const service = new GameService(igdb as never, redis as never, hltb as never);
 
     await service.search('dark souls');
 
@@ -67,40 +87,70 @@ describe('GameService.search', () => {
       expect.any(String),
       expect.any(Object),
     );
+    expect(hltb.findByName).not.toHaveBeenCalled();
   });
 });
 
 describe('GameService.getById', () => {
-  it('returns parsed cache on hit without calling IGDB', async () => {
-    const redis = makeRedis({ get: vi.fn().mockResolvedValue(JSON.stringify(GAME)) });
+  it('returns a cached game that already has hltb without calling IGDB or HLTB', async () => {
+    const redis = makeRedis({
+      get: vi.fn().mockResolvedValue(JSON.stringify(GAME_WITH_HLTB)),
+    });
     const igdb = makeIgdb();
-    const service = new GameService(igdb as never, redis as never);
+    const hltb = makeHltb();
+    const service = new GameService(igdb as never, redis as never, hltb as never);
 
     const result = await service.getById(1942);
 
     expect(igdb.getGameById).not.toHaveBeenCalled();
-    expect(result).toEqual(GAME);
+    expect(hltb.findByName).not.toHaveBeenCalled();
+    expect(redis.set).not.toHaveBeenCalled();
+    expect(result).toEqual(GAME_WITH_HLTB);
   });
 
-  it('fetches from IGDB on cache miss and stores game with 24h TTL', async () => {
+  it('backfills hltb for a cached game without calling IGDB and stores the merge', async () => {
+    const redis = makeRedis({ get: vi.fn().mockResolvedValue(JSON.stringify(GAME)) });
+    const igdb = makeIgdb();
+    const hltb = makeHltb();
+    const service = new GameService(igdb as never, redis as never, hltb as never);
+
+    const result = await service.getById(1942);
+
+    expect(igdb.getGameById).not.toHaveBeenCalled();
+    expect(hltb.findByName).toHaveBeenCalledTimes(1);
+    expect(hltb.findByName).toHaveBeenCalledWith(GAME.name);
+    expect(redis.set).toHaveBeenCalledWith('igdb:game:1942', JSON.stringify(GAME_WITH_HLTB), {
+      EX: 86400,
+    });
+    expect(result).toEqual(GAME_WITH_HLTB);
+  });
+
+  it('fetches from IGDB and HLTB on cache miss and stores the merge for 24h', async () => {
     const redis = makeRedis();
     const igdb = makeIgdb();
-    const service = new GameService(igdb as never, redis as never);
+    const hltb = makeHltb();
+    const service = new GameService(igdb as never, redis as never, hltb as never);
 
     const result = await service.getById(1942);
 
     expect(igdb.getGameById).toHaveBeenCalledWith(1942);
-    expect(redis.set).toHaveBeenCalledWith('igdb:game:1942', JSON.stringify(GAME), { EX: 86400 });
-    expect(result).toEqual(GAME);
+    expect(hltb.findByName).toHaveBeenCalledWith(GAME.name);
+    expect(redis.set).toHaveBeenCalledWith('igdb:game:1942', JSON.stringify(GAME_WITH_HLTB), {
+      EX: 86400,
+    });
+    expect(result).toEqual(GAME_WITH_HLTB);
   });
 
-  it('returns null and skips caching when game is not found', async () => {
+  it('returns null before HLTB and skips caching when the game is not found', async () => {
     const redis = makeRedis();
     const igdb = makeIgdb({ getGameById: vi.fn().mockResolvedValue(null) });
-    const service = new GameService(igdb as never, redis as never);
+    const hltb = makeHltb();
+    const service = new GameService(igdb as never, redis as never, hltb as never);
 
     const result = await service.getById(999999);
 
+    expect(igdb.getGameById).toHaveBeenCalledWith(999999);
+    expect(hltb.findByName).not.toHaveBeenCalled();
     expect(result).toBeNull();
     expect(redis.set).not.toHaveBeenCalled();
   });

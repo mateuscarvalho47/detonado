@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ForbiddenError, IgdbError, UnauthorizedError, ValidationError } from '@/lib/errors.js';
+import { ForbiddenError, IgdbError, ValidationError } from '@/lib/errors.js';
 import { IgdbClient } from '@/lib/igdb/client.js';
 
 const CLIENT_ID = 'test-client-id';
@@ -24,6 +24,7 @@ function makeRedis(overrides: Record<string, unknown> = {}) {
   return {
     get: vi.fn<() => Promise<string | null>>().mockResolvedValue(null),
     set: vi.fn().mockResolvedValue('OK'),
+    del: vi.fn().mockResolvedValue(1),
     ...overrides,
   };
 }
@@ -157,12 +158,38 @@ describe('IgdbClient — error mapping', () => {
     await expect(client.searchGames('test')).rejects.toThrow(ValidationError);
   });
 
-  it('throws UnauthorizedError on IGDB 401', async () => {
+  it('deletes igdb:token and throws IgdbError 502 when IGDB returns 401 twice', async () => {
     const redis = makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) });
     const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
-    setupFetch(mockResponse(null, 401));
+    const fetchMock = setupFetch(mockResponse(null, 401), mockResponse(null, 401));
 
-    await expect(client.searchGames('test')).rejects.toThrow(UnauthorizedError);
+    const err = await client.searchGames('test').catch((e: unknown) => e);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(redis.del).toHaveBeenCalledTimes(1);
+    expect(redis.del).toHaveBeenCalledWith('igdb:token');
+    expect(err).toBeInstanceOf(IgdbError);
+    expect((err as IgdbError).statusCode).toBe(502);
+  });
+
+  it('retries once after 401 and returns the game when the second response is 200', async () => {
+    const redis = makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) });
+    const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
+    const fetchMock = setupFetch(mockResponse(null, 401), mockResponse([RAW_GAME]));
+
+    const [game] = await client.searchGames('test');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(redis.del).toHaveBeenCalledWith('igdb:token');
+    expect(game).toEqual({
+      igdbId: 1942,
+      name: 'The Witcher 3: Wild Hunt',
+      coverUrl: 'https://images.igdb.com/igdb/image/upload/t_thumb/co1wyy.jpg',
+      releaseYear: 2015,
+      platforms: ['PC (Microsoft Windows)', 'PlayStation 4'],
+      genres: ['RPG', 'Aventura'],
+      summary: 'A story-driven open world RPG.',
+    });
   });
 
   it('throws ForbiddenError on IGDB 403', async () => {
