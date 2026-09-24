@@ -42,7 +42,11 @@ describe('AuthService.register', () => {
     });
     const service = new AuthService(repo as never);
 
-    const result = await service.register({ email: 'a@b.com', password: '12345678' });
+    const result = await service.register({
+      email: 'a@b.com',
+      password: '12345678',
+      consent: true,
+    });
 
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -60,7 +64,9 @@ describe('AuthService.register', () => {
     });
     const service = new AuthService(repo as never);
 
-    await expect(service.register({ email: 'a@b.com', password: '12345678' })).rejects.toThrow(
+    await expect(
+      service.register({ email: 'a@b.com', password: '12345678', consent: true }),
+    ).rejects.toThrow(
       EmailAlreadyTakenError,
     );
   });
