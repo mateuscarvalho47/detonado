@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ForbiddenError, IgdbError, ValidationError } from '@/lib/errors.js';
-import { IgdbClient } from '@/lib/igdb/client.js';
+import { escapeIgdbSearch, IgdbClient } from '@/lib/igdb/client.js';
 
 const CLIENT_ID = 'test-client-id';
 const CLIENT_SECRET = 'test-client-secret';
@@ -103,6 +103,30 @@ describe('IgdbClient — searchGames', () => {
       genres: ['RPG', 'Aventura'],
       summary: 'A story-driven open world RPG.',
     });
+  });
+
+  it('escapes quotes, backslashes and newlines inside the search literal', async () => {
+    const redis = makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) });
+    const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
+    const fetchMock = setupFetch(mockResponse([]));
+
+    expect(escapeIgdbSearch('ab"c\\d\n')).toBe('ab\\"c\\\\d ');
+
+    await client.searchGames('ab"c\\d\n');
+
+    const body = (fetchMock.mock.calls[0][1] as RequestInit).body as string;
+    expect(body).toContain('search "ab\\"c\\\\d "');
+    expect(body).not.toContain('search "ab"c');
+  });
+
+  it('rejects a query outside 2 to 100 characters before calling IGDB', async () => {
+    const redis = makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) });
+    const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
+    const fetchMock = setupFetch(mockResponse([]));
+
+    await expect(client.searchGames('a')).rejects.toThrow(ValidationError);
+    await expect(client.searchGames('a'.repeat(101))).rejects.toThrow(ValidationError);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('handles games without optional fields', async () => {

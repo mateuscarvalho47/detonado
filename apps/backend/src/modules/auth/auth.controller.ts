@@ -27,7 +27,8 @@ export class AuthController {
     const user = await this.auth.login(input);
     await req.session.regenerate();
     req.session.userId = user.id;
-    return reply.send(user);
+    req.session.sessionVersion = user.sessionVersion;
+    return reply.send({ id: user.id, email: user.email });
   };
 
   logout = async (req: FastifyRequest, reply: FastifyReply) => {
@@ -57,7 +58,8 @@ export class AuthController {
   updateAccount = async (req: FastifyRequest, reply: FastifyReply) => {
     const input = parse(updateAccountSchema, req.body);
     const result = await this.auth.updateAccount(req.userId, input);
-    return reply.send(result);
+    req.session.sessionVersion = result.sessionVersion;
+    return reply.send({ id: result.id, email: result.email, emailVerified: result.emailVerified });
   };
 
   deleteAccount = async (req: FastifyRequest, reply: FastifyReply) => {

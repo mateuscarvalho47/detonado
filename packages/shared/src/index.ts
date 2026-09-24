@@ -110,8 +110,10 @@ export const libraryStatsSchema = z.object({
 export type LibraryStats = z.infer<typeof libraryStatsSchema>;
 
 // Game
+export const SEARCH_QUERY_MAX = 100;
+
 export const searchQuerySchema = z.object({
-  q: z.string().min(2),
+  q: z.string().min(2).max(SEARCH_QUERY_MAX),
 });
 
 export const hltbInfoSchema = z

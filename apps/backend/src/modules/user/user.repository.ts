@@ -13,7 +13,13 @@ export class UserRepository {
   findByEmailWithHash(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, passwordHash: true, emailVerified: true },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        emailVerified: true,
+        sessionVersion: true,
+      },
     });
   }
 
@@ -55,15 +61,21 @@ export class UserRepository {
   ) {
     return this.prisma.user.update({
       where: { id: userId },
-      data,
-      select: { id: true, email: true, emailVerified: true },
+      data: data.passwordHash ? { ...data, sessionVersion: { increment: 1 } } : data,
+      select: { id: true, email: true, emailVerified: true, sessionVersion: true },
     });
   }
 
   findByIdWithHash(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, passwordHash: true, emailVerified: true },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        emailVerified: true,
+        sessionVersion: true,
+      },
     });
   }
 
@@ -132,8 +144,8 @@ export class UserRepository {
   updatePasswordHash(id: string, passwordHash: string) {
     return this.prisma.user.update({
       where: { id },
-      data: { passwordHash },
-      select: { id: true },
+      data: { passwordHash, sessionVersion: { increment: 1 } },
+      select: { id: true, sessionVersion: true },
     });
   }
 }

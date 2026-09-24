@@ -7,6 +7,7 @@ import { env } from '@/config/env.js';
 declare module 'fastify' {
   interface Session {
     userId?: string;
+    sessionVersion?: number;
   }
 }
 

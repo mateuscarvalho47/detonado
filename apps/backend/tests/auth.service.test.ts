@@ -88,7 +88,7 @@ describe('AuthService.login', () => {
 
     const result = await service.login({ email: 'a@b.com', password: '12345678' });
 
-    expect(result).toEqual({ id: '1', email: 'a@b.com' });
+    expect(result).toEqual({ id: '1', email: 'a@b.com', sessionVersion: 0 });
   });
 
   it('throws InvalidCredentialsError when user does not exist', async () => {

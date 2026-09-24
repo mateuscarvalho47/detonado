@@ -172,4 +172,12 @@ describe('searchQuerySchema validation', () => {
   it('rejects missing q field', () => {
     expect(() => searchQuerySchema.parse({})).toThrow();
   });
+
+  it('accepts a query of 100 characters', () => {
+    expect(() => searchQuerySchema.parse({ q: 'a'.repeat(100) })).not.toThrow();
+  });
+
+  it('rejects a query longer than 100 characters', () => {
+    expect(() => searchQuerySchema.parse({ q: 'a'.repeat(101) })).toThrow();
+  });
 });

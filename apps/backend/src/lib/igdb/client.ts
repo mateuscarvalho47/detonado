@@ -1,3 +1,4 @@
+import { SEARCH_QUERY_MAX } from '@detonado/shared';
 import { ForbiddenError, IgdbError, ValidationError } from '@/lib/errors.js';
 import { translateGenres } from '@/lib/igdb/genre-translations.js';
 import { type IgdbGame, igdbGameRawSchema } from '@/lib/igdb/schemas.js';
@@ -23,7 +24,8 @@ export class IgdbClient {
   ) {}
 
   async searchGames(q: string): Promise<IgdbGame[]> {
-    const raw = await this.query(`${GAME_FIELDS}; search "${q}"; limit 10;`);
+    const term = escapeIgdbSearch(q);
+    const raw = await this.query(`${GAME_FIELDS}; search "${term}"; limit 10;`);
     return raw.map(transformGame);
   }
 
@@ -95,6 +97,16 @@ export class IgdbClient {
     if (status >= 500) throw new IgdbError('IGDB service unavailable', 502);
     throw new IgdbError(`Unexpected IGDB response: ${status}`, 502);
   }
+}
+
+export function escapeIgdbSearch(q: string): string {
+  if (q.length < 2 || q.length > SEARCH_QUERY_MAX) {
+    throw new ValidationError('Consulta de busca inválida');
+  }
+  return q
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r\n|\r|\n/g, ' ');
 }
 
 function transformGame(raw: unknown): IgdbGame {

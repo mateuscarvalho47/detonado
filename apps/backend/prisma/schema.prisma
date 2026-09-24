@@ -19,6 +19,7 @@ model User {
   emailVerified          Boolean              @default(false)
   emailVerificationToken String?              @unique
   consentedAt            DateTime?
+  sessionVersion         Int                  @default(0)
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
   libraryEntries         LibraryEntry[]
