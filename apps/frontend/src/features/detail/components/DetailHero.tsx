@@ -11,7 +11,6 @@ interface DetailHeroProps {
 	game: LibraryEntry;
 	status: DetailFormValues["status"];
 	saved: boolean;
-	theme: "light" | "dark";
 	onBack: () => void;
 	onRemove: () => void;
 }
@@ -20,7 +19,6 @@ export function DetailHero({
 	game,
 	status,
 	saved,
-	theme,
 	onBack,
 	onRemove,
 }: DetailHeroProps) {
@@ -83,12 +81,7 @@ export function DetailHero({
 						size="sm"
 						onClick={onRemove}
 						className="min-h-11 lg:min-h-0 backdrop-blur-sm bg-bg-1/90 border border-border-strong hover:bg-bg-1"
-						style={{
-							color:
-								theme === "light"
-									? "oklch(0.48 0.18 25)"
-									: "oklch(0.75 0.14 25)",
-						}}
+						style={{ color: "oklch(0.75 0.14 25)" }}
 					>
 						Remover
 					</Button>

@@ -2,7 +2,6 @@
 import { statusColor } from "@/lib/statusColor";
 import { cn } from "@/lib/utils";
 import { STATUSES } from "@/shared/constants/statuses";
-import { useAppStore } from "@/store/useAppStore";
 import type { GameStatus, LibraryEntry } from "@/types/api";
 
 interface StatusPillsProps {
@@ -12,7 +11,6 @@ interface StatusPillsProps {
 }
 
 export function StatusPills({ library, active, onChange }: StatusPillsProps) {
-	const theme = useAppStore((s) => s.theme);
 	const total = library.length;
 	const countByStatus = useMemo(() => {
 		const counts = {} as Record<GameStatus, number>;
@@ -59,17 +57,11 @@ export function StatusPills({ library, active, onChange }: StatusPillsProps) {
 						)}
 						style={
 							isActive
-								? theme === "light"
-									? {
-											background: s.bgColorLight,
-											borderColor: s.borderColorLight,
-											color: s.colorLight,
-										}
-									: {
-											background: statusColor(s.hue, "dark", "bgPill"),
-											borderColor: statusColor(s.hue, "dark", "borderPill"),
-											color: "oklch(0.96 0.006 75)",
-										}
+								? {
+										background: statusColor(s.hue, "bgPill"),
+										borderColor: statusColor(s.hue, "borderPill"),
+										color: "oklch(0.96 0.006 75)",
+									}
 								: undefined
 						}
 					>

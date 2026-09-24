@@ -33,7 +33,7 @@ export function RegisterForm() {
 						<span className="text-text-hi font-medium">{email}</span>. Clique no
 						link para ativar sua conta.
 					</p>
-					<p className="text-captiontext-text-lo leading-normal">
+					<p className="text-caption text-text-lo leading-normal">
 						Não recebeu? Verifique a pasta de spam.
 					</p>
 				</div>
@@ -57,7 +57,7 @@ export function RegisterForm() {
 						</p>
 					)}
 				</div>
-				<p className="text-center text-captiontext-text-lo mt-2">
+				<p className="text-center text-caption text-text-lo mt-2">
 					<a
 						href="/login"
 						className="text-accent-bright font-semibold no-underline"
@@ -133,7 +133,7 @@ export function RegisterForm() {
 				/>
 				<label
 					htmlFor="consent"
-					className="text-captiontext-text-lo leading-relaxed cursor-pointer"
+					className="text-caption text-text-lo leading-relaxed cursor-pointer"
 				>
 					Li e concordo com a{" "}
 					<a
@@ -172,7 +172,7 @@ export function RegisterForm() {
 				{register.isPending ? "Criando..." : "Criar conta"}
 			</Button>
 
-			<p className="text-center text-captiontext-text-lo mt-1">
+			<p className="text-center text-caption text-text-lo mt-1">
 				Já tem conta?{" "}
 				<a
 					href="/login"

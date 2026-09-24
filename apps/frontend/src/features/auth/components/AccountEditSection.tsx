@@ -28,7 +28,7 @@ export function AccountEditSection() {
 				<Mail size={14} className="text-accent-bright" />
 				Editar conta
 			</h2>
-			<p className="text-captiontext-text-lo -mt-2">
+			<p className="text-caption text-text-lo -mt-2">
 				Informe a senha atual e altere o e-mail, a senha, ou ambos.
 			</p>
 			<form onSubmit={onUpdateSubmit} className="flex flex-col gap-3">

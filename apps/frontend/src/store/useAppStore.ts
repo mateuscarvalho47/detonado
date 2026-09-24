@@ -4,7 +4,6 @@ import type { GameStatus } from "@/types/api";
 
 export type LibraryView = "grid" | "list";
 export type LibrarySortField = "createdAt" | "name" | "rating" | "hoursPlayed";
-export type Theme = "dark" | "light";
 
 interface AppStore {
 	// Search modal
@@ -27,11 +26,6 @@ interface AppStore {
 
 	librarySearch: string;
 	setLibrarySearch: (q: string) => void;
-
-	// Theme — persisted
-	theme: Theme;
-	setTheme: (t: Theme) => void;
-	toggleTheme: () => void;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -57,12 +51,6 @@ export const useAppStore = create<AppStore>()(
 
 			librarySearch: "",
 			setLibrarySearch: (q) => set({ librarySearch: q }),
-
-			// Theme — default dark
-			theme: "dark",
-			setTheme: (t) => set({ theme: t }),
-			toggleTheme: () =>
-				set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
 		}),
 		{
 			name: "detonado-ui",
@@ -70,7 +58,6 @@ export const useAppStore = create<AppStore>()(
 			partialize: (state) => ({
 				libraryView: state.libraryView,
 				librarySortField: state.librarySortField,
-				theme: state.theme,
 				sidebarOpen: state.sidebarOpen,
 			}),
 		},

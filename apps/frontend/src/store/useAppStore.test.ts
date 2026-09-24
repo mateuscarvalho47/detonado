@@ -76,3 +76,17 @@ describe("setLibrarySearch", () => {
 		expect(useAppStore.getState().librarySearch).toBe("");
 	});
 });
+
+describe("theme", () => {
+	it("does not keep a theme toggle in state or the persisted slice", () => {
+		const state = useAppStore.getState() as Record<string, unknown>;
+		expect(state.theme).toBeUndefined();
+		expect(state.setTheme).toBeUndefined();
+		expect(state.toggleTheme).toBeUndefined();
+
+		const partialize = useAppStore.persist.getOptions().partialize;
+		expect(partialize).toBeTypeOf("function");
+		if (!partialize) return;
+		expect(partialize(useAppStore.getState())).not.toHaveProperty("theme");
+	});
+});

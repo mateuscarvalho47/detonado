@@ -1,4 +1,7 @@
 ﻿import { PageHeader } from "@/components/PageHeader";
+import { ArchiveEmpty } from "@/shared/components/ArchiveEmpty";
+import { LoadFailure } from "@/shared/components/LoadFailure";
+import { useSearchModal } from "@/shared/hooks/useSearchModal";
 import { useStats } from "../hooks/useStats";
 import { DonutChart } from "./DonutChart";
 import { HBars } from "./HBars";
@@ -32,9 +35,10 @@ function Card({
 }
 
 export function StatsScreen() {
-	const { data: stats, isLoading } = useStats();
+	const { setOpen } = useSearchModal();
+	const { data: stats, isLoading, isError, refetch } = useStats();
 
-	if (isLoading || !stats) {
+	if (isLoading) {
 		return (
 			<div className="px-4 pt-6 lg:px-6 lg:pt-7">
 				<div className="flex flex-col gap-5">
@@ -42,6 +46,36 @@ export function StatsScreen() {
 						<div key={i} className="h-50 bg-bg-1 rounded-lg animate-pulse" />
 					))}
 				</div>
+			</div>
+		);
+	}
+
+	if (isError || !stats) {
+		return (
+			<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
+				<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
+					<PageHeader
+						overline="Análise"
+						title="Estatísticas"
+						subtitle="Insights da sua biblioteca"
+					/>
+				</div>
+				<LoadFailure onRetry={() => void refetch()} />
+			</div>
+		);
+	}
+
+	if (stats.totalGames === 0) {
+		return (
+			<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
+				<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
+					<PageHeader
+						overline="Análise"
+						title="Estatísticas"
+						subtitle="Insights da sua biblioteca"
+					/>
+				</div>
+				<ArchiveEmpty onAdd={() => setOpen(true)} />
 			</div>
 		);
 	}

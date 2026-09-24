@@ -1,6 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useAppStore } from "@/store/useAppStore";
 import type { LibraryEntry } from "@/types/api";
 import { useDetailForm } from "../hooks/useDetailForm";
 import { useRemoveLibraryEntry } from "../hooks/useLibraryEntry";
@@ -20,7 +19,6 @@ export function DetailScreen({ game }: DetailScreenProps) {
 	const { form, saved } = useDetailForm(game);
 	const { control, register, watch } = form;
 
-	const theme = useAppStore((s) => s.theme);
 	const status = watch("status");
 	const rating = watch("rating");
 
@@ -31,7 +29,6 @@ export function DetailScreen({ game }: DetailScreenProps) {
 					game={game}
 					status={status}
 					saved={saved}
-					theme={theme}
 					onBack={() => navigate({ to: "/library" })}
 					onRemove={() => setConfirmRemove(true)}
 				/>
@@ -41,7 +38,6 @@ export function DetailScreen({ game }: DetailScreenProps) {
 					register={register}
 					status={status}
 					rating={rating}
-					theme={theme}
 				/>
 			</div>
 

@@ -56,7 +56,7 @@ export function RequestResetForm() {
 				{mutation.isPending ? "Enviando..." : "Enviar código"}
 			</Button>
 
-			<p className="text-center text-captiontext-text-lo mt-1">
+			<p className="text-center text-caption text-text-lo mt-1">
 				Lembrou a senha?{" "}
 				<a
 					href="/login"

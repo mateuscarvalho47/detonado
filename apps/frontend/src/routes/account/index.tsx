@@ -1,9 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Database, LogOut, Moon, Sun } from "lucide-react";
-import { useLogout } from "@/features/auth/hooks/useAuth";
+import { ChevronRight, Database, LogOut } from "lucide-react";
 import { AccountEditSection } from "@/features/auth/components/AccountEditSection";
+import { useLogout } from "@/features/auth/hooks/useAuth";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
-import { useAppStore } from "@/store/useAppStore";
 
 export const Route = createFileRoute("/account/")({
 	component: AccountPage,
@@ -11,7 +10,6 @@ export const Route = createFileRoute("/account/")({
 
 function AccountPage() {
 	usePageTitle("Configurações da Conta");
-	const { theme, toggleTheme } = useAppStore();
 	const logout = useLogout();
 	const navigate = useNavigate();
 
@@ -35,23 +33,6 @@ function AccountPage() {
 				<p className="font-mono text-overline tracking-widest uppercase text-text-lo mb-2">
 					Preferências
 				</p>
-				<button
-					type="button"
-					onClick={toggleTheme}
-					className="flex items-center gap-3 px-3 py-3 rounded-lg bg-bg-1 border border-border-soft cursor-pointer text-left"
-				>
-					{theme === "dark" ? (
-						<Sun className="size-4 text-text-md shrink-0" />
-					) : (
-						<Moon className="size-4 text-text-md shrink-0" />
-					)}
-					<div className="flex-1 min-w-0">
-						<div className="text-body font-medium text-text-hi">Tema</div>
-						<div className="text-caption text-text-lo">
-							{theme === "dark" ? "Escuro — clique para claro" : "Claro — clique para escuro"}
-						</div>
-					</div>
-				</button>
 				<button
 					type="button"
 					onClick={() => navigate({ to: "/account/data" })}

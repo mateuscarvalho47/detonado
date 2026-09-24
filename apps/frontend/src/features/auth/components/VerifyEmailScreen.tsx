@@ -121,7 +121,7 @@ export function VerifyEmailScreen() {
 						</div>
 
 						<div className="rounded-lg border border-accent-bright/20 bg-accent-bright/5 px-4 py-3">
-							<p className="text-captiontext-accent-bright font-medium m-0 leading-normal">
+							<p className="text-caption text-accent-bright font-medium m-0 leading-normal">
 								Você já pode entrar na sua conta com o email e senha
 								cadastrados.
 							</p>

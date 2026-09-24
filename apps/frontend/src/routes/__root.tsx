@@ -17,15 +17,10 @@ import { Sidebar } from "@/shared/components/Sidebar";
 import { useAppStore } from "@/store/useAppStore";
 
 function useApplyTheme() {
-	const theme = useAppStore((s) => s.theme);
 	useEffect(() => {
-		document.documentElement.setAttribute("data-theme", theme);
-		if (theme === "dark") {
-			document.documentElement.classList.add("dark");
-		} else {
-			document.documentElement.classList.remove("dark");
-		}
-	}, [theme]);
+		document.documentElement.setAttribute("data-theme", "dark");
+		document.documentElement.classList.add("dark");
+	}, []);
 }
 
 const PUBLIC_ROUTES = [
@@ -35,6 +30,7 @@ const PUBLIC_ROUTES = [
 	"/verify-email",
 	"/forgot-password",
 	"/reset-password",
+	"/reset-success",
 	"/privacy",
 	"/terms",
 ];
@@ -44,6 +40,7 @@ const NO_SHELL_ROUTES = [
 	"/verify-email",
 	"/forgot-password",
 	"/reset-password",
+	"/reset-success",
 	"/privacy",
 	"/terms",
 ];

@@ -20,7 +20,6 @@ interface DetailEditFormProps {
 	register: UseFormRegister<DetailFormValues>;
 	status: DetailFormValues["status"];
 	rating: number;
-	theme: "light" | "dark";
 }
 
 export function DetailEditForm({
@@ -29,7 +28,6 @@ export function DetailEditForm({
 	register,
 	status,
 	rating,
-	theme,
 }: DetailEditFormProps) {
 	return (
 		<div className="px-6 py-6 pb-15">
@@ -64,15 +62,9 @@ export function DetailEditForm({
 												style={
 													field.value === s.key
 														? {
-																background:
-																	theme === "light"
-																		? s.bgColorLight
-																		: statusColor(s.hue, "dark", "bgActive"),
-																border: `1px solid ${theme === "light" ? s.borderColorLight : statusColor(s.hue, "dark", "borderActive")}`,
-																color:
-																	theme === "light"
-																		? s.colorLight
-																		: statusColor(s.hue, "dark", "textActive"),
+																background: statusColor(s.hue, "bgActive"),
+																border: `1px solid ${statusColor(s.hue, "borderActive")}`,
+																color: statusColor(s.hue, "textActive"),
 															}
 														: {
 																background: "var(--color-bg-2)",
@@ -83,10 +75,7 @@ export function DetailEditForm({
 											>
 												<div
 													className="size-1.5 rounded-full shrink-0"
-													style={{
-														background:
-															theme === "light" ? s.borderColorLight : s.color,
-													}}
+													style={{ background: s.color }}
 												/>
 												{s.label}
 											</ToggleGroupItem>
@@ -233,7 +222,7 @@ export function DetailEditForm({
 									<Input
 										type="date"
 										{...register("completedAt")}
-										style={{ colorScheme: theme }}
+										style={{ colorScheme: "dark" }}
 										className="bg-bg-2 border-border text-text-hi h-10 text-heading w-full pr-9 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
 									/>
 									<Calendar

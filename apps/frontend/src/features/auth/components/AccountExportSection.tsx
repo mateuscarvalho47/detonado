@@ -27,7 +27,7 @@ export function AccountExportSection() {
 				<Download size={14} className="text-accent-bright" />
 				Exportar meus dados
 			</h2>
-			<p className="text-captiontext-text-lo">
+			<p className="text-caption text-text-lo">
 				Baixe um arquivo JSON com todos os seus dados — perfil e biblioteca
 				completa. Seu direito de portabilidade pela LGPD (Art. 19).
 			</p>

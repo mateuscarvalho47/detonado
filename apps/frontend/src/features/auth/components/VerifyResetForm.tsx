@@ -191,7 +191,7 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 				</>
 			)}
 
-			<p className="text-center text-captiontext-text-lo mt-1">
+			<p className="text-center text-caption text-text-lo mt-1">
 				Não recebeu?{" "}
 				<a
 					href="/forgot-password"

@@ -1,6 +1,5 @@
 ﻿import { cva, type VariantProps } from "class-variance-authority";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
-import { useAppStore } from "@/store/useAppStore";
 import type { GameStatus } from "@/types/api";
 
 const badge = cva(
@@ -26,11 +25,9 @@ interface StatusBadgeProps extends BadgeVariants {
 
 export function StatusBadge({ status, size }: StatusBadgeProps) {
 	const def = STATUS_BY_KEY[status];
-	const theme = useAppStore((s) => s.theme);
-	const color = theme === "light" ? def.colorLight : def.color;
-	const bgColor = theme === "light" ? def.bgColorLight : def.bgColor;
-	const borderColor =
-		theme === "light" ? def.borderColorLight : def.borderColor;
+	const color = def.color;
+	const bgColor = def.bgColor;
+	const borderColor = def.borderColor;
 	return (
 		<span
 			className={badge({ size })}

@@ -2,6 +2,7 @@
 import { Search, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import { useLibrary } from "@/features/library/hooks/useLibrary";
 import { Cover } from "@/shared/components/Cover";
@@ -22,7 +23,13 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const navigate = useNavigate();
 	const { data: library = [] } = useLibrary();
-	const { data: results = [], isFetching } = useGameSearch(debouncedQuery);
+	const {
+		data: results = [],
+		isFetching,
+		isPending,
+		isError,
+		refetch,
+	} = useGameSearch(debouncedQuery);
 
 	useEffect(() => {
 		if (open) {
@@ -89,7 +96,22 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 									<div className="py-10 px-5 text-center text-text-lo text-heading">
 										Digite pelo menos 2 caracteres para buscar
 									</div>
-								) : isFetching ? (
+								) : isError && !isFetching ? (
+									<div className="py-10 px-5 text-center flex flex-col items-center gap-3">
+										<p className="text-text-lo text-heading m-0">
+											A busca falhou.
+										</p>
+										<Button
+											type="button"
+											variant="accent"
+											size="sm"
+											onClick={() => void refetch()}
+											className="rounded-lg"
+										>
+											Tentar de novo
+										</Button>
+									</div>
+								) : isFetching || isPending ? (
 									<div className="py-10 px-5 text-center text-text-lo text-heading">
 										Buscando...
 									</div>

@@ -1,7 +1,16 @@
-﻿import type { LibraryStats } from "@/types/api";
+import type { BacklogHours } from "@/shared/lib/backlogHours";
+import {
+	backlogHoursLegend,
+	formatBacklogHours,
+} from "@/shared/lib/backlogHours";
+import type { LibraryStats } from "@/types/api";
+
+export type StatsTileStatus = "ready" | "loading" | "error";
 
 interface StatTilesProps {
-	stats: LibraryStats;
+	stats: LibraryStats | undefined;
+	backlog: BacklogHours;
+	statsStatus: StatsTileStatus;
 }
 
 function tileBorder(i: number): string {
@@ -17,32 +26,55 @@ function tileBorder(i: number): string {
 	return parts.join(" ");
 }
 
-export function StatTiles({ stats }: StatTilesProps) {
+function statNumber(
+	status: StatsTileStatus,
+	value: number | undefined,
+	unit: string,
+	sub: string,
+): { value: string; unit: string; sub: string; pending: boolean } {
+	if (status === "loading") {
+		return { value: "", unit: "", sub, pending: true };
+	}
+	if (status === "error") {
+		return { value: "—", unit: "", sub: "indisponível", pending: false };
+	}
+	return { value: String(value ?? 0), unit, sub, pending: false };
+}
+
+export function StatTiles({ stats, backlog, statsStatus }: StatTilesProps) {
 	const tiles = [
 		{
 			label: "Total de jogos",
-			value: stats.totalGames,
-			unit: "",
-			sub: "na biblioteca",
+			...statNumber(statsStatus, stats?.totalGames, "", "na biblioteca"),
 			accent: true,
 		},
 		{
-			label: "Horas registradas",
-			value: Math.round(stats.totalHours),
+			label: "Horas na fila",
+			value: formatBacklogHours(backlog.total),
 			unit: "h",
-			sub: "tempo total",
+			sub: backlogHoursLegend(backlog),
+			pending: false,
+			accent: false,
 		},
 		{
 			label: "Completos",
-			value: stats.countByStatus.COMPLETED ?? 0,
-			unit: "",
-			sub: "jogos finalizados",
+			...statNumber(
+				statsStatus,
+				stats?.countByStatus.COMPLETED,
+				"",
+				"jogos finalizados",
+			),
+			accent: false,
 		},
 		{
 			label: "Jogando agora",
-			value: stats.countByStatus.PLAYING ?? 0,
-			unit: "",
-			sub: "em andamento",
+			...statNumber(
+				statsStatus,
+				stats?.countByStatus.PLAYING,
+				"",
+				"em andamento",
+			),
+			accent: false,
 		},
 	];
 
@@ -58,9 +90,13 @@ export function StatTiles({ stats }: StatTilesProps) {
 					)}
 					<div className="mono-label">{t.label}</div>
 					<div className="flex items-baseline gap-1">
-						<span className="text-2xl md:text-[33px] font-bold tracking-[-0.03em] text-text-hi">
-							{t.value}
-						</span>
+						{t.pending ? (
+							<span className="inline-block h-8 w-16 rounded-md bg-bg-2 animate-pulse" />
+						) : (
+							<span className="text-2xl md:text-[33px] font-bold tracking-[-0.03em] text-text-hi">
+								{t.value}
+							</span>
+						)}
 						{t.unit && (
 							<span className="text-heading md:text-[17px] font-medium text-text-lo font-mono">
 								{t.unit}

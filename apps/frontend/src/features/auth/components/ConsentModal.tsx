@@ -45,7 +45,7 @@ export function ConsentModal() {
 						. Para continuar usando o Detonado, confirme que você leu e concorda
 						com esses documentos.
 					</p>
-					<p className="text-captiontext-text-lo">
+					<p className="text-caption text-text-lo">
 						Seus dados são armazenados com segurança e nunca serão
 						compartilhados para fins de marketing. Você pode excluir sua conta a
 						qualquer momento.

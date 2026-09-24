@@ -123,7 +123,7 @@ export function LoginForm() {
 				{login.isPending ? "Entrando..." : "Entrar"}
 			</Button>
 
-			<p className="text-center text-captiontext-text-lo mt-1">
+			<p className="text-center text-caption text-text-lo mt-1">
 				Não tem conta?{" "}
 				<Link
 					to="/register"

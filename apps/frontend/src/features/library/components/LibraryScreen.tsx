@@ -1,4 +1,4 @@
-﻿import { BookMarked, LayoutGrid, List, Search } from "lucide-react";
+﻿import { LayoutGrid, List, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { ArchiveEmpty } from "@/shared/components/ArchiveEmpty";
 import { EmptyState } from "@/shared/components/EmptyState";
+import { LoadFailure } from "@/shared/components/LoadFailure";
 import { useSearchModal } from "@/shared/hooks/useSearchModal";
 import { useLibrary } from "../hooks/useLibrary";
 import { useLibraryFilters } from "../hooks/useLibraryFilters";
@@ -25,7 +27,8 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
 ];
 
 export function LibraryScreen() {
-	const { data: library = [], isLoading } = useLibrary();
+	const { data, isLoading, isError, refetch } = useLibrary();
+	const library = data ?? [];
 	const filters = useLibraryFilters(library);
 	const { setOpen } = useSearchModal();
 
@@ -48,6 +51,14 @@ export function LibraryScreen() {
 						/>
 					))}
 				</div>
+			</div>
+		);
+	}
+
+	if (isError || !data) {
+		return (
+			<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
+				<LoadFailure onRetry={() => void refetch()} />
 			</div>
 		);
 	}
@@ -153,21 +164,13 @@ export function LibraryScreen() {
 			</div>
 
 			{/* Content */}
-			{filters.filtered.length === 0 ? (
+			{library.length === 0 ? (
+				<ArchiveEmpty onAdd={() => setOpen(true)} />
+			) : filters.filtered.length === 0 ? (
 				<EmptyState
-					icon={<BookMarked className="size-7" />}
-					title="Biblioteca vazia"
-					body="Adicione seu primeiro jogo usando o botão acima ou pressione Ctrl+K."
-					action={
-						<Button
-							variant="accent"
-							size="sm"
-							onClick={() => setOpen(true)}
-							className="rounded-lg"
-						>
-							Buscar jogo
-						</Button>
-					}
+					icon={<Search className="size-7" />}
+					title="Nenhum jogo neste filtro"
+					body="Há jogos no arquivo, mas nenhum combina com a busca ou o status escolhido."
 				/>
 			) : filters.view === "grid" ? (
 				<LibraryGrid games={filters.filtered} />

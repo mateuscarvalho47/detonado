@@ -14,7 +14,6 @@ import { statusColor } from "@/lib/statusColor";
 import { Cover } from "@/shared/components/Cover";
 import { HltbStat, HltbStatSkeleton } from "@/shared/components/HltbStat";
 import { STATUSES } from "@/shared/constants/statuses";
-import { useAppStore } from "@/store/useAppStore";
 import type { GameSearchResult } from "@/types/api";
 import { useAddToLibraryForm } from "../hooks/useAddToLibraryForm";
 import { useGameDetail } from "../hooks/useGameSearch";
@@ -32,7 +31,6 @@ export function AddToLibraryModal({
 }: AddToLibraryModalProps) {
 	const { form, onSubmit, isPending } = useAddToLibraryForm(game, onAdded);
 	const { control } = form;
-	const theme = useAppStore((s) => s.theme);
 	const { data: detail, isLoading: hltbLoading } = useGameDetail(game.igdbId);
 	const hltb = detail?.hltb;
 
@@ -142,12 +140,12 @@ export function AddToLibraryModal({
 													style={{
 														background:
 															field.value === s.key
-																? statusColor(s.hue, theme, "bgActive")
+																? statusColor(s.hue, "bgActive")
 																: "var(--color-bg-2)",
-														border: `1px solid ${field.value === s.key ? statusColor(s.hue, theme, "borderActive") : "var(--color-border-soft)"}`,
+														border: `1px solid ${field.value === s.key ? statusColor(s.hue, "borderActive") : "var(--color-border-soft)"}`,
 														color:
 															field.value === s.key
-																? statusColor(s.hue, theme, "textActive")
+																? statusColor(s.hue, "textActive")
 																: "var(--color-text-md)",
 													}}
 												>

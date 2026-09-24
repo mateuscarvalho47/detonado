@@ -4,10 +4,8 @@ import {
 	BookMarked,
 	Home,
 	LogOut,
-	Moon,
 	Search,
 	Settings,
-	Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -33,7 +31,6 @@ export function Sidebar({
 	const routerState = useRouterState();
 	const currentPath = routerState.location.pathname;
 	const setSearchOpen = useAppStore((s) => s.setSearchOpen);
-	const { theme, toggleTheme } = useAppStore();
 	const logout = useLogout();
 
 	const isActive = (to: string) =>
@@ -131,26 +128,6 @@ export function Sidebar({
 
 			{/* Footer user */}
 			<div className="mt-auto flex flex-col gap-2">
-				{/* Theme toggle */}
-				<div className="flex items-center justify-between px-1">
-					<span className="text-body font-mono text-text-dim uppercase tracking-widest">
-						Tema
-					</span>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={toggleTheme}
-						title={theme === "dark" ? "Mudar para claro" : "Mudar para escuro"}
-						className="text-text-md"
-					>
-						{theme === "dark" ? (
-							<Sun className="size-3.5" />
-						) : (
-							<Moon className="size-3.5" />
-						)}
-					</Button>
-				</div>
-
 				<div className="flex flex-col gap-2.5 p-3 rounded-md bg-bg-2 border border-border-soft">
 					<div className="flex items-center gap-2.5">
 						<div className="flex-1 min-w-0">
