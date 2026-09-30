@@ -42,6 +42,7 @@ export class UserRepository {
     email: string;
     passwordHash: string;
     emailVerificationToken: string;
+    emailVerificationExpiresAt: Date;
     consentedAt: Date;
   }) {
     return this.prisma.user.create({
@@ -56,6 +57,7 @@ export class UserRepository {
       email?: string;
       passwordHash?: string;
       emailVerificationToken?: string | null;
+      emailVerificationExpiresAt?: Date | null;
       emailVerified?: boolean;
     },
   ) {
@@ -118,10 +120,10 @@ export class UserRepository {
     });
   }
 
-  updateVerificationToken(userId: string, token: string) {
+  updateVerificationToken(userId: string, token: string, expiresAt: Date) {
     return this.prisma.user.update({
       where: { id: userId },
-      data: { emailVerificationToken: token },
+      data: { emailVerificationToken: token, emailVerificationExpiresAt: expiresAt },
       select: { id: true },
     });
   }
@@ -129,14 +131,18 @@ export class UserRepository {
   findByVerificationToken(token: string) {
     return this.prisma.user.findUnique({
       where: { emailVerificationToken: token },
-      select: { id: true, email: true },
+      select: { id: true, email: true, emailVerificationExpiresAt: true },
     });
   }
 
   verifyEmail(userId: string) {
     return this.prisma.user.update({
       where: { id: userId },
-      data: { emailVerified: true, emailVerificationToken: null },
+      data: {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpiresAt: null,
+      },
       select: { id: true, email: true },
     });
   }

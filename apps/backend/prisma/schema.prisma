@@ -16,8 +16,9 @@ model User {
   id                     String               @id @default(cuid())
   email                  String               @unique
   passwordHash           String
-  emailVerified          Boolean              @default(false)
-  emailVerificationToken String?              @unique
+  emailVerified              Boolean              @default(false)
+  emailVerificationToken     String?              @unique
+  emailVerificationExpiresAt DateTime?
   consentedAt            DateTime?
   sessionVersion         Int                  @default(0)
   createdAt              DateTime             @default(now())

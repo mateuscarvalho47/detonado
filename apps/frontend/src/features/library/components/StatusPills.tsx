@@ -1,5 +1,4 @@
 ﻿import { useMemo } from "react";
-import { statusColor } from "@/lib/statusColor";
 import { cn } from "@/lib/utils";
 import { STATUSES } from "@/shared/constants/statuses";
 import type { GameStatus, LibraryEntry } from "@/types/api";
@@ -24,9 +23,9 @@ export function StatusPills({ library, active, onChange }: StatusPillsProps) {
 				type="button"
 				onClick={() => onChange(null)}
 				className={cn(
-					"inline-flex items-center gap-1.5 h-8 min-h-11 lg:min-h-0 px-3 rounded-full text-body font-medium cursor-pointer transition-all border",
+					"inline-flex items-center gap-1.5 h-8 min-h-11 lg:min-h-0 px-3 rounded-sm text-body font-medium cursor-pointer transition-colors border",
 					active === null
-						? "text-text-hi border-border-strong bg-bg-3/50"
+						? "text-text-hi border-border-strong bg-bg-3"
 						: "text-text-md border-border-soft bg-bg-1",
 				)}
 			>
@@ -50,19 +49,13 @@ export function StatusPills({ library, active, onChange }: StatusPillsProps) {
 						key={s.key}
 						onClick={() => onChange(isActive ? null : s.key)}
 						className={cn(
-							"inline-flex items-center gap-1.5 h-8 min-h-11 lg:min-h-0 px-3 rounded-full text-body font-medium cursor-pointer transition-all border",
+							"inline-flex items-center gap-1.5 h-8 min-h-11 lg:min-h-0 px-3 rounded-sm text-body font-medium cursor-pointer transition-colors border",
 							isActive
-								? "border-transparent"
+								? "text-text-hi border-border-strong bg-bg-3"
 								: "text-text-md border-border-soft bg-bg-1",
 						)}
 						style={
-							isActive
-								? {
-										background: statusColor(s.hue, "bgPill"),
-										borderColor: statusColor(s.hue, "borderPill"),
-										color: "oklch(0.96 0.006 75)",
-									}
-								: undefined
+							isActive ? { boxShadow: `inset 2px 0 0 ${s.color}` } : undefined
 						}
 					>
 						{s.label}

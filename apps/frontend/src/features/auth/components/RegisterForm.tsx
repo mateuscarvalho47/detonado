@@ -26,7 +26,7 @@ export function RegisterForm() {
 						Verifique seu email
 					</span>
 					<h1 className="text-2xl font-semibold tracking-tight m-0 mb-2 text-text-hi">
-						Quase lá!
+						Confirme o e-mail
 					</h1>
 					<p className="text-body text-text-md leading-prose mt-0 mb-2 max-w-[36ch]">
 						Enviamos um link de confirmação para{" "}
@@ -76,10 +76,10 @@ export function RegisterForm() {
 					Crie sua conta
 				</span>
 				<h1 className="text-2xl font-semibold tracking-tight m-0 mb-2 text-text-hi">
-					Começar a rastrear
+					Criar conta
 				</h1>
 				<p className="text-body text-text-md leading-prose mt-0 mb-6 max-w-[36ch]">
-					Monte sua biblioteca de jogos pessoal.
+					A biblioteca fica só na sua conta.
 				</p>
 			</div>
 

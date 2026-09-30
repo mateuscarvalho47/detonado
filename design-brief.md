@@ -1,187 +1,95 @@
-# Detonado — Design Brief para Claude Design
+# Detonado — brief de produto e interface
 
-## O que é o projeto
+Documento do produto que o código faz hoje. Serve de referência para a interface e para uma apresentação técnica. O arquivo de componente da home ainda se chama `DashboardScreen.tsx`. O título visível é **Agora**.
 
-**Detonado** é um rastreador pessoal de jogos. O usuário autentica, busca jogos pelo nome (integração com IGDB — base de dados global de jogos), adiciona à sua biblioteca com um status, e acompanha progresso, notas, horas jogadas e avaliações.
+## O que é
 
-Pense em algo como Letterboxd, mas para jogos.
+**Detonado** é uma biblioteca pessoal de jogos, em português. A pessoa busca um jogo no IGDB, guarda uma ficha, marca um de seis status e anota plataforma, horas, nota e texto livre. Os três tempos do HowLongToBeat são copiados no momento em que o jogo entra na biblioteca.
 
----
+A primeira frase da landing é “Sua biblioteca de jogos.” O nome Detonado fica; a frase deixa claro que isto é arquivo pessoal, e não um guia de jogo.
 
-## Paleta / Identidade visual desejada
+Domínio previsto: `https://detonado.carvalholabs.com.br/`. Contato: `sac@carvalholabs.com.br`.
 
-- Tema escuro (dark-first)
-- Sensação de gaming sem ser excessivamente "gamer" — clean, moderno, sóbrio
-- Tipografia legível, hierarquia clara
-- Cores de acento vibrantes mas contidas (ex.: roxo, azul elétrico, ou verde neon — escolha uma)
-- Covers de jogos são imagens coloridas — o layout precisa funcionar bem com miniaturas ricas
+## Tom
 
----
+Registro seco. Palavras de jogador em português. Inglês só em nome próprio: IGDB, HowLongToBeat. Sem emoji, sem “grátis”, sem elogio automático ao tempo do HowLongToBeat.
 
-## Stack frontend (para referência técnica)
+| Código | Rótulo na interface |
+| --- | --- |
+| `WISHLIST` | Quero jogar |
+| `BACKLOG` | Fila |
+| `PLAYING` | Jogando |
+| `PAUSED` | Pausado |
+| `COMPLETED` | Zerado |
+| `DROPPED` | Abandonado |
 
-- React 19 + TypeScript
-- TanStack Router (file-based routing)
-- TanStack Query (data fetching)
-- Tailwind CSS 4
-- shadcn/ui (class-variance-authority + tailwind-merge)
+Navegação: **Agora**, **Biblioteca**, **Estatísticas**. Título da área logada: Biblioteca.
 
----
+Tempos do HowLongToBeat na ficha e no modal de adicionar: **Principal**, **+ Extras**, **Completista**.
 
-## Dados disponíveis na API
+## Visual
 
-### Usuário
-```
-{ id, email }
-```
+Tema escuro, forçado. Carvão quente, um grotesco (IBM Plex Sans), números tabulares (IBM Plex Mono). A capa do jogo carrega a cor. O restante é grafite e osso, sem brilho, sem gradiente, sem botão em degradê.
 
-### Jogo (resultado de busca IGDB)
-```
-{ igdbId, name, coverUrl?, releaseYear?, platforms[], genres[] }
-```
+Status aparece como texto e um filete de 2 px. Lista densa no desktop, grade no celular. A landing é estática e tem duas ações: **Criar conta** e **Já tenho conta**.
 
-### Entrada de biblioteca
-```
-{
-  igdbId, name, coverUrl?,
-  genres[], platforms[],
-  status: WISHLIST | BACKLOG | PLAYING | PAUSED | COMPLETED | DROPPED,
-  userPlatform?,   // plataforma que o usuário joga
-  rating?,         // 0–10
-  hoursPlayed?,    // número decimal
-  notes?,          // texto livre
-  completedAt?,
-  createdAt, updatedAt
-}
-```
+A home logada é a prateleira:
 
-### Estatísticas da biblioteca
-```
-{
-  totalGames,
-  totalHours,
-  countByStatus: { WISHLIST: n, BACKLOG: n, PLAYING: n, ... },
-  topGenres:    [{ genre, count }],
-  topPlatforms: [{ platform, count }],
-  ratingDistribution: [{ rating, count }],
-  completedTimeline:  [{ month, count }]   // ex: "2025-03"
-}
-```
+- cabeçalho **Agora**
+- três contagens: Jogando, Na fila, Horas na fila
+- listas “jogando agora” e “fila”
+- estado vazio com um convite para adicionar o primeiro jogo
 
----
+Horas na fila soma `hltbMain` das entradas em Fila. Quando alguma entrada da fila não tem tempo, a interface mostra a ressalva em texto pequeno. A ficha trata os três tempos como dado, sem comentário.
 
-## Páginas necessárias
+A barra de horas sobre 100 e a faixa de atividade saíram desta home. Zerados recentes e a quebra por status ficam em `/stats`.
 
-### 1. Login / Registro
-**Rota:** `/login`, `/register`
+Nota é inteiro de 0 a 10, também com status Jogando. O zero da nota é enviado no salvamento.
 
-Formulário simples. Campos: email + senha. Link entre as duas páginas.
-O app não tem recuperação de senha por ora — não precisa do link.
+## Rotas da interface
 
-Layout sugerido: centralizado, fundo escuro com algum elemento visual de jogos (pode ser abstrato/geométrico).
+| Rota | Quem vê | O que mostra |
+| --- | --- | --- |
+| `/` | anônimo | landing |
+| `/` | autenticado | prateleira Agora |
+| `/login`, `/register` | anônimo | cartão simples; registro pede consentimento |
+| `/verify-email` | link do e-mail | confirma o token ou pede reenvio |
+| `/forgot-password`, `/reset-password` | anônimo | código de 6 dígitos |
+| `/library` | autenticado | lista (padrão) ou grade, filtro e ordenação |
+| `/library/:igdbId` | autenticado | ficha; a tela baixa a biblioteca inteira e acha o jogo pelo `igdbId` |
+| `/stats` | autenticado | totais, status, gêneros, plataformas, notas, conclusões |
+| `/account` | autenticado | e-mail, senha, exportação, exclusão |
 
----
+Busca é modal global (atalho Ctrl/Cmd+K na área logada), não uma rota `/search`.
 
-### 2. Dashboard / Home (`/`)
+## Dados que a interface usa
 
-Página principal após login. Visão geral da biblioteca.
+Usuário autenticado: `id`, `email`, `emailVerified`.
 
-**Conteúdo:**
-- Cards de resumo rápido: total de jogos, horas totais, jogos completados, jogos em andamento
-- Lista curta "Jogando agora" (status = PLAYING) com cover + nome + plataforma
-- Lista curta "Próximos na fila" (status = BACKLOG, 3–5 jogos)
-- Botão/atalho proeminente para buscar e adicionar jogo
+Jogo IGDB: `igdbId`, `name`, `coverUrl`, `releaseYear`, `platforms`, `genres`.
 
----
+Entrada da biblioteca: ficha IGDB copiada, status, `userPlatform`, `rating` (inteiro 0–10), `hoursPlayed`, `notes`, `completedAt`, `hltbMain`, `hltbMainExtra`, `hltbCompletionist`.
 
-### 3. Biblioteca (`/library`)
+Estatísticas (`GET /api/library/stats`): totais, contagem por status, gêneros, plataformas, distribuição de nota, linha do tempo de conclusões. A home não chama essa rota.
 
-Lista completa dos jogos do usuário.
+## Conta
 
-**Conteúdo:**
-- Filtro por status (tabs ou pills): Todos | Wishlist | Backlog | Jogando | Pausado | Completo | Abandonado
-- Cada item: cover (thumbnail), nome, plataforma escolhida pelo usuário, avaliação (0–10 estrelas ou número), status badge, horas jogadas
-- Ordenação: por nome, data de adição, avaliação, horas
-- Dois modos de visualização: grid de cards (cover grande) e lista compacta
+- Registro exige consentimento e dispara e-mail de verificação.
+- O link de verificação vale 24 horas. Token ausente, expirado ou sem prazo responde o mesmo erro. Conta antiga sem prazo precisa de um reenvio.
+- Login exige e-mail verificado. Sessão no Redis, 7 dias, cookie `httpOnly`.
+- Redefinição de senha: código de 6 dígitos, 15 minutos.
+- Troca de senha invalida sessões anteriores.
+- Exportação e exclusão de conta existem. A exclusão pede a senha. A exportação traz conta e entradas, sem gêneros, plataformas IGDB, capa e tempos HLTB.
 
----
+## Fora do produto
 
-### 4. Busca de jogos (`/search` ou modal global)
+Feed, amigos, perfil público, listas além dos seis status, importação Steam, notificações. O cron do backend é um batimento horário, não um job de HowLongToBeat.
 
-Pode ser uma rota dedicada ou um modal ativado por atalho/botão.
+## O que uma leitura de dez minutos ainda encontra
 
-**Fluxo:**
-1. Campo de busca — digita nome do jogo
-2. Resultado em tempo real (debounce): cover, nome, ano de lançamento, plataformas
-3. Clicar num resultado abre o modal "Adicionar à biblioteca"
-
-**Modal "Adicionar à biblioteca":**
-- Cover grande + nome + plataformas disponíveis (vindo do IGDB)
-- Select: status
-- Select: plataforma do usuário (texto livre ou select)
-- Botão confirmar
-
----
-
-### 5. Detalhe / Edição de entrada (`/library/:igdbId`)
-
-Página completa de uma entrada na biblioteca.
-
-**Conteúdo:**
-- Header: cover (grande), nome, plataformas IGDB, gêneros, ano
-- Seção editável inline ou via form:
-  - Status (select com as 6 opções)
-  - Plataforma que o usuário joga (input texto)
-  - Avaliação (0–10 — pode ser slider ou estrelas)
-  - Horas jogadas (input numérico)
-  - Notas (textarea)
-  - Data de conclusão (date picker — aparece quando status = COMPLETED)
-- Botão "Remover da biblioteca" (destrutivo, pede confirmação)
-
----
-
-### 6. Estatísticas (`/stats`)
-
-Página de insights da biblioteca do usuário.
-
-**Conteúdo:**
-- Números grandes: total de jogos, total de horas, jogos completados
-- Distribuição por status (donut chart ou barras)
-- Top gêneros (barras horizontais)
-- Top plataformas (barras horizontais)
-- Distribuição de avaliações (histograma 0–10)
-- Timeline de conclusões (gráfico de linha ou barras por mês)
-
----
-
-## Navegação
-
-Layout com sidebar fixa (desktop) / bottom nav (mobile):
-
-| Item | Rota |
-|---|---|
-| Home | `/` |
-| Biblioteca | `/library` |
-| Buscar | `/search` ou modal |
-| Estatísticas | `/stats` |
-| Avatar/email + Logout | — |
-
----
-
-## Estados importantes a considerar
-
-- **Lista vazia**: biblioteca vazia — call to action para buscar o primeiro jogo
-- **Loading**: skeletons nas listas e cards (não spinners genéricos)
-- **Erro de autenticação**: redirect para `/login`
-- **Cover ausente**: placeholder genérico de jogo (não quebrar layout)
-- **Avaliação nula**: mostrar "—" ou cinza, não zero
-
----
-
-## O que NÃO existe (não desenhar)
-
-- Feed social / amigos / atividade pública
-- Listas customizadas além dos status padrão
-- Importação de dados
-- Notificações
-- Perfil público
+- O título do Swagger continua “API Boilerplate”.
+- O seed `alice@example.com` / `bob@example.com` nasce com e-mail não verificado, então o login recusa.
+- Hora `0` e plataforma vazia ainda saem do corpo do salvamento da ficha.
+- O token de verificação é guardado em claro. O prazo de 24 horas está no código; o hash do token não.
+- `apps/frontend/README.md` ainda é o texto do template do Vite.
+- `REFACTOR_PLAN.md` é histórico de tokens visuais. O título aponta para o Detonado e avisa que o restante não descreve a interface atual.

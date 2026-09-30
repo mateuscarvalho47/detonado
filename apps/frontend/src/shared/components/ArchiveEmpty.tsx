@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "./EmptyState";
 
 export const ARCHIVE_EMPTY_BODY =
-	"O arquivo está vazio. O primeiro jogo entra com um status e, se quiser, uma nota.";
+	"Busque um jogo e marque o status. A fila e as horas saem daí.";
 
 export function ArchiveEmpty({ onAdd }: { onAdd: () => void }) {
 	return (
 		<EmptyState
 			icon={<BookMarked className="size-7" />}
-			title="Arquivo vazio"
+			title="Nenhum jogo ainda"
 			body={ARCHIVE_EMPTY_BODY}
 			action={
 				<Button
@@ -19,7 +19,7 @@ export function ArchiveEmpty({ onAdd }: { onAdd: () => void }) {
 					onClick={onAdd}
 					className="rounded-lg"
 				>
-					Adicionar ao arquivo
+					Buscar um jogo
 				</Button>
 			}
 		/>

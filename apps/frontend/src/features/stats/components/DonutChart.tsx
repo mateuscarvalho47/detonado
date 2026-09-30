@@ -66,7 +66,7 @@ export function DonutChart({ stats }: DonutChartProps) {
 					))}
 				</svg>
 				<div className="absolute inset-0 flex flex-col items-center justify-center">
-					<span className="text-[37px] font-bold tracking-tight text-text-hi leading-none">
+					<span className="text-3xl font-semibold tabular-nums text-text-hi leading-none">
 						{stats.totalGames}
 					</span>
 					<span className="mono-label mt-1">jogos</span>

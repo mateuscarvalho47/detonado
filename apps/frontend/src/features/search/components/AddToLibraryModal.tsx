@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SelectOptions } from "@/components/ui/select-options";
-import { statusColor } from "@/lib/statusColor";
 import { Cover } from "@/shared/components/Cover";
 import { HltbStat, HltbStatSkeleton } from "@/shared/components/HltbStat";
 import { STATUSES } from "@/shared/constants/statuses";
@@ -108,9 +107,9 @@ export function AddToLibraryModal({
 											</>
 										) : (
 											<>
-												<HltbStat label="Main" hours={hltb?.mainHours} />
+												<HltbStat label="Principal" hours={hltb?.mainHours} />
 												<HltbStat
-													label="Main + Extra"
+													label="+ Extras"
 													hours={hltb?.mainExtraHours}
 												/>
 												<HltbStat
@@ -136,16 +135,23 @@ export function AddToLibraryModal({
 													type="button"
 													key={s.key}
 													onClick={() => field.onChange(s.key)}
-													className="flex items-center gap-2 h-8 px-2.5 rounded-md cursor-pointer text-body font-medium border-0"
+													className="flex items-center gap-2 h-8 px-2.5 rounded-md cursor-pointer text-caption font-medium border"
 													style={{
 														background:
 															field.value === s.key
-																? statusColor(s.hue, "bgActive")
+																? "var(--color-bg-3)"
 																: "var(--color-bg-2)",
-														border: `1px solid ${field.value === s.key ? statusColor(s.hue, "borderActive") : "var(--color-border-soft)"}`,
+														borderColor:
+															field.value === s.key
+																? "var(--color-border-strong)"
+																: "var(--color-border-soft)",
+														boxShadow:
+															field.value === s.key
+																? `inset 2px 0 0 ${s.color}`
+																: undefined,
 														color:
 															field.value === s.key
-																? statusColor(s.hue, "textActive")
+																? "var(--color-text-hi)"
 																: "var(--color-text-md)",
 													}}
 												>

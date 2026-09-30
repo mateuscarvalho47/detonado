@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { SelectOptions } from "@/components/ui/select-options";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { statusColor } from "@/lib/statusColor";
 import { STATUSES } from "@/shared/constants/statuses";
 import type { LibraryEntry } from "@/types/api";
 import type { DetailFormValues } from "../schema/detailSchema";
@@ -62,9 +61,10 @@ export function DetailEditForm({
 												style={
 													field.value === s.key
 														? {
-																background: statusColor(s.hue, "bgActive"),
-																border: `1px solid ${statusColor(s.hue, "borderActive")}`,
-																color: statusColor(s.hue, "textActive"),
+																background: "var(--color-bg-3)",
+																border: "1px solid var(--color-border-strong)",
+																boxShadow: `inset 2px 0 0 ${s.color}`,
+																color: "var(--color-text-hi)",
 															}
 														: {
 																background: "var(--color-bg-2)",
@@ -155,20 +155,19 @@ export function DetailEditForm({
 							</div>
 						)}
 
-						{/* Rating slider */}
-						{["PAUSED", "COMPLETED", "DROPPED"].includes(status) && (
+						{["PLAYING", "PAUSED", "COMPLETED", "DROPPED"].includes(status) && (
 							<div>
 								<div className="flex items-baseline justify-between mb-1.5">
 									<Label className="mono-label">Avaliação</Label>
-									<span className="text-[17px] text-text-hi">
-										<b className="font-bold">{rating}</b>
+									<span className="text-heading tabular-nums text-text-hi">
+										<b className="font-semibold">{Math.round(rating)}</b>
 										<span className="text-caption text-text-lo ml-px">/10</span>
 									</span>
 								</div>
 								<div className="relative h-9 bg-bg-2 border border-border rounded-lg overflow-hidden">
 									<div
-										className="absolute top-0 bottom-0 left-0 pointer-events-none transition-[width] duration-150 gradient-accent-fill"
-										style={{ width: `${(rating / 10) * 100}%` }}
+										className="absolute top-0 bottom-0 left-0 pointer-events-none meter-fill"
+										style={{ width: `${(Math.round(rating) / 10) * 100}%` }}
 									/>
 									<div className="absolute inset-0 flex items-center justify-between px-2.5 pointer-events-none">
 										{RATING_TICKS.map((i) => (
@@ -183,10 +182,10 @@ export function DetailEditForm({
 												type="range"
 												min={0}
 												max={10}
-												step={0.5}
-												value={field.value}
+												step={1}
+												value={Math.round(field.value)}
 												onChange={(e) =>
-													field.onChange(parseFloat(e.target.value))
+													field.onChange(Number.parseInt(e.target.value, 10))
 												}
 												className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer m-0 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-0.75 [&::-webkit-slider-thumb]:h-9 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:bg-white/60 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-0.75 [&::-moz-range-thumb]:h-9 [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:bg-white/60 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
 											/>

@@ -46,10 +46,15 @@ export function useDetailForm(game: LibraryEntry) {
 	}, [game.completedAt, form]);
 
 	const save = useCallback(async () => {
+		const ratingApplies =
+			debouncedStatus === "PLAYING" ||
+			debouncedStatus === "PAUSED" ||
+			debouncedStatus === "COMPLETED" ||
+			debouncedStatus === "DROPPED";
 		await updateRef.current.mutateAsync({
 			status: debouncedStatus,
 			userPlatform: debouncedPlatform || undefined,
-			rating: debouncedRating || undefined,
+			rating: ratingApplies ? Math.round(debouncedRating) : undefined,
 			hoursPlayed: debouncedHours || undefined,
 			notes: debouncedNotes,
 			completedAt: debouncedCompletedAt || undefined,

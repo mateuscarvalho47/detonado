@@ -1,13 +1,13 @@
 # Detonado
 
-Monorepo para rastreamento de jogos — backend Fastify + frontend React.
+Biblioteca pessoal de jogos. Monorepo com backend Fastify e frontend React: busca no IGDB, seis status, horas e nota manuais, tempos do HowLongToBeat gravados ao adicionar o jogo.
 
 ## Stack
 
 ### Monorepo
 
 - **pnpm workspaces** — gerenciador de pacotes e workspaces
-- **`packages/shared`** — tipos e schemas Zod compartilhados
+- **`packages/shared`** (`@detonado/shared`) — schemas Zod usados pelo backend. O frontend mantém os tipos em `apps/frontend/src/types/api.ts`.
 
 ### Backend (`apps/backend`)
 
@@ -24,6 +24,8 @@ Monorepo para rastreamento de jogos — backend Fastify + frontend React.
 - **Biome** — lint e formatação
 - **Vitest** — testes unitários
 - **IGDB API** — busca de jogos
+- **HowLongToBeat** (`howlongtobeat-ts`) — estimativa de duração gravada na entrada da biblioteca
+- **Resend** — e-mail de verificação e de redefinição de senha
 
 ### Frontend (`apps/frontend`)
 
@@ -45,10 +47,11 @@ detonado/
 │   │   ├── bruno/           # coleção Bruno API
 │   │   └── src/
 │   │       ├── config/      # env loader (zod)
-│   │       ├── lib/         # helpers (hash, errors, validate, igdb, requireAuth)
-│   │       ├── plugins/     # prisma, redis, session, swagger, cron, cors, igdb, errorHandler
+│   │       ├── lib/         # helpers (hash, errors, validate, igdb, hltb, email, requireAuth)
+│   │       ├── plugins/     # prisma, redis, session, swagger, cron, cors, rateLimit, igdb, hltb, errorHandler
 │   │       ├── modules/
-│   │       │   ├── auth/    # register, login, logout, me
+│   │       │   ├── auth/    # conta, sessão, verificação de e-mail, consentimento, exportação
+│   │       │   ├── password-reset/ # código de 6 dígitos, 15 min
 │   │       │   ├── user/    # repositório e service de usuário
 │   │       │   ├── game/    # busca de jogos via IGDB
 │   │       │   └── library/ # biblioteca pessoal de jogos
@@ -56,10 +59,12 @@ detonado/
 │   │       └── server.ts    # bootstrap
 │   └── frontend/            # SPA React
 │       └── src/
-│           ├── lib/         # cliente HTTP (api.ts), utilitários
-│           └── routes/      # rotas TanStack Router
+│           ├── features/    # auth, dashboard, detail, landing, library, search, stats
+│           ├── lib/         # cliente HTTP (api.ts)
+│           ├── routes/      # rotas TanStack Router
+│           └── types/       # tipos locais da API
 └── packages/
-    └── shared/              # tipos e schemas cross-cutting (@tracking-games/shared)
+    └── shared/              # @detonado/shared — schemas Zod do backend
 ```
 
 ### Camadas (backend)
@@ -74,14 +79,22 @@ detonado/
 
 ```
 User
-  id, email, passwordHash, createdAt, updatedAt
+  id, email, passwordHash
+  emailVerified, emailVerificationToken, emailVerificationExpiresAt
+  consentedAt, sessionVersion
+  createdAt, updatedAt
   └── LibraryEntry (1:N)
+  └── PasswordResetToken (1:N)
 
 LibraryEntry
   id, userId, igdbId, name, coverUrl, genres[], platforms[]
   status (WISHLIST | BACKLOG | PLAYING | PAUSED | COMPLETED | DROPPED)
-  userPlatform?, rating?, hoursPlayed?, notes?, completedAt?
+  userPlatform?, rating? (inteiro 0–10), hoursPlayed?, notes?, completedAt?
+  hltbMain?, hltbMainExtra?, hltbCompletionist?
+  unique (userId, igdbId)
 ```
+
+O detalhe no frontend não chama `GET /api/library/:id`. Ele baixa `GET /api/library` e acha a entrada pelo `igdbId`. O `:id` da API é o cuid interno.
 
 ## Pré-requisitos
 
@@ -101,8 +114,8 @@ cd apps/backend && docker compose up -d
 
 # 3. variáveis de ambiente
 cp apps/backend/.env.exemple apps/backend/.env
-# preencher DATABASE_URL, REDIS_URL, SESSION_SECRET, COOKIE_SECRET, CORS_ORIGIN
-# e credenciais IGDB: IGDB_CLIENT_ID, IGDB_CLIENT_SECRET
+# preencher DATABASE_URL, REDIS_URL, SESSION_SECRET, COOKIE_SECRET, CORS_ORIGIN,
+# IGDB_CLIENT_ID, IGDB_CLIENT_SECRET e RESEND_API_KEY
 
 # 4. rodar migrations
 pnpm --filter backend prisma:migrate
@@ -121,19 +134,22 @@ Backend: `http://localhost:3000` | Frontend: `http://localhost:5173`
 
 ## Variáveis de ambiente (backend)
 
+Obrigatórias para o processo subir (`src/config/env.ts`):
+
 ```
 DATABASE_URL=postgresql://app:app@localhost:5432/app
 REDIS_URL=redis://localhost:6379
 SESSION_SECRET=<min 32 chars>
 COOKIE_SECRET=<min 32 chars>
 CORS_ORIGIN=http://localhost:5173
-NODE_ENV=development
-PORT=3000
-
-# IGDB (Twitch Developer Console)
 IGDB_CLIENT_ID=
 IGDB_CLIENT_SECRET=
+RESEND_API_KEY=
 ```
+
+Com default: `NODE_ENV=development`, `PORT=3000`, `APP_URL=http://localhost:5173`, `EMAIL_FROM=onboarding@resend.dev`, `IGDB_TIMEOUT_MS=5000`, `HLTB_TIMEOUT_MS=5000`.
+
+`EMAIL_FROM` padrão só entrega para a conta dona da chave Resend. Verificação e redefinição de senha dependem de um domínio verificado para chegar na caixa de outra pessoa.
 
 Gerar secrets (PowerShell):
 
@@ -159,7 +175,7 @@ Gerar secrets (PowerShell):
 | `pnpm start`                  | roda build de produção         |
 | `pnpm prisma:generate`        | gera Prisma Client             |
 | `pnpm prisma:migrate`         | aplica migrations (dev)        |
-| `pnpm db:seed`                | insere usuários de teste       |
+| `pnpm db:seed`                | insere usuários de teste (e-mail não verificado; o login recusa) |
 | `pnpm db:clean`               | limpa todas as tabelas         |
 | `pnpm db:reset`               | recria banco do zero           |
 | `pnpm test`                   | roda testes                    |
@@ -179,39 +195,55 @@ Gerar secrets (PowerShell):
 
 ## Endpoints
 
+Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
+
 ### Auth
 
-| Método | Rota             | Descrição               | Auth |
-| ------ | ---------------- | ----------------------- | ---- |
-| POST   | `/auth/register` | cria usuário            | não  |
-| POST   | `/auth/login`    | autentica e cria sessão | não  |
-| POST   | `/auth/logout`   | encerra sessão          | sim  |
-| GET    | `/auth/me`       | retorna usuário atual   | sim  |
+| Método | Rota                            | Descrição                                      | Auth |
+| ------ | ------------------------------- | ---------------------------------------------- | ---- |
+| POST   | `/api/auth/register`            | cria usuário e envia link de verificação (24 h) | não  |
+| GET    | `/api/auth/verify-email?token=` | confirma o e-mail                              | não  |
+| POST   | `/api/auth/resend-verification` | reenvia o link                                 | não  |
+| POST   | `/api/auth/login`               | sessão; exige e-mail verificado                | não  |
+| POST   | `/api/auth/logout`              | encerra sessão                                 | sim  |
+| GET    | `/api/auth/me`                  | usuário atual                                  | sim  |
+| PATCH  | `/api/auth/account`             | troca e-mail ou senha                          | sim  |
+| DELETE | `/api/auth/account`             | exclui a conta, com senha                      | sim  |
+| POST   | `/api/auth/consent`             | grava consentimento                            | sim  |
+| GET    | `/api/auth/export`              | exporta dados da conta                         | sim  |
+
+### Redefinição de senha
+
+| Método | Rota                           | Descrição                          | Auth |
+| ------ | ------------------------------ | ---------------------------------- | ---- |
+| POST   | `/api/password-reset/request`  | envia código de 6 dígitos (15 min) | não  |
+| POST   | `/api/password-reset/check`    | confere o código                   | não  |
+| POST   | `/api/password-reset/verify`   | troca a senha e invalida sessões   | não  |
 
 ### Games (IGDB)
 
-| Método | Rota                     | Descrição              | Auth |
-| ------ | ------------------------ | ---------------------- | ---- |
-| GET    | `/games/search?q=<nome>` | busca jogos por nome   | sim  |
-| GET    | `/games/:igdbId`         | busca jogo por ID IGDB | sim  |
+| Método | Rota                         | Descrição              | Auth |
+| ------ | ---------------------------- | ---------------------- | ---- |
+| GET    | `/api/games/search?q=<nome>` | busca jogos por nome   | sim  |
+| GET    | `/api/games/:igdbId`         | busca jogo por ID IGDB | sim  |
 
 ### Library
 
-| Método | Rota               | Descrição                   | Auth |
-| ------ | ------------------ | --------------------------- | ---- |
-| GET    | `/library`         | lista biblioteca do usuário | sim  |
-| POST   | `/library`         | adiciona jogo à biblioteca  | sim  |
-| GET    | `/library/stats`   | estatísticas da biblioteca  | sim  |
-| GET    | `/library/:igdbId` | busca entrada por igdbId    | sim  |
-| PATCH  | `/library/:igdbId` | atualiza entrada            | sim  |
-| DELETE | `/library/:igdbId` | remove jogo da biblioteca   | sim  |
+| Método | Rota                 | Descrição                                      | Auth |
+| ------ | -------------------- | ---------------------------------------------- | ---- |
+| GET    | `/api/library`       | lista a biblioteca do usuário                  | sim  |
+| POST   | `/api/library`       | adiciona jogo; copia ficha IGDB e tempos HLTB  | sim  |
+| GET    | `/api/library/stats` | estatísticas                                   | sim  |
+| GET    | `/api/library/:id`   | entrada pelo id interno (cuid)                 | sim  |
+| PATCH  | `/api/library/:id`   | atualiza entrada                               | sim  |
+| DELETE | `/api/library/:id`   | remove jogo                                    | sim  |
 
 ### Utilitários
 
-| Método | Rota      | Descrição               | Auth |
-| ------ | --------- | ----------------------- | ---- |
-| GET    | `/health` | healthcheck             | não  |
-| GET    | `/docs`   | Swagger UI (apenas dev) | não  |
+| Método | Rota      | Descrição                                      | Auth |
+| ------ | --------- | ---------------------------------------------- | ---- |
+| GET    | `/health` | `{ ok: true }`, sem checar Postgres nem Redis  | não  |
+| GET    | `/docs`   | Swagger UI, fora de produção                   | não  |
 
 ## Tratamento de erros
 
@@ -236,9 +268,11 @@ Gerar secrets (PowerShell):
 
 ## Sessões
 
-- Persistidas no Redis (prefix `sess:`)
-- TTL padrão: 7 dias, rolling
-- Cookie `httpOnly`, `sameSite: lax`, `secure` em produção
+- Persistidas no Redis (prefixo `sess:`)
+- TTL de 7 dias, rolling
+- Cookie `httpOnly`
+- `sameSite: lax` em desenvolvimento; `sameSite: none` e `secure` em produção
+- Troca de senha incrementa `sessionVersion` e derruba sessões antigas
 
 ## Testes
 
@@ -255,10 +289,14 @@ tests/
 ├── auth.service.test.ts
 ├── game.service.test.ts
 ├── igdb.client.test.ts
+├── igdb.genre-translations.test.ts
 ├── library.service.test.ts
 ├── library.stats.service.test.ts
+├── requireAuth.test.ts
 └── user.service.test.ts
 ```
+
+Não há teste HTTP. A suíte não sobe Postgres nem Redis.
 
 ## Adicionando um módulo (backend)
 

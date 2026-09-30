@@ -74,20 +74,12 @@ export function PlayingList({ games }: PlayingListProps) {
 								<span className="text-body font-medium text-text-hi truncate">
 									{game.name}
 								</span>
-								<span className="text-caption text-text-md">
+								<span className="text-caption text-text-md tabular-nums">
 									{game.userPlatform ?? game.platforms[0]}
-									{game.hoursPlayed ? ` · ${game.hoursPlayed}h` : ""}
+									{game.hoursPlayed != null && game.hoursPlayed > 0
+										? ` · ${game.hoursPlayed}h`
+										: ""}
 								</span>
-								{game.hoursPlayed && (
-									<div className="h-1 bg-border-soft rounded-full overflow-hidden mt-1">
-										<div
-											className="h-full rounded-full transition-[width] duration-700 ease-out gradient-accent-bar"
-											style={{
-												width: `${Math.min((game.hoursPlayed / 100) * 100, 100)}%`,
-											}}
-										/>
-									</div>
-								)}
 							</div>
 						</button>
 					))}

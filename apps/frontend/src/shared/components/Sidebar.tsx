@@ -15,7 +15,7 @@ import { useAppStore } from "@/store/useAppStore";
 import type { User } from "@/types/api";
 
 const NAV_ITEMS = [
-	{ to: "/", label: "Home", icon: Home },
+	{ to: "/", label: "Agora", icon: Home },
 	{ to: "/library", label: "Biblioteca", icon: BookMarked },
 	{ to: "/stats", label: "Estatísticas", icon: BarChart3 },
 ] as const;
@@ -94,10 +94,11 @@ export function Sidebar({
 								"border-0",
 							)}
 							style={{
-								background: active ? "var(--color-accent-soft)" : "transparent",
-								color: active
-									? "var(--color-accent-bright)"
-									: "var(--color-text-md)",
+								background: active ? "var(--color-bg-3)" : "transparent",
+								color: active ? "var(--color-text-hi)" : "var(--color-text-md)",
+								boxShadow: active
+									? "inset 2px 0 0 var(--color-text-hi)"
+									: undefined,
 							}}
 						>
 							<span className="flex opacity-85">
@@ -108,12 +109,8 @@ export function Sidebar({
 								<span
 									className="text-overline px-1.5 py-px rounded font-mono"
 									style={{
-										color: active
-											? "var(--color-accent-bright)"
-											: "var(--color-text-lo)",
-										background: active
-											? "var(--color-accent-soft)"
-											: "var(--color-bg-3)",
+										color: "var(--color-text-lo)",
+										background: "var(--color-bg-3)",
 									}}
 								>
 									{libraryCount}

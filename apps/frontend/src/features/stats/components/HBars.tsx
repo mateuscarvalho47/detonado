@@ -3,7 +3,7 @@
 	color?: string;
 }
 
-export function HBars({ items, color = "oklch(0.51 0.22 17)" }: HBarsProps) {
+export function HBars({ items, color = "oklch(0.78 0.012 80)" }: HBarsProps) {
 	const max = Math.max(...items.map((i) => i.count), 1);
 	return (
 		<div className="flex flex-col gap-1.5">

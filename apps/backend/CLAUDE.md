@@ -12,7 +12,7 @@ pnpm start            # run production build
 pnpm prisma:migrate   # apply migrations (dev)
 pnpm prisma:generate  # regenerate Prisma Client
 
-pnpm db:seed          # insert seed users (alice@example.com, bob@example.com / password123)
+pnpm db:seed          # alice@example.com, bob@example.com / password123; emailVerified stays false, so login rejects them
 pnpm db:clean         # delete all rows from every table
 pnpm db:reset         # drop DB, re-run migrations, then re-seed (prisma migrate reset)
 
@@ -30,7 +30,7 @@ Tests (Vitest):
 pnpm test                                # run all tests once
 pnpm test:watch                          # watch mode
 pnpm test:cov                            # with coverage
-pnpm test -- tests/auth.test.ts          # single file
+pnpm test -- tests/auth.service.test.ts  # single file
 pnpm test -- -t "returns 201"            # single test by name
 ```
 
@@ -59,17 +59,17 @@ Modular monolith with strict layer separation. All imports use `.js` extensions 
 
 Dependency direction: `routes → controller → service → repository → Prisma`.
 
-**Plugins** (`src/plugins/`): each is a `fastify-plugin` wrapping a concern — `prisma`, `redis`, `session`, `swagger`, `cron`, `errorHandler`, `cors`. Registration order in `app.ts` matters (`errorHandler` and `cors` first).
+**Plugins** (`src/plugins/`): `errorHandler`, `cors`, `rateLimit`, `prisma`, `redis`, `session`, `cron`, `igdb`, `hltb`, `swagger`. Registration order in `app.ts` matters (`errorHandler` and `cors` first). API modules are mounted with prefix `/api`.
 
 **Error handling**: throw subclasses of `AppError` (`src/lib/errors.ts`) from any layer. The global handler in `plugins/errorHandler.ts` serializes them to `{ error: { code, message, details } }`. Available base classes: `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`.
 
-**Auth / protected routes**: use `requireAuth` from `@/lib/requireAuth.js` as a `preHandler` on any route that requires a session. It throws `UnauthorizedError` if `req.session.userId` is absent. On login, always call `req.session.regenerate()` before writing `userId` to prevent session fixation.
+**Auth / protected routes**: use `requireAuth` from `@/lib/requireAuth.js` as a `preHandler` on any route that requires a session. It throws `UnauthorizedError` if `req.session.userId` is absent, and destroys the session when `sessionVersion` does not match the user row. On login, always call `req.session.regenerate()` before writing `userId` to prevent session fixation. Email verification tokens expire 24 hours after issue (`emailVerificationExpiresAt`); a token with a null expiry is invalid.
 
 **Session**: stored in Redis (`sess:` prefix), 7-day TTL, rolling. `request.session.userId` holds the authenticated user ID. Only `session.ts` plugin extends the `Session` interface — do not extend it elsewhere.
 
 **Validation**: Zod schemas on route `body`/`response` via `fastify-type-provider-zod`. Schemas defined in `<module>.schema.ts`, reused in routes and services.
 
-**Environment**: validated at startup via `src/config/env.ts` (Zod). All env access goes through the exported `env` object — never `process.env` directly. Required vars: `DATABASE_URL`, `REDIS_URL`, `SESSION_SECRET` (≥32 chars), `COOKIE_SECRET` (≥32 chars), `CORS_ORIGIN`.
+**Environment**: validated at startup via `src/config/env.ts` (Zod). All env access goes through the exported `env` object — never `process.env` directly. Required: `DATABASE_URL`, `REDIS_URL`, `SESSION_SECRET` (≥32 chars), `COOKIE_SECRET` (≥32 chars), `CORS_ORIGIN`, `IGDB_CLIENT_ID`, `IGDB_CLIENT_SECRET`, `RESEND_API_KEY`. Defaults: `APP_URL`, `EMAIL_FROM`, timeouts.
 
 **Prisma Client**: generated to `src/generated/prisma/` (gitignored). Uses `@prisma/adapter-pg` (driver adapter). Always run `pnpm prisma:generate` after schema changes.
 

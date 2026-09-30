@@ -21,37 +21,8 @@ export function VerifyEmailScreen() {
 	}, [verify.isSuccess]);
 
 	return (
-		<div className="relative min-h-screen flex items-center justify-center px-5 py-10 bg-bg-0 overflow-hidden">
-			{/* Grid background */}
-			<div
-				className="absolute inset-0 pointer-events-none opacity-40"
-				style={{
-					backgroundImage: `
-            linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px),
-            linear-gradient(0deg,  var(--color-grid-line) 1px, transparent 1px)
-          `,
-					backgroundSize: "48px 48px",
-					maskImage:
-						"radial-gradient(ellipse at center, black 30%, transparent 75%)",
-				}}
-			/>
-
-			{/* Glow */}
-			<div
-				className="absolute pointer-events-none"
-				style={{
-					top: "50%",
-					left: "50%",
-					width: "80vw",
-					height: "80vw",
-					transform: "translate(-50%, -50%)",
-					background:
-						"radial-gradient(circle, var(--color-glow-accent) 0%, transparent 50%)",
-				}}
-			/>
-
-			{/* Card */}
-			<div className="relative z-10 w-full max-w-105 rounded-xl border border-border p-8 backdrop-blur-xl bg-bg-1/85 shadow-panel">
+		<div className="min-h-screen flex items-center justify-center px-5 py-10 bg-bg-0">
+			<div className="w-full max-w-105 border border-border-soft bg-bg-1 p-8">
 				{/* Brand */}
 				<div className="flex items-center gap-2.5 mb-7">
 					<img
@@ -112,11 +83,10 @@ export function VerifyEmailScreen() {
 								</span>
 							</div>
 							<h1 className="text-2xl font-semibold tracking-tight text-text-hi m-0">
-								Tudo certo!
+								E-mail confirmado
 							</h1>
 							<p className="text-body text-text-md leading-prose m-0 max-w-[38ch]">
-								Seu email foi verificado com sucesso. Sua conta está ativa e
-								pronta para uso.
+								Seu e-mail foi verificado. Você já pode entrar.
 							</p>
 						</div>
 
@@ -171,7 +141,7 @@ export function VerifyEmailScreen() {
 								Erro
 							</span>
 							<h1 className="text-2xl font-semibold tracking-tight text-text-hi m-0 mb-2">
-								Token ausente
+								Link incompleto
 							</h1>
 							<p className="text-body text-text-md leading-prose m-0 max-w-[36ch]">
 								Use o link enviado para o seu email.
@@ -188,7 +158,7 @@ export function VerifyEmailScreen() {
 				)}
 
 				<div className="mt-5 pt-4 border-t border-border-soft font-mono text-overline text-text-dim text-center tracking-[0.04em]">
-					DETONADO · RASTREADOR DE JOGOS
+					Detonado · biblioteca pessoal
 				</div>
 			</div>
 		</div>

@@ -18,6 +18,15 @@ import type {
   UpdateAccountInput,
 } from './auth.schema.js';
 
+const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+
+function issueVerification() {
+  return {
+    token: randomBytes(32).toString('hex'),
+    expiresAt: new Date(Date.now() + VERIFICATION_TTL_MS),
+  };
+}
+
 export class AuthService {
   constructor(private users: UserRepository) {}
 
@@ -26,17 +35,18 @@ export class AuthService {
     if (exists) throw new EmailAlreadyTakenError();
 
     const passwordHash = await hashPassword(input.password);
-    const emailVerificationToken = randomBytes(32).toString('hex');
+    const verification = issueVerification();
 
     const user = await this.users.create({
       email: input.email,
       passwordHash,
-      emailVerificationToken,
+      emailVerificationToken: verification.token,
+      emailVerificationExpiresAt: verification.expiresAt,
       consentedAt: new Date(),
     });
 
     try {
-      await sendVerificationEmail(input.email, emailVerificationToken);
+      await sendVerificationEmail(input.email, verification.token);
     } catch {
       console.error(
         '[auth] verification email failed for %s — account created, user must resend',
@@ -61,7 +71,10 @@ export class AuthService {
 
   async verifyEmail(token: string) {
     const user = await this.users.findByVerificationToken(token);
-    if (!user) throw new InvalidVerificationTokenError();
+    const expiresAt = user?.emailVerificationExpiresAt;
+    if (!user || !expiresAt || expiresAt.getTime() <= Date.now()) {
+      throw new InvalidVerificationTokenError();
+    }
 
     return this.users.verifyEmail(user.id);
   }
@@ -73,11 +86,11 @@ export class AuthService {
     if (!user) return;
     if (user.emailVerified) throw new EmailAlreadyVerifiedError();
 
-    const token = randomBytes(32).toString('hex');
-    await this.users.updateVerificationToken(user.id, token);
+    const verification = issueVerification();
+    await this.users.updateVerificationToken(user.id, verification.token, verification.expiresAt);
 
     try {
-      await sendVerificationEmail(user.email, token);
+      await sendVerificationEmail(user.email, verification.token);
     } catch {
       console.error('[auth] resend verification email failed for %s', user.email);
     }
@@ -95,12 +108,13 @@ export class AuthService {
     if (input.email && input.email !== user.email) {
       const taken = await this.users.findByEmail(input.email);
       if (taken) throw new EmailAlreadyTakenError();
-      const token = randomBytes(32).toString('hex');
+      const verification = issueVerification();
       updates.email = input.email;
       updates.emailVerified = false;
-      updates.emailVerificationToken = token;
+      updates.emailVerificationToken = verification.token;
+      updates.emailVerificationExpiresAt = verification.expiresAt;
       try {
-        await sendVerificationEmail(input.email, token);
+        await sendVerificationEmail(input.email, verification.token);
       } catch {
         console.error('[auth] verification email failed after email change for %s', input.email);
       }

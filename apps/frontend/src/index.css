@@ -4,22 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@font-face {
-	font-family: "Geist";
-	src: url("/fonts/Geist-Variable.woff2") format("woff2-variations");
-	font-weight: 100 900;
-	font-style: normal;
-	font-display: swap;
-}
-
-@font-face {
-	font-family: "Geist Mono";
-	src: url("/fonts/GeistMono-Variable.woff2") format("woff2-variations");
-	font-weight: 100 900;
-	font-style: normal;
-	font-display: swap;
-}
-
 @theme inline {
 	--font-heading: var(--font-sans);
 	--color-sidebar-ring: var(--sidebar-ring);
@@ -99,8 +83,8 @@
 	--color-hero-overlay-end: var(--hero-overlay-end);
 
 	/* Typography */
-	--font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
-	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+	--font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
 	/* Font sizes — legacy tokens (root 16px era; kept for shadcn + gradual migration) */
 	--font-size-2xs: 0.6875rem;
@@ -204,38 +188,38 @@
 /* ═══ Dark theme ═══ */
 :root[data-theme="dark"],
 .dark {
-	/* Preset shadcn radix-vega — dark */
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.455 0.188 13.697);
-	--primary-foreground: oklch(0.969 0.015 12.422);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
+	/* Warm charcoal. Color stays on the covers; the chrome is flat. */
+	--background: oklch(0.13 0.006 28);
+	--foreground: oklch(0.96 0.006 75);
+	--card: oklch(0.16 0.007 28);
+	--card-foreground: oklch(0.96 0.006 75);
+	--popover: oklch(0.16 0.007 28);
+	--popover-foreground: oklch(0.96 0.006 75);
+	--primary: oklch(0.92 0.012 80);
+	--primary-foreground: oklch(0.2 0.012 50);
+	--secondary: oklch(0.22 0.008 28);
+	--secondary-foreground: oklch(0.96 0.006 75);
+	--muted: oklch(0.2 0.008 28);
+	--muted-foreground: oklch(0.72 0.012 75);
+	--accent: oklch(0.22 0.008 28);
+	--accent-foreground: oklch(0.96 0.006 75);
 	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
+	--border: oklch(0.32 0.012 28);
+	--input: oklch(0.22 0.008 28);
+	--ring: oklch(0.72 0.012 75);
 	--chart-1: oklch(0.81 0.117 11.638);
 	--chart-2: oklch(0.645 0.246 16.439);
 	--chart-3: oklch(0.586 0.253 17.585);
 	--chart-4: oklch(0.514 0.222 16.935);
 	--chart-5: oklch(0.455 0.188 13.697);
-	--sidebar: oklch(0.21 0.006 285.885);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.645 0.246 16.439);
-	--sidebar-primary-foreground: oklch(0.969 0.015 12.422);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.556 0 0);
+	--sidebar: oklch(0.16 0.007 28);
+	--sidebar-foreground: oklch(0.96 0.006 75);
+	--sidebar-primary: oklch(0.92 0.012 80);
+	--sidebar-primary-foreground: oklch(0.2 0.012 50);
+	--sidebar-accent: oklch(0.22 0.008 28);
+	--sidebar-accent-foreground: oklch(0.96 0.006 75);
+	--sidebar-border: oklch(0.32 0.012 28);
+	--sidebar-ring: oklch(0.72 0.012 75);
 
 	/* Custom layers — dark (warm charcoal) */
 	--bg-0: oklch(0.13 0.006 28);
@@ -252,14 +236,14 @@
 	--text-lo: oklch(0.62 0.014 75);
 	--text-dim: oklch(0.5 0.01 75);
 
-	--accent-bright: oklch(0.78 0.18 17);
-	--accent-soft: oklch(0.4 0.1 17 / 0.18);
-	--accent-rim: oklch(0.55 0.16 17 / 0.4);
+	--accent-bright: oklch(0.93 0.012 80);
+	--accent-soft: oklch(0.28 0.01 40 / 0.45);
+	--accent-rim: oklch(0.45 0.02 40 / 0.35);
 
 	--error: oklch(0.68 0.22 20);
 
 	--grid-line: oklch(0.2 0.006 28);
-	--glow-accent: oklch(0.5 0.18 17 / 0.3);
+	--glow-accent: transparent;
 	--scrollbar-thumb: oklch(0.3 0.01 28);
 	--scrollbar-thumb-hover: oklch(0.4 0.01 28);
 	--shadow-base: oklch(0 0 0 / 0.55);
@@ -296,14 +280,14 @@
 	}
 
 	body {
-		font-family: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
-		font-feature-settings: "cv11", "ss01";
+		font-family: var(--font-sans);
+		font-variant-numeric: tabular-nums;
 		-webkit-font-smoothing: antialiased;
 		@apply bg-background text-foreground;
 	}
 
 	::selection {
-		background: oklch(0.5 0.18 17 / 0.4);
+		background: oklch(0.92 0.012 80 / 0.28);
 		color: var(--color-foreground);
 	}
 
@@ -330,21 +314,15 @@
 @layer utilities {
 	/* Accent gradient button */
 	.btn-accent {
-		background: linear-gradient(
-			180deg,
-			oklch(0.65 0.22 17),
-			oklch(0.51 0.22 17)
-		);
-		color: oklch(0.97 0.015 12);
-		border: 1px solid oklch(0.55 0.18 17 / 0.5);
-		box-shadow:
-			0 1px 0 oklch(1 0 0 / 0.2) inset,
-			0 4px 14px oklch(0.5 0.18 17 / 0.25);
+		background: oklch(0.92 0.012 80);
+		color: oklch(0.2 0.012 50);
+		border: 1px solid oklch(0.92 0.012 80);
+		box-shadow: none;
 		font-weight: 600;
 		cursor: pointer;
 	}
 	.btn-accent:hover:not(:disabled) {
-		filter: brightness(1.06);
+		background: oklch(0.96 0.008 80);
 	}
 	.btn-accent:disabled {
 		opacity: 0.55;
@@ -398,22 +376,8 @@
 			0 24px 60px oklch(0 0 0 / 0.55);
 	}
 
-	/* Accent progress bar fill */
-	.gradient-accent-bar {
-		background: linear-gradient(
-			90deg,
-			oklch(0.51 0.22 17),
-			oklch(0.65 0.22 17)
-		);
-	}
-
-	/* Accent rating fill */
-	.gradient-accent-fill {
-		background: linear-gradient(
-			90deg,
-			oklch(0.4 0.1 17 / 0.3),
-			oklch(0.51 0.22 17)
-		);
+	.meter-fill {
+		background: oklch(0.78 0.012 80);
 	}
 
 	/* Screen page title section */
@@ -437,16 +401,12 @@
 	box-shadow:
 		0 0 0 1px rgba(255, 255, 255, 0.04) inset,
 		0 8px 24px rgba(0, 0, 0, 0.35);
-	transition:
-		transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1),
-		box-shadow 0.25s;
+	transition: box-shadow 0.25s;
 }
 .cv[data-hover="1"]:hover {
-	transform: translateY(-3px);
 	box-shadow:
 		0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-		0 14px 36px rgba(0, 0, 0, 0.5),
-		0 0 0 1px var(--accent-rim, transparent);
+		0 8px 24px rgba(0, 0, 0, 0.45);
 }
 .cv-stripe {
 	position: absolute;
@@ -467,7 +427,7 @@
 	position: absolute;
 	right: -6%;
 	bottom: -18%;
-	font-family: "Geist Mono", ui-monospace, monospace;
+	font-family: var(--font-mono);
 	font-weight: 800;
 	letter-spacing: -0.04em;
 	line-height: 0.8;
@@ -489,12 +449,12 @@
 	);
 }
 .cv-sub {
-	font-family: "Geist Mono", ui-monospace, monospace;
+	font-family: var(--font-mono);
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 }
 .cv-name {
-	font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+	font-family: var(--font-sans);
 	letter-spacing: -0.02em;
 	text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
 }

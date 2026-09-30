@@ -40,7 +40,7 @@ export const useAppStore = create<AppStore>()(
 			toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 
 			// Library state — persisted
-			libraryView: "grid",
+			libraryView: "list",
 			setLibraryView: (view) => set({ libraryView: view }),
 
 			libraryStatusFilter: null,
@@ -54,7 +54,16 @@ export const useAppStore = create<AppStore>()(
 		}),
 		{
 			name: "detonado-ui",
-			// Only persist non-transient UI state
+			version: 2,
+			migrate: (persisted, version) => {
+				const state = persisted as {
+					libraryView?: LibraryView;
+					librarySortField?: LibrarySortField;
+					sidebarOpen?: boolean;
+				};
+				if (version < 2) return { ...state, libraryView: "list" as const };
+				return state;
+			},
 			partialize: (state) => ({
 				libraryView: state.libraryView,
 				librarySortField: state.librarySortField,

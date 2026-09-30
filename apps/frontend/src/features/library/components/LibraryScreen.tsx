@@ -68,9 +68,9 @@ export function LibraryScreen() {
 			{/* Topbar */}
 			<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
 				<PageHeader
-					overline="Coleção"
-					title="Biblioteca"
-					subtitle={`${library.length} jogo${library.length !== 1 ? "s" : ""} na coleção`}
+					overline="Biblioteca"
+					title="Todos os jogos"
+					subtitle={`${library.length} jogo${library.length !== 1 ? "s" : ""}`}
 				/>
 				<Button
 					variant="accent"

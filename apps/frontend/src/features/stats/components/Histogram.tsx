@@ -26,14 +26,21 @@ export function Histogram({ distribution }: HistogramProps) {
 								style={{
 									height: `${heightPct}%`,
 									background: isMode
-										? "linear-gradient(180deg, oklch(0.65 0.22 17), oklch(0.51 0.22 17))"
+										? "oklch(0.92 0.012 80)"
 										: count > 0
-											? "oklch(0.4 0.14 17)"
+											? "oklch(0.55 0.012 70)"
 											: "oklch(0.22 0.009 28)",
 								}}
 							>
 								{count > 0 && (
-									<span className="text-caption text-text-hi font-semibold">
+									<span
+										className="text-caption font-semibold"
+										style={{
+											color: isMode
+												? "oklch(0.2 0.012 50)"
+												: "var(--color-text-hi)",
+										}}
+									>
 										{count}
 									</span>
 								)}

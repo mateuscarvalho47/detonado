@@ -55,9 +55,9 @@ export function StatsScreen() {
 			<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
 				<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
 					<PageHeader
-						overline="Análise"
+						overline="Biblioteca"
 						title="Estatísticas"
-						subtitle="Insights da sua biblioteca"
+						subtitle="Números da sua biblioteca"
 					/>
 				</div>
 				<LoadFailure onRetry={() => void refetch()} />
@@ -70,9 +70,9 @@ export function StatsScreen() {
 			<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
 				<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
 					<PageHeader
-						overline="Análise"
+						overline="Biblioteca"
 						title="Estatísticas"
-						subtitle="Insights da sua biblioteca"
+						subtitle="Números da sua biblioteca"
 					/>
 				</div>
 				<ArchiveEmpty onAdd={() => setOpen(true)} />
@@ -85,9 +85,9 @@ export function StatsScreen() {
 			{/* Topbar */}
 			<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
 				<PageHeader
-					overline="Análise"
+					overline="Biblioteca"
 					title="Estatísticas"
-					subtitle="Insights da sua biblioteca"
+					subtitle="Números da sua biblioteca"
 				/>
 			</div>
 
@@ -102,12 +102,12 @@ export function StatsScreen() {
 							unit: "h",
 						},
 						{
-							label: "Jogos completos",
+							label: "Zerados",
 							value: stats.countByStatus.COMPLETED ?? 0,
 							unit: "",
 						},
 						{
-							label: "Na wishlist",
+							label: "Quero jogar",
 							value: stats.countByStatus.WISHLIST ?? 0,
 							unit: "",
 						},
@@ -124,7 +124,7 @@ export function StatsScreen() {
 							<div className="mono-label">{b.label}</div>
 							<div className="flex items-baseline gap-1.5">
 								<span
-									className="text-[37px] md:text-[49px] font-bold leading-none text-text-hi"
+									className="text-3xl font-semibold leading-none tabular-nums text-text-hi"
 									style={{ letterSpacing: "-0.04em" }}
 								>
 									{b.value}
@@ -150,7 +150,7 @@ export function StatsScreen() {
 								label: g.genre,
 								count: g.count,
 							}))}
-							color="oklch(0.51 0.22 17)"
+							color="oklch(0.78 0.012 80)"
 						/>
 					</Card>
 				</div>
@@ -163,7 +163,7 @@ export function StatsScreen() {
 								label: p.platform,
 								count: p.count,
 							}))}
-							color="oklch(0.58 0.25 17)"
+							color="oklch(0.62 0.012 70)"
 						/>
 					</Card>
 					<Card title="Distribuição de avaliações" sub="nota 0–10">

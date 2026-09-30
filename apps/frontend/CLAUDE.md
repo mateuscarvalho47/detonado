@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Frontend app of the `ludex` monorepo. React 19 + Vite + TanStack Router/Query. See root `../../CLAUDE.md` for monorepo-wide setup. Run all commands from this directory (`apps/frontend`).
+Frontend of the Detonado monorepo. React 19 + Vite + TanStack Router/Query. See root `../../CLAUDE.md` for monorepo-wide setup. Run all commands from this directory (`apps/frontend`).
 
 ## Commands
 
@@ -37,9 +37,9 @@ Features: `auth`, `dashboard`, `detail`, `landing`, `library`, `search`, `stats`
 Shared layers:
 - `src/components/ui/` — shadcn primitives (style `radix-vega`, `components.json`). Generated; don't hand-edit casually.
 - `src/shared/` — cross-feature components (`Sidebar`, `BottomNav`, `StatusBadge`…), hooks, constants.
-- `src/lib/` — `api.ts` (fetch wrapper + `ApiError`), `utils.ts`, `statusColor.ts`.
-- `src/store/useAppStore.ts` — Zustand store for transient + persisted UI state (theme, sidebar, library view/sort/filter). Persisted slice is whitelisted via `partialize` under key `detonado-ui`. Not for server data — that lives in Query cache.
-- `src/types/api.ts` — local API types. Shared types come from `@tracking-games/shared`.
+- `src/lib/` — `api.ts` (fetch wrapper + `ApiError`), `utils.ts`.
+- `src/store/useAppStore.ts` — Zustand for UI state only (search modal, sidebar, library view/sort/filter). Persisted slice (`detonado-ui`, version 2) is `libraryView`, `librarySortField`, and `sidebarOpen`. Default view is `list`. There is no theme in the store: `__root.tsx` forces `data-theme="dark"`.
+- `src/types/api.ts` — local API types. This app does not depend on `@detonado/shared`.
 
 ### Data flow
 
@@ -55,5 +55,5 @@ Auth gating is **centralized in `src/routes/__root.tsx`**, not per-route `before
 
 - **Biome** formats with **tabs** and (frontend default) **double quotes** — note this differs from the backend. Run `pnpm lint:fix` before committing.
 - Path alias `@` → `src/`.
-- Theme via `data-theme` attr + `.dark` class on `<html>`, applied in `__root.tsx`; colors are CSS vars (`var(--color-*)`).
+- Dark only. `__root.tsx` sets `data-theme="dark"` and `.dark` on `<html>`. Type is IBM Plex Sans / IBM Plex Mono. The logged-in home is the shelf (`Agora`: playing, queue, backlog hours), not a metrics dashboard.
 - Tests colocated as `*.test.ts(x)`, jsdom env, globals on, `@testing-library/react` (`src/test/setup.ts`).

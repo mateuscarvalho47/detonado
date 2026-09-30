@@ -53,8 +53,12 @@ describe('AuthService.register', () => {
         email: 'a@b.com',
         passwordHash: 'hashed-password',
         emailVerificationToken: expect.any(String),
+        emailVerificationExpiresAt: expect.any(Date),
       }),
     );
+    const expiresAt = repo.create.mock.calls[0][0].emailVerificationExpiresAt as Date;
+    expect(expiresAt.getTime()).toBeGreaterThan(Date.now() + 23 * 60 * 60 * 1000);
+    expect(expiresAt.getTime()).toBeLessThan(Date.now() + 25 * 60 * 60 * 1000);
     expect(result.email).toBe('a@b.com');
   });
 
@@ -135,7 +139,11 @@ describe('AuthService.login', () => {
 
 describe('AuthService.verifyEmail', () => {
   it('verifies the user when token is valid', async () => {
-    const user = { id: '1', email: 'a@b.com' };
+    const user = {
+      id: '1',
+      email: 'a@b.com',
+      emailVerificationExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    };
     const verified = { id: '1', email: 'a@b.com', emailVerified: true };
     const repo = makeRepo({
       findByVerificationToken: vi.fn().mockResolvedValue(user),
@@ -157,6 +165,38 @@ describe('AuthService.verifyEmail', () => {
     const service = new AuthService(repo as never);
 
     await expect(service.verifyEmail('bad-token')).rejects.toThrow(InvalidVerificationTokenError);
+  });
+
+  it('throws InvalidVerificationTokenError when the token is expired', async () => {
+    const repo = makeRepo({
+      findByVerificationToken: vi.fn().mockResolvedValue({
+        id: '1',
+        email: 'a@b.com',
+        emailVerificationExpiresAt: new Date(Date.now() - 1000),
+      }),
+      verifyEmail: vi.fn(),
+    });
+    const service = new AuthService(repo as never);
+
+    await expect(service.verifyEmail('old-token')).rejects.toThrow(InvalidVerificationTokenError);
+    expect(repo.verifyEmail).not.toHaveBeenCalled();
+  });
+
+  it('throws InvalidVerificationTokenError when the token has no expiry', async () => {
+    const repo = makeRepo({
+      findByVerificationToken: vi.fn().mockResolvedValue({
+        id: '1',
+        email: 'a@b.com',
+        emailVerificationExpiresAt: null,
+      }),
+      verifyEmail: vi.fn(),
+    });
+    const service = new AuthService(repo as never);
+
+    await expect(service.verifyEmail('legacy-token')).rejects.toThrow(
+      InvalidVerificationTokenError,
+    );
+    expect(repo.verifyEmail).not.toHaveBeenCalled();
   });
 });
 
@@ -201,7 +241,11 @@ describe('AuthService.resendVerification', () => {
 
     await service.resendVerification({ email: 'a@b.com' });
 
-    expect(repo.updateVerificationToken).toHaveBeenCalledWith('1', expect.any(String));
+    expect(repo.updateVerificationToken).toHaveBeenCalledWith(
+      '1',
+      expect.any(String),
+      expect.any(Date),
+    );
     expect(sendVerificationEmail).toHaveBeenCalledWith('a@b.com', expect.any(String));
   });
 });

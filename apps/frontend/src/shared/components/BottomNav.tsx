@@ -3,7 +3,7 @@ import { BarChart3, BookMarked, Home, Search, User } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
 const NAV_ITEMS = [
-	{ to: "/", label: "Home", icon: Home },
+	{ to: "/", label: "Agora", icon: Home },
 	{ to: "/library", label: "Biblioteca", icon: BookMarked },
 	{ to: "/stats", label: "Estatísticas", icon: BarChart3 },
 ] as const;
@@ -32,9 +32,7 @@ export function BottomNav({
 						onClick={() => navigate({ to })}
 						className="flex flex-col items-center gap-1 flex-1 py-2 border-0 bg-transparent cursor-pointer"
 						style={{
-							color: active
-								? "var(--color-accent-bright)"
-								: "var(--color-text-lo)",
+							color: active ? "var(--color-text-hi)" : "var(--color-text-lo)",
 						}}
 					>
 						<Icon className="size-5" />
@@ -59,7 +57,7 @@ export function BottomNav({
 				className="flex flex-col items-center gap-1 flex-1 py-2 border-0 bg-transparent cursor-pointer"
 				style={{
 					color: currentPath.startsWith("/account")
-						? "var(--color-accent-bright)"
+						? "var(--color-text-hi)"
 						: "var(--color-text-lo)",
 				}}
 			>

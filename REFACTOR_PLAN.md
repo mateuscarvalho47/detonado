@@ -1,4 +1,6 @@
-# Refactor Plan — Frontend Ludex
+# Refactor Plan — Frontend Detonado
+
+Histórico de padronização de tokens. O produto se chama Detonado. Este arquivo não descreve o estado atual da interface.
 
 Plano de refatoração focado em padronização de design tokens, substituição de componentes nativos por shadcn/ui e remoção de valores arbitrários espalhados pelo código.
 

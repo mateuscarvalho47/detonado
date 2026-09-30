@@ -3,7 +3,7 @@ import { useAppStore } from "./useAppStore";
 
 const INITIAL_STATE = {
 	searchOpen: false,
-	libraryView: "grid" as const,
+	libraryView: "list" as const,
 	libraryStatusFilter: null,
 	librarySortField: "createdAt" as const,
 	librarySearch: "",
@@ -17,7 +17,7 @@ describe("useAppStore — initial state", () => {
 	it("has correct default values", () => {
 		const state = useAppStore.getState();
 		expect(state.searchOpen).toBe(false);
-		expect(state.libraryView).toBe("grid");
+		expect(state.libraryView).toBe("list");
 		expect(state.libraryStatusFilter).toBeNull();
 		expect(state.librarySortField).toBe("createdAt");
 		expect(state.librarySearch).toBe("");
