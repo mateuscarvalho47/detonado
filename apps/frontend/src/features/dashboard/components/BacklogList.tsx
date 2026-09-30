@@ -56,7 +56,7 @@ export function BacklogList({ games }: BacklogListProps) {
 							<span className="text-caption text-text-dim font-medium">
 								#{idx + 1}
 							</span>
-							<div className="w-9 h-12 rounded-[2px] overflow-hidden">
+							<div className="w-9 h-12">
 								<Cover
 									game={{
 										name: game.name,

@@ -67,7 +67,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 						aria-describedby={undefined}
 						className="fixed top-5 sm:top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-160 px-4 outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-3 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-3 duration-200"
 					>
-						<div className="w-full border border-border overflow-hidden bg-bg-1">
+						<div className="w-full border border-border-soft overflow-hidden bg-bg-1">
 							{/* Header */}
 							<DialogPrimitive.Title asChild>
 								<div className="flex items-center gap-2.5 px-5 py-3.5 text-text-md border-b border-border-soft">
@@ -82,7 +82,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 									<DialogPrimitive.Close asChild>
 										<button
 											type="button"
-											className="flex items-center justify-center size-6 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded-md text-text-lo hover:text-text-hi hover:bg-bg-2 transition-colors cursor-pointer"
+											className="flex items-center justify-center size-6 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 text-text-lo hover:text-text-hi hover:bg-bg-2 transition-colors cursor-pointer"
 										>
 											<X className="size-3.5" />
 										</button>
@@ -106,7 +106,6 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 											variant="accent"
 											size="sm"
 											onClick={() => void refetch()}
-											className="rounded-lg"
 										>
 											Tentar de novo
 										</Button>
@@ -137,7 +136,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 														gridTemplateColumns: "36px 1fr auto",
 													}}
 												>
-													<div className="w-9 h-12 rounded-[2px] overflow-hidden">
+													<div className="w-9 h-12">
 														<Cover
 															game={{
 																name: game.name,

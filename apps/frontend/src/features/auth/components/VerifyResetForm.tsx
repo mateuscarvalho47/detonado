@@ -97,7 +97,7 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 										<InputOTPSlot
 											key={i}
 											index={i}
-											className="bg-bg-2 border-border text-text-hi rounded-md size-10 first:rounded-md last:rounded-md border"
+											className="bg-bg-2 border-border-soft text-text-hi size-10 border"
 										/>
 									))}
 								</InputOTPGroup>
@@ -118,7 +118,7 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 					type="button"
 					disabled={check.isPending}
 					onClick={handleValidateCode}
-					className="w-full h-11 rounded-lg mt-5"
+					className="w-full h-11 mt-5"
 				>
 					{check.isPending ? "Validando..." : "Validar código"}
 				</Button>
@@ -133,7 +133,7 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 								type={showPassword ? "text" : "password"}
 								{...register("password")}
 								placeholder="mínimo 8 caracteres"
-								className="bg-bg-2 border-border text-text-hi placeholder:text-text-lo h-11 pr-9"
+								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11 pr-9"
 							/>
 							<button
 								type="button"
@@ -158,7 +158,7 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 								type={showConfirm ? "text" : "password"}
 								{...register("confirmPassword")}
 								placeholder="repita a nova senha"
-								className="bg-bg-2 border-border text-text-hi placeholder:text-text-lo h-11 pr-9"
+								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11 pr-9"
 							/>
 							<button
 								type="button"
@@ -184,7 +184,7 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 						variant="accent"
 						type="submit"
 						disabled={mutation.isPending}
-						className="w-full h-11 rounded-lg mt-1.5"
+						className="w-full h-11 mt-1.5"
 					>
 						{mutation.isPending ? "Redefinindo..." : "Redefinir senha"}
 					</Button>

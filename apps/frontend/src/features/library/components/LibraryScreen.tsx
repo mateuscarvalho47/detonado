@@ -47,7 +47,7 @@ export function LibraryScreen() {
 					{Array.from({ length: 12 }, (_, i) => i).map((i) => (
 						<div
 							key={i}
-							className="aspect-3/4 bg-bg-1 rounded-[2px] animate-pulse"
+							className="aspect-3/4 bg-bg-1 rounded-cover animate-pulse"
 						/>
 					))}
 				</div>
@@ -72,12 +72,7 @@ export function LibraryScreen() {
 					title="Todos os jogos"
 					subtitle={`${library.length} jogo${library.length !== 1 ? "s" : ""}`}
 				/>
-				<Button
-					variant="accent"
-					size="sm"
-					onClick={() => setOpen(true)}
-					className="rounded-lg"
-				>
+				<Button variant="accent" size="sm" onClick={() => setOpen(true)}>
 					+ Adicionar jogo
 				</Button>
 			</div>
@@ -96,7 +91,7 @@ export function LibraryScreen() {
 
 				<div className="flex gap-2 items-center">
 					{/* Search */}
-					<div className="relative flex items-center gap-2 h-10 px-3 bg-bg-2 border border-border rounded-lg flex-1 sm:w-55 sm:flex-none text-text-lo">
+					<div className="relative flex items-center gap-2 h-10 px-3 bg-bg-2 border border-border-soft flex-1 sm:w-55 sm:flex-none text-text-lo">
 						<Search className="size-3.5 shrink-0" />
 						<Input
 							value={filters.search}
@@ -111,7 +106,7 @@ export function LibraryScreen() {
 						<DropdownMenuTrigger asChild>
 							<button
 								type="button"
-								className="inline-flex items-center gap-1.5 h-8 min-h-11 lg:min-h-0 px-2.5 bg-bg-2 border border-border rounded-md text-text-md cursor-pointer text-body font-medium"
+								className="inline-flex items-center gap-1.5 h-8 min-h-11 lg:min-h-0 px-2.5 bg-bg-2 border border-border-soft text-text-md cursor-pointer text-body font-medium"
 							>
 								{currentSortLabel} ↕
 							</button>
@@ -139,14 +134,14 @@ export function LibraryScreen() {
 					</DropdownMenu>
 
 					{/* View toggle */}
-					<div className="flex p-0.5 bg-bg-2 border border-border rounded-lg">
+					<div className="flex p-0.5 bg-bg-2 border border-border-soft">
 						{(["grid", "list"] as const).map((v) => (
 							<button
 								type="button"
 								key={v}
 								onClick={() => filters.setView(v)}
 								className={cn(
-									"flex items-center justify-center size-8 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded-sm cursor-pointer border-0 transition-all",
+									"flex items-center justify-center size-8 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 cursor-pointer border-0 transition-all",
 									filters.view === v
 										? "bg-bg-3 text-text-hi"
 										: "bg-transparent text-text-lo",

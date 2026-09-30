@@ -42,7 +42,7 @@ export function RegisterForm() {
 						variant="outline"
 						disabled={resend.isPending || resend.isSuccess}
 						onClick={() => resend.mutate(email)}
-						className="w-full h-10 rounded-lg"
+						className="w-full h-10"
 					>
 						{resend.isPending ? "Enviando..." : "Reenviar email"}
 					</Button>
@@ -89,7 +89,7 @@ export function RegisterForm() {
 					type="email"
 					{...registerField("email")}
 					placeholder="seu@email.com"
-					className="bg-bg-2 border-border text-text-hi placeholder:text-text-lo h-11"
+					className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11"
 				/>
 				{errors.email && (
 					<p className="text-body m-0 text-error">{errors.email.message}</p>
@@ -103,7 +103,7 @@ export function RegisterForm() {
 						type={showPassword ? "text" : "password"}
 						{...registerField("password")}
 						placeholder="mínimo 8 caracteres"
-						className="bg-bg-2 border-border text-text-hi placeholder:text-text-lo h-10 pr-9"
+						className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-10 pr-9"
 					/>
 					<button
 						type="button"
@@ -167,7 +167,7 @@ export function RegisterForm() {
 				variant="accent"
 				type="submit"
 				disabled={register.isPending}
-				className="w-full h-10 rounded-lg mt-1.5"
+				className="w-full h-10 mt-1.5"
 			>
 				{register.isPending ? "Criando..." : "Criar conta"}
 			</Button>

@@ -35,7 +35,7 @@ export function AccountExportSection() {
 				variant="outline"
 				onClick={handleExport}
 				disabled={exportMutation.isPending}
-				className="w-fit h-9 rounded-lg text-caption"
+				className="w-fit h-9 text-caption"
 			>
 				<Download size={12} />
 				{exportMutation.isPending ? "Preparando..." : "Baixar dados (.json)"}

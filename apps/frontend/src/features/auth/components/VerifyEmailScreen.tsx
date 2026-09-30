@@ -25,13 +25,7 @@ export function VerifyEmailScreen() {
 			<div className="w-full max-w-105 border border-border-soft bg-bg-1 p-8">
 				{/* Brand */}
 				<div className="flex items-center gap-2.5 mb-7">
-					<img
-						src="/logo.svg"
-						alt="Detonado"
-						width="22"
-						height="22"
-						className="rounded-md"
-					/>
+					<img src="/logo.svg" alt="Detonado" width="22" height="22" />
 					<span className="text-title font-bold tracking-[-0.02em] text-text-hi">
 						Detonado
 					</span>
@@ -90,7 +84,7 @@ export function VerifyEmailScreen() {
 							</p>
 						</div>
 
-						<div className="rounded-lg border border-accent-bright/20 bg-accent-bright/5 px-4 py-3">
+						<div className="border border-accent-bright/20 bg-accent-bright/5 px-4 py-3">
 							<p className="text-caption text-accent-bright font-medium m-0 leading-normal">
 								Você já pode entrar na sua conta com o email e senha
 								cadastrados.
@@ -99,7 +93,7 @@ export function VerifyEmailScreen() {
 
 						<Button
 							variant="accent"
-							className="w-full h-11 rounded-lg"
+							className="w-full h-11"
 							onClick={() => {
 								localStorage.removeItem(VERIFIED_KEY);
 								navigate({ to: "/login" });
@@ -126,7 +120,7 @@ export function VerifyEmailScreen() {
 						</div>
 						<Button
 							variant="outline"
-							className="w-full h-11 rounded-lg mt-1"
+							className="w-full h-11 mt-1"
 							onClick={() => navigate({ to: "/register" })}
 						>
 							Criar nova conta
@@ -149,7 +143,7 @@ export function VerifyEmailScreen() {
 						</div>
 						<Button
 							variant="outline"
-							className="w-full h-11 rounded-lg mt-1"
+							className="w-full h-11 mt-1"
 							onClick={() => navigate({ to: "/login" })}
 						>
 							Voltar ao login

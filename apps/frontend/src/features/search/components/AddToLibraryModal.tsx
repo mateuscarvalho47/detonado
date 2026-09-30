@@ -44,7 +44,7 @@ export function AddToLibraryModal({
 			<DialogContent
 				showCloseButton={false}
 				aria-describedby={undefined}
-				className="p-0 gap-0 max-w-180 bg-bg-1 border border-border shadow-none"
+				className="p-0 gap-0 max-w-180 bg-bg-1 border border-border-soft shadow-none"
 			>
 				<DialogHeader className="flex flex-row items-center justify-between px-5 py-3.5 border-b border-border-soft">
 					<DialogTitle className="text-heading text-text-hi">
@@ -65,7 +65,7 @@ export function AddToLibraryModal({
 						style={{ gridTemplateColumns: "320px 1fr" }}
 					>
 						{/* Cover */}
-						<div className="w-40 sm:w-auto self-stretch rounded-[2px] overflow-hidden mx-auto sm:mx-0">
+						<div className="w-40 sm:w-auto self-stretch mx-auto sm:mx-0">
 							<Cover
 								game={{
 									name: game.name,
@@ -135,7 +135,7 @@ export function AddToLibraryModal({
 													type="button"
 													key={s.key}
 													onClick={() => field.onChange(s.key)}
-													className="flex items-center gap-2 h-8 px-2.5 rounded-md cursor-pointer text-caption font-medium border"
+													className="flex items-center gap-2 h-8 px-2.5 cursor-pointer text-caption font-medium border"
 													style={{
 														background:
 															field.value === s.key
@@ -179,7 +179,7 @@ export function AddToLibraryModal({
 											value={field.value}
 											onChange={field.onChange}
 											placeholder="Plataforma"
-											className="w-full h-10 bg-bg-2 border-border text-text-hi"
+											className="w-full h-10 bg-bg-2 border-border-soft text-text-hi"
 										/>
 									)}
 								/>
@@ -193,7 +193,7 @@ export function AddToLibraryModal({
 							type="button"
 							variant="ghost"
 							onClick={onClose}
-							className="h-9 border border-border text-text-md rounded-lg"
+							className="h-9 border border-border-soft text-text-md"
 						>
 							Cancelar
 						</Button>
@@ -201,7 +201,7 @@ export function AddToLibraryModal({
 							variant="accent"
 							type="submit"
 							disabled={isPending}
-							className="h-9 rounded-lg"
+							className="h-9"
 						>
 							{isPending ? "Adicionando..." : "Adicionar"}
 						</Button>

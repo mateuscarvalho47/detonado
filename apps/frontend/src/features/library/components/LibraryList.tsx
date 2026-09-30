@@ -72,7 +72,7 @@ export function LibraryList({ games }: LibraryListProps) {
 							className="md:hidden grid items-center gap-3 px-4 py-2.5"
 							style={{ gridTemplateColumns: MOBILE_GRID }}
 						>
-							<div className="w-10 h-13.5 rounded-[2px] overflow-hidden">
+							<div className="w-10 h-13.5">
 								<Cover
 									game={{
 										name: game.name,
@@ -108,7 +108,7 @@ export function LibraryList({ games }: LibraryListProps) {
 							className="hidden md:grid gap-3.5 items-center px-4 py-2.5"
 							style={{ gridTemplateColumns: DESKTOP_GRID }}
 						>
-							<div className="w-9 h-12 rounded-[2px] overflow-hidden">
+							<div className="w-9 h-12">
 								<Cover
 									game={{
 										name: game.name,

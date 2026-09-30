@@ -46,13 +46,7 @@ export function Sidebar({
 		>
 			{/* Brand */}
 			<div className="flex items-center gap-2 px-1.5 pb-1">
-				<img
-					src="/logo.svg"
-					alt=""
-					width="22"
-					height="22"
-					className="rounded-md"
-				/>
+				<img src="/logo.svg" alt="" width="22" height="22" />
 				<span className="text-heading font-bold tracking-[-0.02em] text-text-hi">
 					Detonado
 				</span>
@@ -62,7 +56,7 @@ export function Sidebar({
 			<button
 				type="button"
 				onClick={() => setSearchOpen(true)}
-				className="flex items-center gap-2 rounded-md px-2.5 py-2 text-caption transition-all cursor-pointer w-full bg-bg-2 border border-border-soft text-text-md"
+				className="flex items-center gap-2 px-2.5 py-2 text-caption transition-all cursor-pointer w-full bg-bg-2 border border-border-soft text-text-md"
 			>
 				<Search className="size-3.5" />
 				<span className="flex-1 text-left text-body">Buscar jogos</span>
@@ -70,7 +64,7 @@ export function Sidebar({
 					{["Ctrl", "K"].map((k) => (
 						<kbd
 							key={k}
-							className="inline-flex items-center justify-center h-4 min-w-4 px-1 text-overline font-medium font-mono text-text-md bg-bg-3 border border-border"
+							className="inline-flex items-center justify-center h-4 min-w-4 px-1 text-overline font-medium font-mono text-text-md bg-bg-3 border border-border-soft"
 						>
 							{k}
 						</kbd>
@@ -88,7 +82,7 @@ export function Sidebar({
 							key={to}
 							onClick={() => navigate({ to })}
 							className={cn(
-								"flex items-center gap-2.5 px-2.5 py-2 rounded-sm",
+								"flex items-center gap-2.5 px-2.5 py-2",
 								"text-body font-medium text-left w-full cursor-pointer transition-[background,color]",
 								"border-0",
 							)}
@@ -124,7 +118,7 @@ export function Sidebar({
 
 			{/* Footer user */}
 			<div className="mt-auto flex flex-col gap-2">
-				<div className="flex flex-col gap-2.5 p-3 rounded-md bg-bg-2 border border-border-soft">
+				<div className="flex flex-col gap-2.5 p-3 bg-bg-2 border border-border-soft">
 					<div className="flex items-center gap-2.5">
 						<div className="flex-1 min-w-0">
 							<div className="text-body font-semibold text-text-hi leading-tight">

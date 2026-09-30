@@ -72,6 +72,7 @@ export function DetailHero({
 							coverUrl: game.coverUrl,
 						}}
 						size="lg"
+						square
 					/>
 				</div>
 

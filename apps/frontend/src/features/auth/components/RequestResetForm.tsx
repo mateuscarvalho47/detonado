@@ -36,7 +36,7 @@ export function RequestResetForm() {
 					type="email"
 					{...register("email")}
 					placeholder="seu@email.com"
-					className="bg-bg-2 border-border text-text-hi placeholder:text-text-lo h-11"
+					className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11"
 				/>
 				{errors.email && (
 					<p className="text-body m-0 text-error">{errors.email.message}</p>
@@ -51,7 +51,7 @@ export function RequestResetForm() {
 				variant="accent"
 				type="submit"
 				disabled={mutation.isPending}
-				className="w-full h-10 rounded-lg mt-1.5"
+				className="w-full h-10 mt-1.5"
 			>
 				{mutation.isPending ? "Enviando..." : "Enviar código"}
 			</Button>

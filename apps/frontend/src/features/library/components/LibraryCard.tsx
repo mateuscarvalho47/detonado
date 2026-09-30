@@ -36,7 +36,7 @@ export function LibraryCard({ game }: LibraryCardProps) {
 			}
 			className="flex flex-col gap-2.5 bg-transparent border-0 p-0 cursor-pointer text-left"
 		>
-			<div className="relative aspect-3/4 rounded-[2px] overflow-hidden">
+			<div className="relative aspect-3/4">
 				<Cover
 					game={{
 						name: game.name,

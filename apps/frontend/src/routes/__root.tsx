@@ -123,13 +123,7 @@ function RootLayout() {
 							className="lg:hidden flex items-center gap-2 px-4 h-12 sticky top-0 z-30 border-b border-border-soft"
 							style={{ background: "var(--color-bg-1)" }}
 						>
-							<img
-								src="/logo.svg"
-								alt=""
-								width="20"
-								height="20"
-								className="rounded-md"
-							/>
+							<img src="/logo.svg" alt="" width="20" height="20" />
 							<span className="text-heading font-bold tracking-[-0.02em] text-text-hi">
 								Detonado
 							</span>
@@ -149,13 +143,7 @@ function RootLayout() {
 							</Button>
 							{!sidebarOpen && (
 								<div className="flex items-center gap-1.5">
-									<img
-										src="/logo.svg"
-										alt=""
-										width="20"
-										height="20"
-										className="rounded-md"
-									/>
+									<img src="/logo.svg" alt="" width="20" height="20" />
 									<span className="text-heading font-bold tracking-[-0.02em] text-text-hi">
 										Detonado
 									</span>

@@ -29,7 +29,7 @@ export function ConfirmRemoveModal({
 				if (!open) onCancel();
 			}}
 		>
-			<AlertDialogContent className="max-w-sm text-center bg-bg-1 border border-border shadow-none">
+			<AlertDialogContent className="max-w-sm text-center bg-bg-1 border border-border-soft shadow-none">
 				<div className="flex flex-col items-center gap-3">
 					<AlertDialogHeader className="space-y-0">
 						<AlertDialogTitle className="text-title text-text-hi">
@@ -45,14 +45,14 @@ export function ConfirmRemoveModal({
 				<AlertDialogFooter className="flex-row justify-center gap-2.5 sm:justify-center">
 					<AlertDialogCancel
 						onClick={onCancel}
-						className="h-9 border border-border text-text-md rounded-lg"
+						className="h-9 border border-border-soft text-text-md"
 					>
 						Cancelar
 					</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={onConfirm}
 						disabled={isPending}
-						className="h-9 rounded-lg bg-error text-white hover:bg-error/90"
+						className="h-9 bg-error text-white hover:bg-error/90"
 					>
 						{isPending ? "Removendo..." : "Remover"}
 					</AlertDialogAction>

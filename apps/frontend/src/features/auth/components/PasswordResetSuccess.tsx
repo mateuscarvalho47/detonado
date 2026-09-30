@@ -23,7 +23,7 @@ export function PasswordResetSuccess() {
 			<Button
 				variant="accent"
 				onClick={() => navigate({ to: "/login" })}
-				className="w-full h-11 rounded-lg mt-1.5"
+				className="w-full h-11 mt-1.5"
 			>
 				Fazer login
 			</Button>

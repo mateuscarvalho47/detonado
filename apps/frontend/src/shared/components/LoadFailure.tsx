@@ -16,20 +16,14 @@ export function LoadFailure({
 	compact = false,
 }: LoadFailureProps) {
 	const retry = (
-		<Button
-			type="button"
-			variant="accent"
-			size="sm"
-			onClick={onRetry}
-			className="rounded-lg"
-		>
+		<Button type="button" variant="accent" size="sm" onClick={onRetry}>
 			Tentar de novo
 		</Button>
 	);
 
 	if (compact) {
 		return (
-			<div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-bg-1 border border-border-soft rounded-lg">
+			<div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-bg-1 border border-border-soft">
 				<div className="min-w-0">
 					<p className="text-body font-medium text-text-hi m-0">{title}</p>
 					<p className="text-caption text-text-md m-0 mt-1">{body}</p>

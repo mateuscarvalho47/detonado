@@ -14,7 +14,7 @@ export function ConsentModal() {
 
 	return (
 		<Dialog open onOpenChange={() => {}}>
-			<DialogContent className="max-w-md bg-bg-1 border border-border [&>button]:hidden shadow-none">
+			<DialogContent className="max-w-md bg-bg-1 border border-border-soft [&>button]:hidden shadow-none">
 				<DialogHeader>
 					<DialogTitle className="text-heading text-text-hi">
 						Precisamos da sua confirmação
@@ -57,7 +57,7 @@ export function ConsentModal() {
 						variant="accent"
 						disabled={isPending}
 						onClick={() => mutate()}
-						className="h-9 rounded-lg"
+						className="h-9"
 					>
 						{isPending ? "Salvando..." : "Aceitar e continuar"}
 					</Button>

@@ -12,13 +12,7 @@ export function ArchiveEmpty({ onAdd }: { onAdd: () => void }) {
 			title="Nenhum jogo ainda"
 			body={ARCHIVE_EMPTY_BODY}
 			action={
-				<Button
-					type="button"
-					variant="accent"
-					size="sm"
-					onClick={onAdd}
-					className="rounded-lg"
-				>
+				<Button type="button" variant="accent" size="sm" onClick={onAdd}>
 					Buscar um jogo
 				</Button>
 			}

@@ -20,6 +20,7 @@ interface CoverProps {
 	size?: CoverSize;
 	withTitle?: boolean;
 	hover?: boolean;
+	square?: boolean;
 	className?: string;
 	style?: CSSProperties;
 }
@@ -86,18 +87,23 @@ function resolveIgdbUrl(url: string, size: CoverSize): string {
 	return url.replace(/t_[a-z0-9_]+\//, `${token}/`);
 }
 
+function coverFrame(square: boolean, className?: string) {
+	return `cv ${square ? "rounded-none" : "rounded-cover"} ${className ?? ""}`.trim();
+}
+
 export function Cover({
 	game,
 	size = "md",
 	withTitle = true,
 	hover = false,
+	square = false,
 	className,
 	style,
 }: CoverProps) {
 	if (game.coverUrl) {
 		return (
 			<div
-				className={`cv ${className ?? ""}`}
+				className={coverFrame(square, className)}
 				data-hover={hover ? "1" : "0"}
 				style={style}
 			>
@@ -126,7 +132,7 @@ export function Cover({
 
 	return (
 		<div
-			className={`cv ${className ?? ""}`}
+			className={coverFrame(square, className)}
 			data-hover={hover ? "1" : "0"}
 			style={{
 				background: `radial-gradient(120% 90% at ${xOff}% ${yOff}%, ${c.c} 0%, ${c.b} 35%, ${c.a} 100%)`,

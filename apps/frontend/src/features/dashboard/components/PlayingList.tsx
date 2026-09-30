@@ -53,7 +53,7 @@ export function PlayingList({ games }: PlayingListProps) {
 							}
 							className={`grid grid-cols-[48px_1fr_auto] gap-3.5 items-center px-2 py-2.5 bg-transparent border-0 cursor-pointer text-left transition-[background] w-full hover:bg-bg-2 font-[inherit]${idx < games.length - 1 ? " border-b border-border-soft" : ""}`}
 						>
-							<div className="w-12 h-16 rounded-[2px] overflow-hidden">
+							<div className="w-12 h-16">
 								<Cover
 									game={{
 										name: game.name,

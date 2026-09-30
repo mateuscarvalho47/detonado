@@ -56,4 +56,5 @@ Auth gating is **centralized in `src/routes/__root.tsx`**, not per-route `before
 - **Biome** formats with **tabs** and (frontend default) **double quotes** — note this differs from the backend. Run `pnpm lint:fix` before committing.
 - Path alias `@` → `src/`.
 - Dark only. `__root.tsx` sets `data-theme="dark"` and `.dark` on `<html>`. Type is IBM Plex Sans / IBM Plex Mono. The logged-in home is the shelf (`Agora`: playing, queue, backlog hours), not a metrics dashboard.
+- Shelf color lives in `--bg-*`, `--text-*`, and `--border-soft` / `--border-strong` in `src/index.css`. In the dark block the shadcn names (`--background`, `--card`, `--muted`, `--border`, …) point at those. Primitives in `src/components/ui/` use the shelf utilities (`bg-bg-1`, `text-text-hi`, `border-border-soft`). Chrome is square: do not add `rounded-*` to panels, buttons, or fields. The 2px cover radius is the `rounded-cover` utility (`--radius-cover`); `Cover` applies it, and the ficha passes `square`.
 - Tests colocated as `*.test.ts(x)`, jsdom env, globals on, `@testing-library/react` (`src/test/setup.ts`).

@@ -36,7 +36,7 @@ function AccountPage() {
 				<button
 					type="button"
 					onClick={() => navigate({ to: "/account/data" })}
-					className="flex items-center gap-3 px-3 py-3 rounded-lg bg-bg-1 border border-border-soft cursor-pointer text-left"
+					className="flex items-center gap-3 px-3 py-3 bg-bg-1 border border-border-soft cursor-pointer text-left"
 				>
 					<Database className="size-4 text-text-md shrink-0" />
 					<div className="flex-1 min-w-0">
@@ -52,7 +52,7 @@ function AccountPage() {
 				<button
 					type="button"
 					onClick={() => logout.mutate()}
-					className="flex items-center gap-3 px-3 py-3 rounded-lg bg-bg-1 border border-border-soft cursor-pointer text-left"
+					className="flex items-center gap-3 px-3 py-3 bg-bg-1 border border-border-soft cursor-pointer text-left"
 				>
 					<LogOut className="size-4 text-error shrink-0" />
 					<div className="flex-1 min-w-0">

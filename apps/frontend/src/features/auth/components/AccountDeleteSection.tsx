@@ -37,7 +37,7 @@ export function AccountDeleteSection() {
 				<Button
 					variant="outline"
 					onClick={() => setDeleteOpen(true)}
-					className="w-fit h-9 rounded-lg text-caption text-error border-error/30 hover:bg-error/10"
+					className="w-fit h-9 text-caption text-error border-error/30 hover:bg-error/10"
 				>
 					<Trash2 size={12} />
 					Excluir minha conta
@@ -45,7 +45,7 @@ export function AccountDeleteSection() {
 			) : (
 				<form
 					onSubmit={onDeleteSubmit}
-					className="flex flex-col gap-3 p-4 rounded-lg border border-error/30 bg-error/5"
+					className="flex flex-col gap-3 p-4 border border-error/30 bg-error/5"
 				>
 					<p className="text-caption text-text-md">
 						Para confirmar, insira sua senha abaixo:
@@ -55,7 +55,7 @@ export function AccountDeleteSection() {
 							type="password"
 							{...regDelete("password")}
 							placeholder="sua senha"
-							className="bg-bg-2 border-border text-text-hi placeholder:text-text-lo h-10"
+							className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-10"
 							autoFocus
 						/>
 						{deleteErrors.password && (
@@ -74,7 +74,7 @@ export function AccountDeleteSection() {
 							variant="outline"
 							type="submit"
 							disabled={deleteMutation.isPending}
-							className="h-9 rounded-lg text-caption text-error border-error/40 hover:bg-error/10"
+							className="h-9 text-caption text-error border-error/40 hover:bg-error/10"
 						>
 							{deleteMutation.isPending ? "Excluindo..." : "Confirmar exclusão"}
 						</Button>
@@ -82,7 +82,7 @@ export function AccountDeleteSection() {
 							variant="ghost"
 							type="button"
 							onClick={() => setDeleteOpen(false)}
-							className="h-9 rounded-lg text-caption text-text-lo"
+							className="h-9 text-caption text-text-lo"
 						>
 							Cancelar
 						</Button>

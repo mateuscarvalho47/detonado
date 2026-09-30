@@ -78,7 +78,7 @@ export function DetailEditForm({
 											<ToggleGroupItem
 												key={s.key}
 												value={s.key}
-												className="flex items-center gap-2 h-8 px-2.5 rounded-md text-body font-medium border w-full justify-start"
+												className="flex items-center gap-2 h-8 px-2.5 text-body font-medium border w-full justify-start"
 												style={
 													field.value === s.key
 														? {
@@ -118,7 +118,7 @@ export function DetailEditForm({
 										value={field.value}
 										onChange={field.onChange}
 										allowClear
-										className="w-full h-10 bg-bg-2 border-border text-text-hi"
+										className="w-full h-10 bg-bg-2 border-border-soft text-text-hi"
 									/>
 								)}
 							/>
@@ -132,13 +132,13 @@ export function DetailEditForm({
 									control={control}
 									name="hoursPlayed"
 									render={({ field }) => (
-										<div className="flex items-center bg-bg-2 border border-border rounded-lg h-10 overflow-hidden">
+										<div className="flex items-center bg-bg-2 border border-border-soft h-10 overflow-hidden">
 											<button
 												type="button"
 												onClick={() =>
 													field.onChange(Math.max(0, field.value - 0.5))
 												}
-												className="flex items-center justify-center w-9 shrink-0 h-full text-text-dim hover:text-text-hi hover:bg-bg-3 border-r border-border transition-colors cursor-pointer bg-transparent"
+												className="flex items-center justify-center w-9 shrink-0 h-full text-text-dim hover:text-text-hi hover:bg-bg-3 border-r border-border-soft transition-colors cursor-pointer bg-transparent"
 											>
 												<span className="text-[17px] leading-none select-none">
 													−
@@ -164,7 +164,7 @@ export function DetailEditForm({
 											<button
 												type="button"
 												onClick={() => field.onChange(field.value + 0.5)}
-												className="flex items-center justify-center w-9 shrink-0 h-full text-text-dim hover:text-text-hi hover:bg-bg-3 border-l border-border transition-colors cursor-pointer bg-transparent"
+												className="flex items-center justify-center w-9 shrink-0 h-full text-text-dim hover:text-text-hi hover:bg-bg-3 border-l border-border-soft transition-colors cursor-pointer bg-transparent"
 											>
 												<span className="text-[17px] leading-none select-none">
 													+
@@ -185,7 +185,7 @@ export function DetailEditForm({
 										<span className="text-caption text-text-lo ml-px">/10</span>
 									</span>
 								</div>
-								<div className="relative h-9 bg-bg-2 border border-border rounded-lg overflow-hidden">
+								<div className="relative h-9 bg-bg-2 border border-border-soft overflow-hidden">
 									<div
 										className="absolute top-0 bottom-0 left-0 pointer-events-none meter-fill"
 										style={{ width: `${(Math.round(rating) / 10) * 100}%` }}
@@ -208,7 +208,7 @@ export function DetailEditForm({
 												onChange={(e) =>
 													field.onChange(Number.parseInt(e.target.value, 10))
 												}
-												className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer m-0 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-0.75 [&::-webkit-slider-thumb]:h-9 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:bg-white/60 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-0.75 [&::-moz-range-thumb]:h-9 [&::-moz-range-thumb]:rounded-sm [&::-moz-range-thumb]:bg-white/60 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+												className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer m-0 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-0.75 [&::-webkit-slider-thumb]:h-9 [&::-webkit-slider-thumb]:bg-white/60 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-0.75 [&::-moz-range-thumb]:h-9 [&::-moz-range-thumb]:bg-white/60 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
 											/>
 										)}
 									/>
@@ -228,7 +228,7 @@ export function DetailEditForm({
 								{...register("notes")}
 								placeholder="Suas anotações sobre o jogo..."
 								rows={4}
-								className="bg-bg-2 border-border text-text-hi placeholder:text-text-lo resize-y leading-relaxed"
+								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo resize-y leading-relaxed"
 							/>
 						</div>
 
@@ -243,7 +243,7 @@ export function DetailEditForm({
 										type="date"
 										{...register("completedAt")}
 										style={{ colorScheme: "dark" }}
-										className="bg-bg-2 border-border text-text-hi h-10 text-heading w-full pr-9 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+										className="bg-bg-2 border-border-soft text-text-hi h-10 text-heading w-full pr-9 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
 									/>
 									<Calendar
 										size={15}
