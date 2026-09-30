@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { LibraryEntry } from "@/types/api";
+import { detailPatch } from "../lib/detailPatch";
 import { type DetailFormValues, detailSchema } from "../schema/detailSchema";
 import { useUpdateLibraryEntry } from "./useLibraryEntry";
 
@@ -46,19 +47,16 @@ export function useDetailForm(game: LibraryEntry) {
 	}, [game.completedAt, form]);
 
 	const save = useCallback(async () => {
-		const ratingApplies =
-			debouncedStatus === "PLAYING" ||
-			debouncedStatus === "PAUSED" ||
-			debouncedStatus === "COMPLETED" ||
-			debouncedStatus === "DROPPED";
-		await updateRef.current.mutateAsync({
-			status: debouncedStatus,
-			userPlatform: debouncedPlatform || undefined,
-			rating: ratingApplies ? Math.round(debouncedRating) : undefined,
-			hoursPlayed: debouncedHours || undefined,
-			notes: debouncedNotes,
-			completedAt: debouncedCompletedAt || undefined,
-		});
+		await updateRef.current.mutateAsync(
+			detailPatch({
+				status: debouncedStatus,
+				userPlatform: debouncedPlatform,
+				rating: debouncedRating,
+				hoursPlayed: debouncedHours,
+				notes: debouncedNotes,
+				completedAt: debouncedCompletedAt,
+			}),
+		);
 		setSaved(true);
 		setTimeout(() => setSaved(false), 2000);
 	}, [
@@ -73,7 +71,7 @@ export function useDetailForm(game: LibraryEntry) {
 	useEffect(() => {
 		if (
 			debouncedStatus !== game.status ||
-			debouncedPlatform !== (game.userPlatform ?? "") ||
+			debouncedPlatform.trim() !== (game.userPlatform ?? "").trim() ||
 			debouncedRating !== (game.rating ?? 0) ||
 			debouncedHours !== (game.hoursPlayed ?? 0) ||
 			debouncedNotes !== (game.notes ?? "") ||

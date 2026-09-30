@@ -1,6 +1,6 @@
 # Detonado — brief de produto e interface
 
-Documento do produto que o código faz hoje. Serve de referência para a interface e para uma apresentação técnica. O arquivo de componente da home ainda se chama `DashboardScreen.tsx`. O título visível é **Agora**.
+Documento do produto que o código faz hoje. Serve de referência para a interface e para uma apresentação técnica. O componente da home é `AgoraScreen.tsx`. O título visível é **Agora**.
 
 ## O que é
 
@@ -29,9 +29,9 @@ Tempos do HowLongToBeat na ficha e no modal de adicionar: **Principal**, **+ Ext
 
 ## Visual
 
-Tema escuro, forçado. Carvão quente, um grotesco (IBM Plex Sans), números tabulares (IBM Plex Mono). A capa do jogo carrega a cor. O restante é grafite e osso, sem brilho, sem gradiente, sem botão em degradê.
+Tema escuro, forçado. Tinta quente em cinco degraus (página, painel, faixa, fio, osso), um grotesco (IBM Plex Sans), números tabulares (IBM Plex Mono). A capa do jogo carrega a cor. O chrome não tem brilho, gradiente nem botão em degradê.
 
-Status aparece como texto e um filete de 2 px. Lista densa no desktop, grade no celular. A landing é estática e tem duas ações: **Criar conta** e **Já tenho conta**.
+Status aparece como texto e um filete de 2 px. Na grade, esse texto fica numa placa da cor da página, com fio de osso, para continuar legível em cima da capa. Lista densa no desktop, grade no celular. A landing é estática e tem duas ações: **Criar conta** e **Já tenho conta**.
 
 A home logada é a prateleira:
 
@@ -68,18 +68,24 @@ Usuário autenticado: `id`, `email`, `emailVerified`.
 
 Jogo IGDB: `igdbId`, `name`, `coverUrl`, `releaseYear`, `platforms`, `genres`.
 
-Entrada da biblioteca: ficha IGDB copiada, status, `userPlatform`, `rating` (inteiro 0–10), `hoursPlayed`, `notes`, `completedAt`, `hltbMain`, `hltbMainExtra`, `hltbCompletionist`.
+Entrada da biblioteca: ficha IGDB copiada, status, `userPlatform`, `rating` (inteiro 0–10), `hoursPlayed`, `notes`, `completedAt`, tempos do HowLongToBeat e `hltbStatus` (`FOUND`, `MISS` ou `FAILED`).
+
+Hora `0` e plataforma vazia são gravadas. A data de conclusão só permanece com status Zerado; ao sair dele, a data sai junto. Nota `0` também é enviada.
+
+`FOUND` mostra Principal, + Extras e Completista. `MISS` diz que não há tempo publicado. `FAILED` diz que a consulta falhou. Os três casos, e uma entrada antiga sem status, têm **Buscar de novo**. Uma falha não fica guardada no cache como se o jogo não existisse no HowLongToBeat.
 
 Estatísticas (`GET /api/library/stats`): totais, contagem por status, gêneros, plataformas, distribuição de nota, linha do tempo de conclusões. A home não chama essa rota.
 
 ## Conta
 
-- Registro exige consentimento e dispara e-mail de verificação.
-- O link de verificação vale 24 horas. Token ausente, expirado ou sem prazo responde o mesmo erro. Conta antiga sem prazo precisa de um reenvio.
-- Login exige e-mail verificado. Sessão no Redis, 7 dias, cookie `httpOnly`.
-- Redefinição de senha: código de 6 dígitos, 15 minutos.
+- Registro exige consentimento e dispara e-mail de verificação. Se o envio falha, a conta é apagada e a API responde erro.
+- O link de verificação vale 24 horas. O banco guarda o SHA-256 do token; o e-mail leva o valor cru. Token ausente, expirado, sem prazo ou ainda em texto puro responde o mesmo erro. Essas contas pedem um reenvio.
+- Reenvio e troca de e-mail também falham a requisição se o e-mail não sai. Na troca, o endereço e a senha nova só são gravados depois do envio.
+- Login exige e-mail verificado. Sessão no Redis, 7 dias, cookie `httpOnly`. Em produção o cookie é `Secure` e `SameSite=None`. Cada POST, PATCH e DELETE envia `x-csrf-token`, obtido em `GET /api/auth/csrf`.
+- Redefinição de senha: código de 6 dígitos, 15 minutos. Se o e-mail não sai, o código recém-criado é invalidado e a API responde erro. E-mail desconhecido continua em silêncio.
+- O seed `alice@example.com` e `bob@example.com` (senha `password123`) nasce com e-mail verificado. Rodar o seed de novo marca a conta existente como verificada, sem trocar a senha.
 - Troca de senha invalida sessões anteriores.
-- Exportação e exclusão de conta existem. A exclusão pede a senha. A exportação traz conta e entradas, sem gêneros, plataformas IGDB, capa e tempos HLTB.
+- Exportação e exclusão de conta existem. A exclusão pede a senha. A exportação traz a conta e as entradas, com gêneros, plataformas, capa e tempos do HowLongToBeat. Hash de senha e token de verificação ficam de fora.
 
 ## Fora do produto
 
@@ -87,9 +93,10 @@ Feed, amigos, perfil público, listas além dos seis status, importação Steam,
 
 ## O que uma leitura de dez minutos ainda encontra
 
-- O título do Swagger continua “API Boilerplate”.
-- O seed `alice@example.com` / `bob@example.com` nasce com e-mail não verificado, então o login recusa.
-- Hora `0` e plataforma vazia ainda saem do corpo do salvamento da ficha.
-- O token de verificação é guardado em claro. O prazo de 24 horas está no código; o hash do token não.
-- `apps/frontend/README.md` ainda é o texto do template do Vite.
+- O frontend não importa `@detonado/shared`. Os tipos da interface ficam em `apps/frontend/src/types/api.ts`.
+- Não há suíte HTTP. Os testes mockam o repositório.
+- A ficha baixa a biblioteca inteira e acha o jogo pelo `igdbId`.
+- O tema claro existe no CSS e a interface não o usa.
 - `REFACTOR_PLAN.md` é histórico de tokens visuais. O título aponta para o Detonado e avisa que o restante não descreve a interface atual.
+- O Swagger em `/docs` descreve a API. Um POST feito pelo “try it out” falha sem o header `x-csrf-token`.
+- `TRUST_PROXY` nasce `false`. Atrás de um proxy, o limite de taxa vê o IP do proxy até `TRUST_PROXY=1`.

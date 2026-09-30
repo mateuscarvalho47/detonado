@@ -1,13 +1,17 @@
 import { HowLongToBeatService } from 'howlongtobeat-ts';
-import type { HltbTimes } from '@/lib/hltb/schemas.js';
+import {
+  type HltbLookup,
+  type HltbTimes,
+  hltbCacheTtl,
+  parseHltbCache,
+} from '@/lib/hltb/schemas.js';
 
-const CACHE_TTL = 60 * 60 * 24;
-const NULL_CACHE_TTL = 60 * 60;
 const MIN_SIMILARITY = 0.6;
 
 interface RedisLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, options?: { EX?: number }): Promise<unknown>;
+  del(key: string): Promise<unknown>;
 }
 
 interface Logger {
@@ -23,38 +27,47 @@ export class HltbClient {
     private readonly logger?: Logger,
   ) {}
 
-  async findByName(name: string): Promise<HltbTimes | null> {
+  async findByName(name: string, options?: { fresh?: boolean }): Promise<HltbLookup> {
     const key = `hltb:name:${name.toLowerCase().trim()}`;
-    const cached = await this.redis.get(key);
-    if (cached) return JSON.parse(cached) as HltbTimes | null;
+    if (!options?.fresh) {
+      const cached = await this.redis.get(key);
+      if (cached) {
+        const parsed = parseHltbCache(cached);
+        if (parsed) return parsed;
+      }
+    }
 
-    const times = await this.fetchTimes(name);
-    await this.redis.set(key, JSON.stringify(times), {
-      EX: times ? CACHE_TTL : NULL_CACHE_TTL,
-    });
-    return times;
+    const lookup = await this.fetchTimes(name);
+    const ttl = hltbCacheTtl(lookup);
+    if (ttl == null) {
+      await this.redis.del(key);
+      return lookup;
+    }
+
+    await this.redis.set(key, JSON.stringify(lookup), { EX: ttl });
+    return lookup;
   }
 
-  private async fetchTimes(name: string): Promise<HltbTimes | null> {
+  private async fetchTimes(name: string): Promise<HltbLookup> {
     try {
       const result = await this.withTimeout(this.service.search(name));
-      if (!result.success || result.data.length === 0) return null;
+      if (!result.success || result.data.length === 0) return { status: 'MISS' };
 
       const best = result.data[0];
-      const main = secondsToHours(best.mainTime);
-      const mainExtra = secondsToHours(best.mainExtraTime);
-      const completionist = secondsToHours(best.completionistTime);
-
-      if (main == null && mainExtra == null && completionist == null) return null;
-
-      return {
-        mainHours: main,
-        mainExtraHours: mainExtra,
-        completionistHours: completionist,
+      const times: HltbTimes = {
+        mainHours: secondsToHours(best.mainTime),
+        mainExtraHours: secondsToHours(best.mainExtraTime),
+        completionistHours: secondsToHours(best.completionistTime),
       };
+
+      const empty =
+        times.mainHours == null && times.mainExtraHours == null && times.completionistHours == null;
+      if (empty) return { status: 'MISS' };
+
+      return { status: 'FOUND', times };
     } catch (err) {
       this.logger?.warn({ err, name }, 'HLTB lookup failed');
-      return null;
+      return { status: 'FAILED' };
     }
   }
 
@@ -62,9 +75,9 @@ export class HltbClient {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('HLTB request timed out')), this.timeoutMs);
       promise.then(
-        (v) => {
+        (value) => {
           clearTimeout(timer);
-          resolve(v);
+          resolve(value);
         },
         (err) => {
           clearTimeout(timer);

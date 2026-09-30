@@ -21,7 +21,7 @@ Run a single test file: `pnpm vitest run src/lib/api.test.ts`. Filter by name: `
 
 ## Backend dependency
 
-Dev server proxies `/api` → `http://localhost:3000` (see `vite.config.ts`). Backend must run for auth/data. In prod, `VITE_API_URL` prefixes requests (`src/lib/api.ts`). Auth is cookie-session — every request uses `credentials: "include"`; there are no tokens in JS.
+Dev server proxies `/api` → `http://localhost:3000` (see `vite.config.ts`). Backend must run for auth/data. In prod, `VITE_API_URL` prefixes requests (`src/lib/api.ts`). Auth is a cookie session (`credentials: "include"`). POST, PATCH, and DELETE send `x-csrf-token`, cached in memory by `src/lib/api.ts` and cleared after login, logout, and account deletion. The logged-in home component is `AgoraScreen`.
 
 ## Architecture
 

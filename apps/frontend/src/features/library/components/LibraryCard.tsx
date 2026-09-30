@@ -47,8 +47,10 @@ export function LibraryCard({ game }: LibraryCardProps) {
 					size="md"
 					hover
 				/>
-				<div className="absolute top-2 left-2 right-2 flex justify-end items-start pointer-events-none">
-					<StatusBadge status={game.status} size="sm" />
+				<div className="absolute top-1.5 right-1.5 max-w-[calc(100%-12px)] pointer-events-none">
+					<div className="inline-flex max-w-full bg-bg-0 border border-text-hi px-1.5 py-1">
+						<StatusBadge status={game.status} size="sm" />
+					</div>
 				</div>
 			</div>
 			<div className="flex flex-col gap-0.5 px-0.5">

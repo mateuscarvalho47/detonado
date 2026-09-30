@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '@/lib/requireAuth.js';
 import { UserRepository } from '@/modules/user/user.repository.js';
 import { UserService } from '@/modules/user/user.service.js';
+import { issueCsrfToken } from '@/plugins/csrf.js';
 import { AuthController } from './auth.controller.js';
 import {
   deleteAccountSchema,
@@ -71,6 +72,20 @@ export async function authRoutes(app: FastifyInstance) {
       },
     },
     handler: controller.login,
+  });
+
+  app.get('/auth/csrf', {
+    schema: {
+      tags: ['auth'],
+      summary: 'Token CSRF da sessão',
+      response: { 200: z.object({ token: z.string() }) },
+    },
+    handler: async (req) => {
+      if (!req.session.csrfToken) {
+        req.session.csrfToken = issueCsrfToken();
+      }
+      return { token: req.session.csrfToken };
+    },
   });
 
   app.post('/auth/logout', {

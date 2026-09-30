@@ -18,7 +18,7 @@ const HLTB = {
   completionistHours: 170,
 };
 
-const GAME_WITH_HLTB = { ...GAME, hltb: HLTB };
+const GAME_WITH_HLTB = { ...GAME, hltb: HLTB, hltbStatus: 'FOUND' as const };
 
 function makeIgdb(overrides: Record<string, unknown> = {}) {
   return {
@@ -38,7 +38,7 @@ function makeRedis(overrides: Record<string, unknown> = {}) {
 
 function makeHltb(overrides: Record<string, unknown> = {}) {
   return {
-    findByName: vi.fn().mockResolvedValue(HLTB),
+    findByName: vi.fn().mockResolvedValue({ status: 'FOUND', times: HLTB }),
     ...overrides,
   };
 }
@@ -138,6 +138,51 @@ describe('GameService.getById', () => {
     expect(redis.set).toHaveBeenCalledWith('igdb:game:1942', JSON.stringify(GAME_WITH_HLTB), {
       EX: 86400,
     });
+    expect(result).toEqual(GAME_WITH_HLTB);
+  });
+
+  it('caches a miss separately from a found game', async () => {
+    const redis = makeRedis();
+    const igdb = makeIgdb();
+    const hltb = makeHltb({
+      findByName: vi.fn().mockResolvedValue({ status: 'MISS' }),
+    });
+    const service = new GameService(igdb as never, redis as never, hltb as never);
+
+    const result = await service.getById(1942);
+
+    const missed = { ...GAME, hltb: null, hltbStatus: 'MISS' };
+    expect(redis.set).toHaveBeenCalledWith('igdb:game:1942', JSON.stringify(missed), {
+      EX: 86400,
+    });
+    expect(result).toEqual(missed);
+  });
+
+  it('does not cache a failed lookup as a miss', async () => {
+    const redis = makeRedis();
+    const igdb = makeIgdb();
+    const hltb = makeHltb({
+      findByName: vi.fn().mockResolvedValue({ status: 'FAILED' }),
+    });
+    const service = new GameService(igdb as never, redis as never, hltb as never);
+
+    const result = await service.getById(1942);
+
+    expect(redis.set).toHaveBeenCalledWith('igdb:game:1942', JSON.stringify(GAME), { EX: 86400 });
+    expect(result).toEqual({ ...GAME, hltb: null, hltbStatus: 'FAILED' });
+  });
+
+  it('treats a legacy cached payload with times as found', async () => {
+    const redis = makeRedis({
+      get: vi.fn().mockResolvedValue(JSON.stringify({ ...GAME, hltb: HLTB })),
+    });
+    const igdb = makeIgdb();
+    const hltb = makeHltb();
+    const service = new GameService(igdb as never, redis as never, hltb as never);
+
+    const result = await service.getById(1942);
+
+    expect(hltb.findByName).not.toHaveBeenCalled();
     expect(result).toEqual(GAME_WITH_HLTB);
   });
 

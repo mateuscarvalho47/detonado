@@ -8,6 +8,7 @@ declare module 'fastify' {
   interface Session {
     userId?: string;
     sessionVersion?: number;
+    csrfToken?: string;
   }
 }
 

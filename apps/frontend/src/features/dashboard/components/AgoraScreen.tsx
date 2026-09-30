@@ -13,7 +13,7 @@ import {
 import { BacklogList } from "./BacklogList";
 import { PlayingList } from "./PlayingList";
 
-export function DashboardScreen() {
+export function AgoraScreen() {
 	const { setOpen } = useSearchModal();
 	const {
 		data: library,

@@ -16,8 +16,8 @@ async function main() {
     const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
     const user = await prisma.user.upsert({
       where: { email },
-      update: {},
-      create: { email, passwordHash },
+      update: { emailVerified: true },
+      create: { email, passwordHash, emailVerified: true },
     });
     console.log(`seeded: ${user.email} (${user.id})`);
   }

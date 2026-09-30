@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parseTrustProxy } from '@/lib/trustProxy.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -15,6 +16,16 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1),
   EMAIL_FROM: z.string().default('onboarding@resend.dev'),
   APP_URL: z.string().default('http://localhost:5173'),
+  TRUST_PROXY: z.preprocess(
+    (value) => {
+      try {
+        return parseTrustProxy(value);
+      } catch {
+        return value;
+      }
+    },
+    z.union([z.boolean(), z.number().int().nonnegative()]),
+  ),
 });
 
 export const env = envSchema.parse(process.env);

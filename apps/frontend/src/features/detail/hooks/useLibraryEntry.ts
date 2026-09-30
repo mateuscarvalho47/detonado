@@ -1,7 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	type QueryClient,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import type { LibraryEntry } from "@/types/api";
 import {
 	fetchLibraryEntry,
+	type LibraryEntryPatch,
+	refreshLibraryHltb,
 	removeLibraryEntry,
 	updateLibraryEntry,
 } from "../service/detailService";
@@ -26,14 +33,36 @@ export function useLibraryEntry(igdbId: number) {
 	});
 }
 
+function writeLibraryEntry(
+	qc: QueryClient,
+	igdbId: number,
+	updated: LibraryEntry,
+) {
+	qc.setQueryData(["library", igdbId], updated);
+	qc.setQueryData<LibraryEntry[]>(["library"], (list) =>
+		list?.map((entry) => (entry.id === updated.id ? updated : entry)),
+	);
+}
+
 export function useUpdateLibraryEntry(id: string, igdbId: number) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (data: Partial<LibraryEntry>) => updateLibraryEntry(id, data),
+		mutationFn: (data: LibraryEntryPatch) => updateLibraryEntry(id, data),
 		onSuccess: (updated) => {
-			qc.setQueryData(["library", igdbId], updated);
+			writeLibraryEntry(qc, igdbId, updated);
 			qc.invalidateQueries({ queryKey: ["library"] });
 			qc.invalidateQueries({ queryKey: ["stats"] });
+		},
+	});
+}
+
+export function useRefreshLibraryHltb(id: string, igdbId: number) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => refreshLibraryHltb(id),
+		onSuccess: (updated) => {
+			writeLibraryEntry(qc, igdbId, updated);
+			qc.invalidateQueries({ queryKey: ["library"] });
 		},
 	});
 }

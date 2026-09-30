@@ -13,14 +13,17 @@ vi.mock("@/lib/api", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/lib/api")>();
 	return {
 		...actual,
+		clearCsrfToken: vi.fn(),
 		api: {
 			get: vi.fn(),
 			post: vi.fn(),
+			patch: vi.fn(),
+			delete: vi.fn(),
 		},
 	};
 });
 
-import { api } from "@/lib/api";
+import { api, clearCsrfToken } from "@/lib/api";
 
 afterEach(() => vi.clearAllMocks());
 
@@ -57,6 +60,7 @@ describe("login", () => {
 		const result = await login(data);
 		expect(result).toEqual(USER);
 		expect(api.post).toHaveBeenCalledWith("/auth/login", data);
+		expect(clearCsrfToken).toHaveBeenCalledOnce();
 	});
 });
 
@@ -93,5 +97,6 @@ describe("logout", () => {
 		vi.mocked(api.post).mockResolvedValue(undefined);
 		await logout();
 		expect(api.post).toHaveBeenCalledWith("/auth/logout");
+		expect(clearCsrfToken).toHaveBeenCalledOnce();
 	});
 });

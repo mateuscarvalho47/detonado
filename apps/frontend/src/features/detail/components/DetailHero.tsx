@@ -3,6 +3,7 @@ import { Cover } from "@/shared/components/Cover";
 import { HltbStat } from "@/shared/components/HltbStat";
 import { StatusBadge } from "@/shared/components/StatusBadge";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
+import { hltbCaption } from "@/shared/lib/hltbCaption";
 import type { LibraryEntry } from "@/types/api";
 import type { DetailFormValues } from "../schema/detailSchema";
 
@@ -12,6 +13,8 @@ interface DetailHeroProps {
 	saved: boolean;
 	onBack: () => void;
 	onRemove: () => void;
+	onRefreshHltb: () => void;
+	refreshingHltb: boolean;
 }
 
 export function DetailHero({
@@ -20,6 +23,8 @@ export function DetailHero({
 	saved,
 	onBack,
 	onRemove,
+	onRefreshHltb,
+	refreshingHltb,
 }: DetailHeroProps) {
 	const statusDef = STATUS_BY_KEY[status];
 	const coverData = {
@@ -104,20 +109,52 @@ export function DetailHero({
 						))}
 					</div>
 
-					{(game.hltbMain != null ||
-						game.hltbMainExtra != null ||
-						game.hltbCompletionist != null) && (
-						<div className="mt-2">
-							<div className="mono-label mb-1.5">Tempo para zerar</div>
-							<div className="grid grid-cols-3 gap-2">
-								<HltbStat label="Principal" hours={game.hltbMain} />
-								<HltbStat label="+ Extras" hours={game.hltbMainExtra} />
-								<HltbStat label="Completista" hours={game.hltbCompletionist} />
-							</div>
-						</div>
-					)}
+					<HltbBlock
+						game={game}
+						onRefresh={onRefreshHltb}
+						refreshing={refreshingHltb}
+					/>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+function HltbBlock({
+	game,
+	onRefresh,
+	refreshing,
+}: {
+	game: LibraryEntry;
+	onRefresh: () => void;
+	refreshing: boolean;
+}) {
+	const hasTimes =
+		game.hltbMain != null ||
+		game.hltbMainExtra != null ||
+		game.hltbCompletionist != null;
+	const caption = hltbCaption(game.hltbStatus, hasTimes);
+
+	return (
+		<div className="mt-2 text-left">
+			<div className="mono-label mb-1.5">Tempo para zerar</div>
+			{caption ? (
+				<p className="m-0 text-body text-text-md">{caption}</p>
+			) : (
+				<div className="grid grid-cols-3 gap-2">
+					<HltbStat label="Principal" hours={game.hltbMain} />
+					<HltbStat label="+ Extras" hours={game.hltbMainExtra} />
+					<HltbStat label="Completista" hours={game.hltbCompletionist} />
+				</div>
+			)}
+			<button
+				type="button"
+				onClick={onRefresh}
+				disabled={refreshing}
+				className="mt-2 font-mono text-caption text-text-md bg-transparent border-0 p-0 cursor-pointer disabled:cursor-default"
+			>
+				{refreshing ? "Buscando…" : "Buscar de novo"}
+			</button>
 		</div>
 	);
 }

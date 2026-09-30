@@ -48,7 +48,7 @@ detonado/
 │   │   └── src/
 │   │       ├── config/      # env loader (zod)
 │   │       ├── lib/         # helpers (hash, errors, validate, igdb, hltb, email, requireAuth)
-│   │       ├── plugins/     # prisma, redis, session, swagger, cron, cors, rateLimit, igdb, hltb, errorHandler
+│   │       ├── plugins/     # prisma, redis, session, csrf, swagger, cron, cors, rateLimit, igdb, hltb, errorHandler
 │   │       ├── modules/
 │   │       │   ├── auth/    # conta, sessão, verificação de e-mail, consentimento, exportação
 │   │       │   ├── password-reset/ # código de 6 dígitos, 15 min
@@ -80,7 +80,7 @@ detonado/
 ```
 User
   id, email, passwordHash
-  emailVerified, emailVerificationToken, emailVerificationExpiresAt
+  emailVerified, emailVerificationToken (SHA-256 do token do e-mail), emailVerificationExpiresAt
   consentedAt, sessionVersion
   createdAt, updatedAt
   └── LibraryEntry (1:N)
@@ -90,7 +90,7 @@ LibraryEntry
   id, userId, igdbId, name, coverUrl, genres[], platforms[]
   status (WISHLIST | BACKLOG | PLAYING | PAUSED | COMPLETED | DROPPED)
   userPlatform?, rating? (inteiro 0–10), hoursPlayed?, notes?, completedAt?
-  hltbMain?, hltbMainExtra?, hltbCompletionist?
+  hltbMain?, hltbMainExtra?, hltbCompletionist?, hltbStatus? (FOUND | MISS | FAILED)
   unique (userId, igdbId)
 ```
 
@@ -113,7 +113,7 @@ pnpm install
 cd apps/backend && docker compose up -d
 
 # 3. variáveis de ambiente
-cp apps/backend/.env.exemple apps/backend/.env
+cp apps/backend/.env.example apps/backend/.env
 # preencher DATABASE_URL, REDIS_URL, SESSION_SECRET, COOKIE_SECRET, CORS_ORIGIN,
 # IGDB_CLIENT_ID, IGDB_CLIENT_SECRET e RESEND_API_KEY
 
@@ -147,7 +147,9 @@ IGDB_CLIENT_SECRET=
 RESEND_API_KEY=
 ```
 
-Com default: `NODE_ENV=development`, `PORT=3000`, `APP_URL=http://localhost:5173`, `EMAIL_FROM=onboarding@resend.dev`, `IGDB_TIMEOUT_MS=5000`, `HLTB_TIMEOUT_MS=5000`.
+Com default: `NODE_ENV=development`, `PORT=3000`, `APP_URL=http://localhost:5173`, `EMAIL_FROM=onboarding@resend.dev`, `IGDB_TIMEOUT_MS=5000`, `HLTB_TIMEOUT_MS=5000`, `TRUST_PROXY=false`.
+
+`TRUST_PROXY` aceita `true`, `false` ou um número de saltos. Atrás de um proxy reverso, use `TRUST_PROXY=1`. O padrão `false` faz o limite de taxa ver o IP do proxy.
 
 `EMAIL_FROM` padrão só entrega para a conta dona da chave Resend. Verificação e redefinição de senha dependem de um domínio verificado para chegar na caixa de outra pessoa.
 
@@ -175,7 +177,7 @@ Gerar secrets (PowerShell):
 | `pnpm start`                  | roda build de produção         |
 | `pnpm prisma:generate`        | gera Prisma Client             |
 | `pnpm prisma:migrate`         | aplica migrations (dev)        |
-| `pnpm db:seed`                | insere usuários de teste (e-mail não verificado; o login recusa) |
+| `pnpm db:seed`                | alice e bob / password123, e-mail verificado (também na atualização) |
 | `pnpm db:clean`               | limpa todas as tabelas         |
 | `pnpm db:reset`               | recria banco do zero           |
 | `pnpm test`                   | roda testes                    |
@@ -205,6 +207,7 @@ Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
 | GET    | `/api/auth/verify-email?token=` | confirma o e-mail                              | não  |
 | POST   | `/api/auth/resend-verification` | reenvia o link                                 | não  |
 | POST   | `/api/auth/login`               | sessão; exige e-mail verificado                | não  |
+| GET    | `/api/auth/csrf`                | token da sessão para o header `x-csrf-token`   | não  |
 | POST   | `/api/auth/logout`              | encerra sessão                                 | sim  |
 | GET    | `/api/auth/me`                  | usuário atual                                  | sim  |
 | PATCH  | `/api/auth/account`             | troca e-mail ou senha                          | sim  |
@@ -233,6 +236,7 @@ Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
 | ------ | -------------------- | ---------------------------------------------- | ---- |
 | GET    | `/api/library`       | lista a biblioteca do usuário                  | sim  |
 | POST   | `/api/library`       | adiciona jogo; copia ficha IGDB e tempos HLTB  | sim  |
+| POST   | `/api/library/:id/hltb` | busca de novo os tempos do HowLongToBeat    | sim  |
 | GET    | `/api/library/stats` | estatísticas                                   | sim  |
 | GET    | `/api/library/:id`   | entrada pelo id interno (cuid)                 | sim  |
 | PATCH  | `/api/library/:id`   | atualiza entrada                               | sim  |
@@ -242,7 +246,7 @@ Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
 
 | Método | Rota      | Descrição                                      | Auth |
 | ------ | --------- | ---------------------------------------------- | ---- |
-| GET    | `/health` | `{ ok: true }`, sem checar Postgres nem Redis  | não  |
+| GET    | `/health` | `{ ok: true }` se Postgres e Redis respondem; 503 se não | não  |
 | GET    | `/docs`   | Swagger UI, fora de produção                   | não  |
 
 ## Tratamento de erros
@@ -265,6 +269,7 @@ Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
 | `NOT_FOUND`        | 404    |
 | `CONFLICT`         | 409    |
 | `INTERNAL`         | 500    |
+| `EMAIL_DELIVERY_FAILED` | 503 |
 
 ## Sessões
 
@@ -272,7 +277,10 @@ Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
 - TTL de 7 dias, rolling
 - Cookie `httpOnly`
 - `sameSite: lax` em desenvolvimento; `sameSite: none` e `secure` em produção
+- POST, PATCH e DELETE exigem o header `x-csrf-token` emitido por `GET /api/auth/csrf`
+- Login troca a sessão; o cliente busca outro token em seguida
 - Troca de senha incrementa `sessionVersion` e derruba sessões antigas
+- O limite de taxa fica no Redis (prefixo `detonado-rl:`)
 
 ## Testes
 
@@ -287,12 +295,16 @@ pnpm test:cov      # coverage
 ```
 tests/
 ├── auth.service.test.ts
+├── csrf.test.ts
 ├── game.service.test.ts
 ├── igdb.client.test.ts
 ├── igdb.genre-translations.test.ts
 ├── library.service.test.ts
 ├── library.stats.service.test.ts
+├── password-reset.service.test.ts
+├── rateLimitStore.test.ts
 ├── requireAuth.test.ts
+├── trustProxy.test.ts
 └── user.service.test.ts
 ```
 

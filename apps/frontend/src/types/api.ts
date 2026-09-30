@@ -12,6 +12,8 @@ export interface HltbInfo {
 	completionistHours: number | null;
 }
 
+export type HltbStatus = "FOUND" | "MISS" | "FAILED";
+
 export interface LibraryEntry {
 	id: string;
 	igdbId: number;
@@ -28,6 +30,7 @@ export interface LibraryEntry {
 	hltbMain: number | null;
 	hltbMainExtra: number | null;
 	hltbCompletionist: number | null;
+	hltbStatus?: HltbStatus | null;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -44,6 +47,7 @@ export interface GameSearchResult {
 export interface GameDetail extends GameSearchResult {
 	summary?: string;
 	hltb?: HltbInfo | null;
+	hltbStatus?: HltbStatus;
 }
 
 export interface LibraryStats {

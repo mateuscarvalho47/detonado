@@ -30,7 +30,8 @@ function AccountDataPage() {
 					Gerenciar meus dados
 				</h1>
 				<p className="text-body text-text-lo mt-2">
-					Direitos garantidos pela LGPD — portabilidade e exclusão dos seus dados.
+					Direitos garantidos pela LGPD — portabilidade e exclusão dos seus
+					dados.
 				</p>
 			</div>
 

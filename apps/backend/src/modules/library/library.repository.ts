@@ -30,6 +30,18 @@ export class LibraryRepository {
     return this.db.libraryEntry.update({ where: { id }, data });
   }
 
+  updateHltb(
+    id: string,
+    data: {
+      hltbMain: number | null;
+      hltbMainExtra: number | null;
+      hltbCompletionist: number | null;
+      hltbStatus: 'FOUND' | 'MISS' | 'FAILED';
+    },
+  ) {
+    return this.db.libraryEntry.update({ where: { id }, data });
+  }
+
   delete(id: string) {
     return this.db.libraryEntry.delete({ where: { id } });
   }

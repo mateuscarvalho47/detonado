@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	fetchLibraryEntry,
+	refreshLibraryHltb,
 	removeLibraryEntry,
 	updateLibraryEntry,
 } from "./detailService";
@@ -11,6 +12,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
 		...actual,
 		api: {
 			get: vi.fn(),
+			post: vi.fn(),
 			patch: vi.fn(),
 			delete: vi.fn(),
 		},
@@ -56,6 +58,15 @@ describe("updateLibraryEntry", () => {
 		const result = await updateLibraryEntry("entry-1", data);
 		expect(result).toEqual(updated);
 		expect(api.patch).toHaveBeenCalledWith("/library/entry-1", data);
+	});
+});
+
+describe("refreshLibraryHltb", () => {
+	it("posts to the entry hltb route", async () => {
+		vi.mocked(api.post).mockResolvedValue(ENTRY);
+		const result = await refreshLibraryHltb("entry-1");
+		expect(result).toEqual(ENTRY);
+		expect(api.post).toHaveBeenCalledWith("/library/entry-1/hltb");
 	});
 });
 

@@ -40,6 +40,7 @@ function makeRepo(overrides: Record<string, unknown> = {}) {
     findByUserAndIgdbId: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    updateHltb: vi.fn(),
     delete: vi.fn(),
     ...overrides,
   };
@@ -49,6 +50,7 @@ function makeGames(overrides: Record<string, unknown> = {}) {
   return {
     getById: vi.fn().mockResolvedValue(GAME),
     search: vi.fn(),
+    lookupByName: vi.fn(),
     ...overrides,
   };
 }
@@ -97,6 +99,54 @@ describe('LibraryService.create', () => {
     );
   });
 
+  it('stores a miss without inventing times', async () => {
+    const repo = makeRepo({
+      findByUserAndIgdbId: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue(ENTRY),
+    });
+    const games = makeGames({
+      getById: vi.fn().mockResolvedValue({ ...GAME, hltb: null, hltbStatus: 'MISS' }),
+    });
+    const service = new LibraryService(repo as never, games as never);
+
+    await service.create('user-1', { igdbId: 1, status: 'BACKLOG' });
+
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hltbMain: null,
+        hltbMainExtra: null,
+        hltbCompletionist: null,
+        hltbStatus: 'MISS',
+      }),
+    );
+  });
+
+  it('stores times when the lookup is found', async () => {
+    const repo = makeRepo({
+      findByUserAndIgdbId: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue(ENTRY),
+    });
+    const games = makeGames({
+      getById: vi.fn().mockResolvedValue({
+        ...GAME,
+        hltbStatus: 'FOUND',
+        hltb: { mainHours: 40, mainExtraHours: 60, completionistHours: null },
+      }),
+    });
+    const service = new LibraryService(repo as never, games as never);
+
+    await service.create('user-1', { igdbId: 1, status: 'BACKLOG' });
+
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hltbMain: 40,
+        hltbMainExtra: 60,
+        hltbCompletionist: null,
+        hltbStatus: 'FOUND',
+      }),
+    );
+  });
+
   it('throws LibraryEntryNotFoundError when IGDB game not found', async () => {
     const repo = makeRepo({ findByUserAndIgdbId: vi.fn().mockResolvedValue(null) });
     const games = makeGames({ getById: vi.fn().mockResolvedValue(null) });
@@ -133,11 +183,11 @@ describe('LibraryService.update', () => {
     );
   });
 
-  it('preserves completedAt when transitioning away from COMPLETED', async () => {
+  it('clears completedAt when the status leaves COMPLETED', async () => {
     const completedAt = new Date('2024-01-01');
     const repo = makeRepo({
       findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED', completedAt }),
-      update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'PAUSED', completedAt }),
+      update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'PAUSED', completedAt: null }),
     });
     const service = new LibraryService(repo as never, makeGames() as never);
 
@@ -145,7 +195,38 @@ describe('LibraryService.update', () => {
 
     expect(repo.update).toHaveBeenCalledWith(
       'entry-1',
-      expect.objectContaining({ completedAt: undefined }),
+      expect.objectContaining({ completedAt: null }),
+    );
+  });
+
+  it('clears completedAt when the date is sent empty', async () => {
+    const completedAt = new Date('2024-01-01');
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED', completedAt }),
+      update: vi.fn().mockResolvedValue({ ...ENTRY, completedAt: null }),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await service.update('entry-1', 'user-1', { status: 'COMPLETED', completedAt: null });
+
+    expect(repo.update).toHaveBeenCalledWith(
+      'entry-1',
+      expect.objectContaining({ completedAt: null }),
+    );
+  });
+
+  it('forwards zero hours and a cleared platform', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      update: vi.fn().mockResolvedValue({ ...ENTRY, hoursPlayed: 0, userPlatform: null }),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await service.update('entry-1', 'user-1', { hoursPlayed: 0, userPlatform: '' });
+
+    expect(repo.update).toHaveBeenCalledWith(
+      'entry-1',
+      expect.objectContaining({ hoursPlayed: 0, userPlatform: null }),
     );
   });
 
@@ -163,6 +244,52 @@ describe('LibraryService.update', () => {
       'entry-1',
       expect.objectContaining({ completedAt: undefined }),
     );
+  });
+});
+
+describe('LibraryService.refreshHltb', () => {
+  it('replaces a failed lookup with the new result', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      updateHltb: vi.fn().mockResolvedValue({ ...ENTRY, hltbStatus: 'FOUND', hltbMain: 12 }),
+    });
+    const games = makeGames({
+      lookupByName: vi.fn().mockResolvedValue({
+        status: 'FOUND',
+        times: { mainHours: 12, mainExtraHours: null, completionistHours: null },
+      }),
+    });
+    const service = new LibraryService(repo as never, games as never);
+
+    await service.refreshHltb('entry-1', 'user-1');
+
+    expect(games.lookupByName).toHaveBeenCalledWith('Elden Ring');
+    expect(repo.updateHltb).toHaveBeenCalledWith('entry-1', {
+      hltbMain: 12,
+      hltbMainExtra: null,
+      hltbCompletionist: null,
+      hltbStatus: 'FOUND',
+    });
+  });
+
+  it('stores a miss when the new lookup finds nothing', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      updateHltb: vi.fn().mockResolvedValue({ ...ENTRY, hltbStatus: 'MISS' }),
+    });
+    const games = makeGames({
+      lookupByName: vi.fn().mockResolvedValue({ status: 'MISS' }),
+    });
+    const service = new LibraryService(repo as never, games as never);
+
+    await service.refreshHltb('entry-1', 'user-1');
+
+    expect(repo.updateHltb).toHaveBeenCalledWith('entry-1', {
+      hltbMain: null,
+      hltbMainExtra: null,
+      hltbCompletionist: null,
+      hltbStatus: 'MISS',
+    });
   });
 });
 

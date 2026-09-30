@@ -200,7 +200,7 @@ async function main() {
   if (!existsSync(collectionFile)) {
     writeFileSync(
       collectionFile,
-      'meta {\n  name: trecking-games-backend\n  type: collection\n  ignore: node_modules, .git\n}\n',
+      'meta {\n  name: detonado-backend\n  type: collection\n  ignore: node_modules, .git\n}\n',
     );
   }
 

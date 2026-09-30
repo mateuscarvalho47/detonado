@@ -40,8 +40,12 @@ function AccountPage() {
 				>
 					<Database className="size-4 text-text-md shrink-0" />
 					<div className="flex-1 min-w-0">
-						<div className="text-body font-medium text-text-hi">Gerenciar meus dados</div>
-						<div className="text-caption text-text-lo">Exportar ou excluir sua conta</div>
+						<div className="text-body font-medium text-text-hi">
+							Gerenciar meus dados
+						</div>
+						<div className="text-caption text-text-lo">
+							Exportar ou excluir sua conta
+						</div>
 					</div>
 					<ChevronRight className="size-4 text-text-dim shrink-0" />
 				</button>
@@ -52,8 +56,12 @@ function AccountPage() {
 				>
 					<LogOut className="size-4 text-error shrink-0" />
 					<div className="flex-1 min-w-0">
-						<div className="text-body font-medium text-error">Sair da conta</div>
-						<div className="text-caption text-text-lo">Encerra a sessão atual</div>
+						<div className="text-body font-medium text-error">
+							Sair da conta
+						</div>
+						<div className="text-caption text-text-lo">
+							Encerra a sessão atual
+						</div>
 					</div>
 				</button>
 			</div>

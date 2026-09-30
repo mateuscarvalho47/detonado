@@ -1,5 +1,10 @@
 ﻿import { Calendar } from "lucide-react";
-import type { Control, UseFormRegister } from "react-hook-form";
+import type {
+	Control,
+	UseFormGetValues,
+	UseFormRegister,
+	UseFormSetValue,
+} from "react-hook-form";
 import { Controller } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +18,19 @@ import { DetailInfoPanel } from "./DetailInfoPanel";
 
 const RATING_TICKS = Array.from({ length: 9 }, (_, i) => i);
 
+function todayInputValue() {
+	const now = new Date();
+	const month = String(now.getMonth() + 1).padStart(2, "0");
+	const day = String(now.getDate()).padStart(2, "0");
+	return `${now.getFullYear()}-${month}-${day}`;
+}
+
 interface DetailEditFormProps {
 	game: LibraryEntry;
 	control: Control<DetailFormValues>;
 	register: UseFormRegister<DetailFormValues>;
+	setValue: UseFormSetValue<DetailFormValues>;
+	getValues: UseFormGetValues<DetailFormValues>;
 	status: DetailFormValues["status"];
 	rating: number;
 }
@@ -25,6 +39,8 @@ export function DetailEditForm({
 	game,
 	control,
 	register,
+	setValue,
+	getValues,
 	status,
 	rating,
 }: DetailEditFormProps) {
@@ -49,7 +65,12 @@ export function DetailEditForm({
 										type="single"
 										value={field.value}
 										onValueChange={(v) => {
-											if (v) field.onChange(v);
+											if (!v) return;
+											field.onChange(v);
+											if (v === "COMPLETED" && !getValues("completedAt")) {
+												setValue("completedAt", todayInputValue());
+											}
+											if (v !== "COMPLETED") setValue("completedAt", "");
 										}}
 										className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 justify-start"
 									>
@@ -127,7 +148,7 @@ export function DetailEditForm({
 												<input
 													type="text"
 													inputMode="decimal"
-													value={field.value || ""}
+													value={field.value === 0 ? "0" : field.value || ""}
 													onChange={(e) => {
 														const val = parseFloat(
 															e.target.value.replace(",", "."),

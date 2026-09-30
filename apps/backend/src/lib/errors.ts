@@ -45,3 +45,13 @@ export class IgdbError extends AppError {
     super('IGDB_ERROR', statusCode, message);
   }
 }
+
+export class EmailDeliveryError extends AppError {
+  constructor() {
+    super(
+      'EMAIL_DELIVERY_FAILED',
+      503,
+      'Não foi possível enviar o e-mail. Tente de novo em alguns minutos.',
+    );
+  }
+}

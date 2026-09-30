@@ -16,7 +16,7 @@ function PrivacyPage() {
 				Política de Privacidade
 			</h1>
 			<p className="text-xs text-text-lo font-mono mb-8">
-				Última atualização: maio de 2026
+				Última atualização: setembro de 2026
 			</p>
 
 			<div className="flex flex-col gap-7 text-body text-text-md leading-relaxed">
@@ -25,9 +25,9 @@ function PrivacyPage() {
 						1. Quem somos
 					</h2>
 					<p>
-						O <strong className="text-text-hi">Detonado</strong> é um aplicativo
-						de rastreamento de biblioteca de jogos pessoal. O controlador dos
-						seus dados é o desenvolvedor responsável pelo serviço (contato:{" "}
+						O <strong className="text-text-hi">Detonado</strong> é uma
+						biblioteca pessoal de jogos. O controlador dos seus dados é o
+						desenvolvedor responsável pelo serviço (contato:{" "}
 						<a
 							href="mailto:sac@carvalholabs.com.br"
 							className="text-accent-bright no-underline hover:underline"
@@ -54,8 +54,9 @@ function PrivacyPage() {
 						</li>
 						<li>
 							<strong className="text-text-hi">Biblioteca de jogos</strong> —
-							jogos adicionados, status, plataforma, nota, horas jogadas, notas
-							pessoais e data de conclusão.
+							jogos adicionados, ficha (capa, gêneros e plataformas), status,
+							plataforma, nota, horas jogadas, notas pessoais, data de conclusão
+							e tempos do HowLongToBeat.
 						</li>
 						<li>
 							<strong className="text-text-hi">Dados de sessão</strong> —
@@ -76,8 +77,7 @@ function PrivacyPage() {
 					<ul className="list-disc list-inside flex flex-col gap-1.5 pl-1">
 						<li>
 							<strong className="text-text-hi">Execução do contrato</strong>{" "}
-							(LGPD, Art. 7º, V) — para fornecer o serviço de rastreamento de
-							jogos.
+							(LGPD, Art. 7º, V) — para fornecer a biblioteca pessoal de jogos.
 						</li>
 						<li>
 							<strong className="text-text-hi">Consentimento</strong> (LGPD,
@@ -94,8 +94,9 @@ function PrivacyPage() {
 					<ul className="list-disc list-inside flex flex-col gap-1.5 pl-1">
 						<li>
 							<strong className="text-text-hi">Resend</strong> — serviço de
-							entrega de e-mail transacional. Recebe seu endereço de e-mail
-							apenas para entregar o e-mail de verificação. Consulte a{" "}
+							entrega de e-mail transacional. Recebe seu endereço de e-mail para
+							entregar o link de verificação e o código de redefinição de senha.
+							Consulte a{" "}
 							<a
 								href="https://resend.com/legal/privacy-policy"
 								target="_blank"
@@ -110,6 +111,11 @@ function PrivacyPage() {
 							<strong className="text-text-hi">IGDB / Twitch</strong> — banco de
 							dados de jogos. Utilizamos apenas para busca de informações sobre
 							jogos. Nenhum dado pessoal seu é enviado.
+						</li>
+						<li>
+							<strong className="text-text-hi">HowLongToBeat</strong> — consulta
+							de duração. Recebe o nome do jogo quando os tempos são buscados.
+							Seu e-mail não é enviado.
 						</li>
 					</ul>
 					<p className="mt-3">
@@ -155,7 +161,8 @@ function PrivacyPage() {
 						</li>
 						<li>
 							<strong className="text-text-hi">Portabilidade</strong> — exportar
-							todos os seus dados em formato JSON.
+							a conta e a biblioteca em JSON, com ficha, status, horas, nota e
+							tempos.
 						</li>
 						<li>
 							<strong className="text-text-hi">Exclusão</strong> — excluir sua
@@ -193,8 +200,9 @@ function PrivacyPage() {
 					</h2>
 					<p>
 						Adotamos medidas técnicas para proteger seus dados: senhas com hash
-						Argon2, cookies seguros (httpOnly, SameSite), comunicação via HTTPS
-						e armazenamento de sessão em Redis com TTL de 7 dias.
+						Argon2, cookie de sessão httpOnly (em produção, Secure e
+						SameSite=None), token de sessão em cada alteração, comunicação via
+						HTTPS e armazenamento de sessão em Redis com TTL de 7 dias.
 					</p>
 				</section>
 

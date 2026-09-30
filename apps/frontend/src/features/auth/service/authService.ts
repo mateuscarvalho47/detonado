@@ -1,4 +1,4 @@
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, clearCsrfToken } from "@/lib/api";
 import type { User } from "@/types/api";
 
 export async function fetchMe(): Promise<User | null> {
@@ -10,8 +10,10 @@ export async function fetchMe(): Promise<User | null> {
 	}
 }
 
-export function login(data: { email: string; password: string }) {
-	return api.post<User>("/auth/login", data);
+export async function login(data: { email: string; password: string }) {
+	const user = await api.post<User>("/auth/login", data);
+	clearCsrfToken();
+	return user;
 }
 
 export function register(data: {
@@ -30,8 +32,10 @@ export function resendVerification(email: string) {
 	return api.post<{ message: string }>("/auth/resend-verification", { email });
 }
 
-export function logout() {
-	return api.post("/auth/logout");
+export async function logout() {
+	const result = await api.post("/auth/logout");
+	clearCsrfToken();
+	return result;
 }
 
 export function updateAccount(data: {
@@ -50,8 +54,10 @@ export function updateAccount(data: {
 	);
 }
 
-export function deleteAccount(data: { password: string }) {
-	return api.delete("/auth/account", data);
+export async function deleteAccount(data: { password: string }) {
+	const result = await api.delete("/auth/account", data);
+	clearCsrfToken();
+	return result;
 }
 
 export function consent() {

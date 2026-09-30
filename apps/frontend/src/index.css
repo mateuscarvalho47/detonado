@@ -188,67 +188,67 @@
 /* ═══ Dark theme ═══ */
 :root[data-theme="dark"],
 .dark {
-	/* Warm charcoal. Color stays on the covers; the chrome is flat. */
-	--background: oklch(0.13 0.006 28);
-	--foreground: oklch(0.96 0.006 75);
-	--card: oklch(0.16 0.007 28);
-	--card-foreground: oklch(0.96 0.006 75);
-	--popover: oklch(0.16 0.007 28);
-	--popover-foreground: oklch(0.96 0.006 75);
-	--primary: oklch(0.92 0.012 80);
-	--primary-foreground: oklch(0.2 0.012 50);
-	--secondary: oklch(0.22 0.008 28);
-	--secondary-foreground: oklch(0.96 0.006 75);
-	--muted: oklch(0.2 0.008 28);
-	--muted-foreground: oklch(0.72 0.012 75);
-	--accent: oklch(0.22 0.008 28);
-	--accent-foreground: oklch(0.96 0.006 75);
+	/* Warm ink. Steps are far enough apart to read; color stays on the covers. */
+	--background: oklch(0.17 0.006 70);
+	--foreground: oklch(0.97 0.008 90);
+	--card: oklch(0.23 0.008 70);
+	--card-foreground: oklch(0.97 0.008 90);
+	--popover: oklch(0.23 0.008 70);
+	--popover-foreground: oklch(0.97 0.008 90);
+	--primary: oklch(0.94 0.012 90);
+	--primary-foreground: oklch(0.2 0.01 50);
+	--secondary: oklch(0.28 0.008 70);
+	--secondary-foreground: oklch(0.97 0.008 90);
+	--muted: oklch(0.25 0.008 70);
+	--muted-foreground: oklch(0.78 0.012 85);
+	--accent: oklch(0.28 0.008 70);
+	--accent-foreground: oklch(0.97 0.008 90);
 	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(0.32 0.012 28);
-	--input: oklch(0.22 0.008 28);
-	--ring: oklch(0.72 0.012 75);
+	--border: oklch(0.42 0.012 70);
+	--input: oklch(0.28 0.008 70);
+	--ring: oklch(0.78 0.012 85);
 	--chart-1: oklch(0.81 0.117 11.638);
 	--chart-2: oklch(0.645 0.246 16.439);
 	--chart-3: oklch(0.586 0.253 17.585);
 	--chart-4: oklch(0.514 0.222 16.935);
 	--chart-5: oklch(0.455 0.188 13.697);
-	--sidebar: oklch(0.16 0.007 28);
-	--sidebar-foreground: oklch(0.96 0.006 75);
-	--sidebar-primary: oklch(0.92 0.012 80);
-	--sidebar-primary-foreground: oklch(0.2 0.012 50);
-	--sidebar-accent: oklch(0.22 0.008 28);
-	--sidebar-accent-foreground: oklch(0.96 0.006 75);
-	--sidebar-border: oklch(0.32 0.012 28);
-	--sidebar-ring: oklch(0.72 0.012 75);
+	--sidebar: oklch(0.21 0.007 70);
+	--sidebar-foreground: oklch(0.97 0.008 90);
+	--sidebar-primary: oklch(0.94 0.012 90);
+	--sidebar-primary-foreground: oklch(0.2 0.01 50);
+	--sidebar-accent: oklch(0.28 0.008 70);
+	--sidebar-accent-foreground: oklch(0.97 0.008 90);
+	--sidebar-border: oklch(0.42 0.012 70);
+	--sidebar-ring: oklch(0.78 0.012 85);
 
-	/* Custom layers — dark (warm charcoal) */
-	--bg-0: oklch(0.13 0.006 28);
-	--bg-1: oklch(0.16 0.007 28);
-	--bg-2: oklch(0.19 0.009 28);
-	--bg-3: oklch(0.23 0.011 28);
-	--bg-4: oklch(0.27 0.013 28);
+	/* Custom layers — dark ink */
+	--bg-0: oklch(0.17 0.006 70);
+	--bg-1: oklch(0.23 0.008 70);
+	--bg-2: oklch(0.28 0.009 70);
+	--bg-3: oklch(0.33 0.01 70);
+	--bg-4: oklch(0.39 0.011 70);
 
-	--border-soft: oklch(0.22 0.009 28);
-	--border-strong: oklch(0.34 0.013 28);
+	--border-soft: oklch(0.4 0.012 70);
+	--border-strong: oklch(0.55 0.014 75);
 
-	--text-hi: oklch(0.96 0.006 75);
-	--text-md: oklch(0.72 0.012 75);
-	--text-lo: oklch(0.62 0.014 75);
-	--text-dim: oklch(0.5 0.01 75);
+	--text-hi: oklch(0.97 0.008 90);
+	--text-md: oklch(0.84 0.012 85);
+	--text-lo: oklch(0.74 0.012 80);
+	--text-dim: oklch(0.64 0.01 75);
 
-	--accent-bright: oklch(0.93 0.012 80);
-	--accent-soft: oklch(0.28 0.01 40 / 0.45);
-	--accent-rim: oklch(0.45 0.02 40 / 0.35);
+	--accent-bright: oklch(0.94 0.014 90);
+	--accent-soft: oklch(0.34 0.012 70 / 0.55);
+	--accent-rim: oklch(0.55 0.02 70 / 0.45);
 
-	--error: oklch(0.68 0.22 20);
+	--error: oklch(0.72 0.18 22);
 
-	--grid-line: oklch(0.2 0.006 28);
+	--grid-line: oklch(0.3 0.008 70);
 	--glow-accent: transparent;
-	--scrollbar-thumb: oklch(0.3 0.01 28);
-	--scrollbar-thumb-hover: oklch(0.4 0.01 28);
-	--shadow-base: oklch(0 0 0 / 0.55);
-	--hero-overlay-start: oklch(0.13 0.005 280 / 0);
-	--hero-overlay-end: oklch(0.13 0.005 280);
+	--scrollbar-thumb: oklch(0.4 0.01 70);
+	--scrollbar-thumb-hover: oklch(0.5 0.012 70);
+	--shadow-base: oklch(0 0 0 / 0.45);
+	--hero-overlay-start: oklch(0.17 0.006 70 / 0);
+	--hero-overlay-end: oklch(0.17 0.006 70);
 }
 
 @layer base {

@@ -13,6 +13,7 @@ import { SelectOptions } from "@/components/ui/select-options";
 import { Cover } from "@/shared/components/Cover";
 import { HltbStat, HltbStatSkeleton } from "@/shared/components/HltbStat";
 import { STATUSES } from "@/shared/constants/statuses";
+import { hltbCaption } from "@/shared/lib/hltbCaption";
 import type { GameSearchResult } from "@/types/api";
 import { useAddToLibraryForm } from "../hooks/useAddToLibraryForm";
 import { useGameDetail } from "../hooks/useGameSearch";
@@ -93,32 +94,31 @@ export function AddToLibraryModal({
 							</div>
 
 							{/* HowLongToBeat */}
-							{(hltbLoading || hltb) && (
+							{(hltbLoading || detail) && (
 								<div>
 									<Label className="mono-label block mb-2">
 										Tempo para zerar
 									</Label>
-									<div className="grid grid-cols-3 gap-1.5">
-										{hltbLoading ? (
-											<>
-												<HltbStatSkeleton />
-												<HltbStatSkeleton />
-												<HltbStatSkeleton />
-											</>
-										) : (
-											<>
-												<HltbStat label="Principal" hours={hltb?.mainHours} />
-												<HltbStat
-													label="+ Extras"
-													hours={hltb?.mainExtraHours}
-												/>
-												<HltbStat
-													label="Completista"
-													hours={hltb?.completionistHours}
-												/>
-											</>
-										)}
-									</div>
+									{hltbLoading ? (
+										<div className="grid grid-cols-3 gap-1.5">
+											<HltbStatSkeleton />
+											<HltbStatSkeleton />
+											<HltbStatSkeleton />
+										</div>
+									) : hltb ? (
+										<div className="grid grid-cols-3 gap-1.5">
+											<HltbStat label="Principal" hours={hltb.mainHours} />
+											<HltbStat label="+ Extras" hours={hltb.mainExtraHours} />
+											<HltbStat
+												label="Completista"
+												hours={hltb.completionistHours}
+											/>
+										</div>
+									) : (
+										<p className="m-0 text-body text-text-md">
+											{hltbCaption(detail?.hltbStatus, false)}
+										</p>
+									)}
 								</div>
 							)}
 

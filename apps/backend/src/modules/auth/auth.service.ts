@@ -1,6 +1,6 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { sendVerificationEmail } from '@/lib/email.js';
-import { UnauthorizedError } from '@/lib/errors.js';
+import { EmailDeliveryError, UnauthorizedError } from '@/lib/errors.js';
 import { hashPassword, verifyPassword } from '@/lib/hash.js';
 import type { UserRepository } from '@/modules/user/user.repository.js';
 import {
@@ -20,9 +20,15 @@ import type {
 
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 
+function hashVerificationToken(token: string) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
 function issueVerification() {
+  const token = randomBytes(32).toString('hex');
   return {
-    token: randomBytes(32).toString('hex'),
+    token,
+    tokenHash: hashVerificationToken(token),
     expiresAt: new Date(Date.now() + VERIFICATION_TTL_MS),
   };
 }
@@ -40,7 +46,7 @@ export class AuthService {
     const user = await this.users.create({
       email: input.email,
       passwordHash,
-      emailVerificationToken: verification.token,
+      emailVerificationToken: verification.tokenHash,
       emailVerificationExpiresAt: verification.expiresAt,
       consentedAt: new Date(),
     });
@@ -48,10 +54,12 @@ export class AuthService {
     try {
       await sendVerificationEmail(input.email, verification.token);
     } catch {
-      console.error(
-        '[auth] verification email failed for %s — account created, user must resend',
-        input.email,
-      );
+      try {
+        await this.users.deleteById(user.id);
+      } catch (rollbackErr) {
+        console.error('[auth] failed to roll back user after email delivery error', rollbackErr);
+      }
+      throw new EmailDeliveryError();
     }
 
     return user;
@@ -70,7 +78,7 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    const user = await this.users.findByVerificationToken(token);
+    const user = await this.users.findByVerificationToken(hashVerificationToken(token));
     const expiresAt = user?.emailVerificationExpiresAt;
     if (!user || !expiresAt || expiresAt.getTime() <= Date.now()) {
       throw new InvalidVerificationTokenError();
@@ -87,12 +95,16 @@ export class AuthService {
     if (user.emailVerified) throw new EmailAlreadyVerifiedError();
 
     const verification = issueVerification();
-    await this.users.updateVerificationToken(user.id, verification.token, verification.expiresAt);
+    await this.users.updateVerificationToken(
+      user.id,
+      verification.tokenHash,
+      verification.expiresAt,
+    );
 
     try {
       await sendVerificationEmail(user.email, verification.token);
     } catch {
-      console.error('[auth] resend verification email failed for %s', user.email);
+      throw new EmailDeliveryError();
     }
   }
 
@@ -109,15 +121,15 @@ export class AuthService {
       const taken = await this.users.findByEmail(input.email);
       if (taken) throw new EmailAlreadyTakenError();
       const verification = issueVerification();
-      updates.email = input.email;
-      updates.emailVerified = false;
-      updates.emailVerificationToken = verification.token;
-      updates.emailVerificationExpiresAt = verification.expiresAt;
       try {
         await sendVerificationEmail(input.email, verification.token);
       } catch {
-        console.error('[auth] verification email failed after email change for %s', input.email);
+        throw new EmailDeliveryError();
       }
+      updates.email = input.email;
+      updates.emailVerified = false;
+      updates.emailVerificationToken = verification.tokenHash;
+      updates.emailVerificationExpiresAt = verification.expiresAt;
     }
 
     if (input.newPassword) {

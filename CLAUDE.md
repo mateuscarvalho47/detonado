@@ -31,21 +31,21 @@ pnpm install
 # 1. Start infrastructure (Postgres 17 + Redis 7)
 cd apps/backend && docker compose up -d
 
-# 2. Configure env (see apps/backend/.env.exemple)
-cp apps/backend/.env.exemple apps/backend/.env
+# 2. Configure env (see apps/backend/.env.example)
+cp apps/backend/.env.example apps/backend/.env
 # Required: DATABASE_URL, REDIS_URL, SESSION_SECRET (≥32 chars), COOKIE_SECRET (≥32 chars),
 #            CORS_ORIGIN, IGDB_CLIENT_ID, IGDB_CLIENT_SECRET, RESEND_API_KEY
-# Defaults: APP_URL=http://localhost:5173, EMAIL_FROM=onboarding@resend.dev
+# Defaults: APP_URL=http://localhost:5173, EMAIL_FROM=onboarding@resend.dev, TRUST_PROXY=false
 
 # 3. Database
 cd apps/backend
 pnpm prisma:migrate && pnpm prisma:generate
-pnpm db:seed   # alice@example.com, bob@example.com / password123, emailVerified=false
+pnpm db:seed   # alice@example.com, bob@example.com / password123, emailVerified=true
 ```
 
-Seed users cannot log in until `emailVerified` is true. Login rejects an unverified email. Email verification links expire 24 hours after they are issued; a token with no expiry is rejected.
+The seed sets `emailVerified=true` on create and on update, and does not change an existing password. Login still rejects an unverified email. Verification links expire 24 hours after they are issued. The database stores the SHA-256 of the token; the email carries the raw value. A missing token, an expired token, a token with no expiry, or a token still stored in clear text is rejected — those accounts need a new link. If Resend fails, register deletes the new user, and resend, email change, and password reset answer 503 instead of success.
 
-API routes are mounted under `/api` (`/health` and `/docs` are not). Swagger UI (dev only): http://localhost:3000/docs — the document title is still the boilerplate string.
+API routes are mounted under `/api` (`/health` and `/docs` are not). Swagger UI (dev only): http://localhost:3000/docs, title Detonado. POST, PATCH, and DELETE require `x-csrf-token` from `GET /api/auth/csrf`. `GET /health` checks Postgres and Redis. Behind a reverse proxy set `TRUST_PROXY=1` (the default is false, so the rate limit otherwise sees the proxy IP).
 
 ## Tech decisions that span both apps
 

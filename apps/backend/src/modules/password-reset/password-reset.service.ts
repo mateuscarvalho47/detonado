@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { sendPasswordResetEmail } from '@/lib/email.js';
+import { EmailDeliveryError } from '@/lib/errors.js';
 import { hashPassword, verifyPassword } from '@/lib/hash.js';
 import type { UserRepository } from '@/modules/user/user.repository.js';
 import { InvalidOrExpiredResetTokenError } from './password-reset.errors.js';
@@ -33,7 +34,8 @@ export class PasswordResetService {
     try {
       await sendPasswordResetEmail(user.email, code);
     } catch {
-      console.error('[password-reset] email failed for %s', user.email);
+      await this.tokens.invalidateActiveForUser(user.id);
+      throw new EmailDeliveryError();
     }
   }
 

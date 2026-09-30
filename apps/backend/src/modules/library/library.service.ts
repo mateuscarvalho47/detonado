@@ -1,3 +1,4 @@
+import type { IgdbGame } from '@/lib/igdb/schemas.js';
 import type { GameService } from '@/modules/game/game.service.js';
 import { LibraryEntryAlreadyExistsError, LibraryEntryNotFoundError } from './library.errors.js';
 import type { LibraryRepository } from './library.repository.js';
@@ -8,6 +9,30 @@ import type {
 } from './library.schema.js';
 
 const ALL_STATUSES = ['WISHLIST', 'BACKLOG', 'PLAYING', 'PAUSED', 'COMPLETED', 'DROPPED'] as const;
+
+function blankToNull(value: string | null): string | null {
+  if (value == null) return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function hltbSnapshot(game: IgdbGame) {
+  if (game.hltbStatus === 'MISS' || game.hltbStatus === 'FAILED' || !game.hltb) {
+    return {
+      hltbMain: null,
+      hltbMainExtra: null,
+      hltbCompletionist: null,
+      hltbStatus: game.hltbStatus === 'MISS' ? 'MISS' : 'FAILED',
+    } as const;
+  }
+
+  return {
+    hltbMain: game.hltb.mainHours,
+    hltbMainExtra: game.hltb.mainExtraHours,
+    hltbCompletionist: game.hltb.completionistHours,
+    hltbStatus: 'FOUND',
+  } as const;
+}
 
 export class LibraryService {
   constructor(
@@ -33,6 +58,7 @@ export class LibraryService {
     if (!game) throw new LibraryEntryNotFoundError();
 
     const completedAt = input.status === 'COMPLETED' ? new Date() : null;
+    const hltb = hltbSnapshot(game);
 
     return this.repo.create({
       user: { connect: { id: userId } },
@@ -44,9 +70,7 @@ export class LibraryService {
       status: input.status,
       userPlatform: input.userPlatform ?? null,
       completedAt,
-      hltbMain: game.hltb?.mainHours ?? null,
-      hltbMainExtra: game.hltb?.mainExtraHours ?? null,
-      hltbCompletionist: game.hltb?.completionistHours ?? null,
+      ...hltb,
     });
   }
 
@@ -54,16 +78,39 @@ export class LibraryService {
     const entry = await this.repo.findByIdAndUser(id, userId);
     if (!entry) throw new LibraryEntryNotFoundError();
 
-    const { completedAt: inputCompletedAt, ...restInput } = input;
+    const nextStatus = input.status ?? entry.status;
+    const { completedAt: inputCompletedAt, userPlatform, ...restInput } = input;
 
     let completedAt: Date | null | undefined;
-    if (inputCompletedAt !== undefined) {
+    if (nextStatus !== 'COMPLETED') {
+      completedAt = null;
+    } else if (inputCompletedAt !== undefined) {
       completedAt = inputCompletedAt ? new Date(inputCompletedAt) : null;
-    } else if (input.status === 'COMPLETED' && entry.completedAt === null) {
+    } else if (entry.completedAt == null) {
       completedAt = new Date();
     }
 
-    return this.repo.update(id, { ...restInput, completedAt });
+    const platform = userPlatform === undefined ? undefined : blankToNull(userPlatform);
+
+    return this.repo.update(id, {
+      ...restInput,
+      ...(userPlatform !== undefined ? { userPlatform: platform } : {}),
+      completedAt,
+    });
+  }
+
+  async refreshHltb(id: string, userId: string) {
+    const entry = await this.repo.findByIdAndUser(id, userId);
+    if (!entry) throw new LibraryEntryNotFoundError();
+
+    const lookup = await this.games.lookupByName(entry.name);
+    const times = lookup.status === 'FOUND' ? lookup.times : null;
+    return this.repo.updateHltb(id, {
+      hltbMain: times?.mainHours ?? null,
+      hltbMainExtra: times?.mainExtraHours ?? null,
+      hltbCompletionist: times?.completionistHours ?? null,
+      hltbStatus: lookup.status,
+    });
   }
 
   async remove(id: string, userId: string) {

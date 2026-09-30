@@ -33,6 +33,11 @@ export class LibraryController {
     return reply.code(204).send();
   };
 
+  refreshHltb = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const entry = await this.library.refreshHltb(req.params.id, req.userId);
+    return reply.send(entry);
+  };
+
   getStats = async (req: FastifyRequest, reply: FastifyReply) => {
     const stats = await this.library.getStats(req.userId);
     return reply.send(stats);

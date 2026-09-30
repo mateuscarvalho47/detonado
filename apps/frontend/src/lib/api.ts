@@ -17,17 +17,70 @@ export class ApiError extends Error {
 	}
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+let csrfToken: string | null = null;
+let csrfInflight: Promise<string> | null = null;
+let csrfGeneration = 0;
+
+export function clearCsrfToken() {
+	csrfToken = null;
+	csrfInflight = null;
+	csrfGeneration += 1;
+}
+
+async function readCsrfToken(): Promise<string> {
+	if (csrfToken) return csrfToken;
+	if (csrfInflight) return csrfInflight;
+
+	const generation = csrfGeneration;
+	csrfInflight = request<{ token: string }>("/auth/csrf")
+		.then((body) => {
+			if (typeof body.token !== "string" || body.token.length === 0) {
+				throw new ApiError(
+					"UNKNOWN_ERROR",
+					"Não foi possível iniciar a sessão.",
+					undefined,
+					500,
+				);
+			}
+			if (generation === csrfGeneration) csrfToken = body.token;
+			return body.token;
+		})
+		.finally(() => {
+			if (generation === csrfGeneration) csrfInflight = null;
+		});
+
+	return csrfInflight;
+}
+
+async function request<T>(
+	path: string,
+	init: RequestInit = {},
+	attempt = 0,
+): Promise<T> {
+	const method = (init.method ?? "GET").toUpperCase();
+	const needsCsrf = MUTATING.has(method);
 	const hasBody = init.body !== undefined && init.body !== null;
+	const headers = new Headers(init.headers);
+	if (hasBody && !headers.has("Content-Type")) {
+		headers.set("Content-Type", "application/json");
+	}
+	if (needsCsrf) {
+		headers.set("x-csrf-token", await readCsrfToken());
+	}
+
 	const base = import.meta.env.VITE_API_URL ?? "";
 	const res = await fetch(`${base}/api${path}`, {
 		...init,
 		credentials: "include",
-		headers: {
-			...(hasBody ? { "Content-Type": "application/json" } : {}),
-			...init.headers,
-		},
+		headers,
 	});
+
+	if (needsCsrf && res.status === 403 && attempt === 0) {
+		clearCsrfToken();
+		return request<T>(path, init, attempt + 1);
+	}
 
 	if (!res.ok) {
 		const body = await res.json().catch(() => ({}));

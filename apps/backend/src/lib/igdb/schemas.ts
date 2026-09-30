@@ -25,4 +25,5 @@ export type IgdbGame = {
     mainExtraHours: number | null;
     completionistHours: number | null;
   } | null;
+  hltbStatus?: 'FOUND' | 'MISS' | 'FAILED';
 };

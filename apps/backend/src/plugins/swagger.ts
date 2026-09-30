@@ -11,8 +11,9 @@ export default fp(async (app) => {
     openapi: {
       openapi: '3.1.0',
       info: {
-        title: 'API Boilerplate',
-        description: 'Auth + sessões em Redis',
+        title: 'Detonado',
+        description:
+          'Biblioteca pessoal de jogos. POST, PATCH e DELETE exigem o header x-csrf-token.',
         version: '0.1.0',
       },
       servers: [{ url: `http://localhost:${env.PORT}` }],

@@ -67,6 +67,17 @@ export async function libraryRoutes(app: FastifyInstance) {
     handler: controller.getById,
   });
 
+  app.post('/library/:id/hltb', {
+    ...opts,
+    schema: {
+      ...opts.schema,
+      summary: 'Buscar de novo os tempos do HowLongToBeat',
+      params: idParam,
+      response: { 200: LibraryEntrySchema },
+    },
+    handler: controller.refreshHltb,
+  });
+
   app.patch('/library/:id', {
     ...opts,
     schema: {

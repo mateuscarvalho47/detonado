@@ -135,9 +135,14 @@ export const gameSearchResultSchema = z.object({
   genres: z.array(z.string()),
 });
 
+export const hltbStatusSchema = z.enum(['FOUND', 'MISS', 'FAILED']);
+
+export type HltbStatus = z.infer<typeof hltbStatusSchema>;
+
 export const gameDetailSchema = gameSearchResultSchema.extend({
   summary: z.string().optional(),
   hltb: hltbInfoSchema.optional(),
+  hltbStatus: hltbStatusSchema.optional(),
 });
 
 export type SearchQuery = z.infer<typeof searchQuerySchema>;
