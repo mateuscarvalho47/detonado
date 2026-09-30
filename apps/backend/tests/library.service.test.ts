@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ValidationError } from '@/lib/errors.js';
+import { calendarToday } from '@/modules/library/library.dates.js';
 import {
   LibraryEntryAlreadyExistsError,
   LibraryEntryNotFoundError,
@@ -85,9 +87,8 @@ describe('LibraryService.create', () => {
 
     await service.create('user-1', { igdbId: 1, status: 'COMPLETED' });
 
-    expect(repo.create).toHaveBeenCalledWith(
-      expect.objectContaining({ completedAt: expect.any(Date) }),
-    );
+    const passed = repo.create.mock.calls[0]?.[0] as { completedAt: Date };
+    expect(passed.completedAt.toISOString()).toBe(calendarToday().toISOString());
   });
 
   it('throws LibraryEntryAlreadyExistsError on duplicate', async () => {
@@ -179,7 +180,8 @@ describe('LibraryService.update', () => {
 
     expect(repo.update).toHaveBeenCalledWith(
       'entry-1',
-      expect.objectContaining({ completedAt: expect.any(Date) }),
+      'user-1',
+      expect.objectContaining({ completedAt: calendarToday() }),
     );
   });
 
@@ -195,6 +197,7 @@ describe('LibraryService.update', () => {
 
     expect(repo.update).toHaveBeenCalledWith(
       'entry-1',
+      'user-1',
       expect.objectContaining({ completedAt: null }),
     );
   });
@@ -211,6 +214,7 @@ describe('LibraryService.update', () => {
 
     expect(repo.update).toHaveBeenCalledWith(
       'entry-1',
+      'user-1',
       expect.objectContaining({ completedAt: null }),
     );
   });
@@ -226,6 +230,7 @@ describe('LibraryService.update', () => {
 
     expect(repo.update).toHaveBeenCalledWith(
       'entry-1',
+      'user-1',
       expect.objectContaining({ hoursPlayed: 0, userPlatform: null }),
     );
   });
@@ -240,9 +245,78 @@ describe('LibraryService.update', () => {
 
     await service.update('entry-1', 'user-1', { status: 'COMPLETED' });
 
+    const payload = repo.update.mock.calls[0]?.[2] as { completedAt?: Date };
+    expect(payload).not.toHaveProperty('completedAt');
+  });
+
+  it('keeps stored hours when the status moves to the queue', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, hoursPlayed: 12, rating: 8 }),
+      update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'BACKLOG' }),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await service.update('entry-1', 'user-1', { status: 'BACKLOG' });
+
+    const payload = repo.update.mock.calls[0]?.[2] as { hoursPlayed?: number; rating?: number };
+    expect(payload).not.toHaveProperty('hoursPlayed');
+    expect(payload).not.toHaveProperty('rating');
+    expect(repo.update).toHaveBeenCalledWith('entry-1', 'user-1', expect.anything());
+  });
+
+  it('stores hours sent for a wishlist entry', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      update: vi
+        .fn()
+        .mockResolvedValue({ ...ENTRY, status: 'WISHLIST', hoursPlayed: 12, rating: 7 }),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await service.update('entry-1', 'user-1', { status: 'WISHLIST', hoursPlayed: 12, rating: 7 });
+
     expect(repo.update).toHaveBeenCalledWith(
       'entry-1',
-      expect.objectContaining({ completedAt: undefined }),
+      'user-1',
+      expect.objectContaining({ hoursPlayed: 12, rating: 7 }),
+    );
+  });
+
+  it('stores a completion date as UTC midnight of that calendar day', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED' }),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await service.update('entry-1', 'user-1', { status: 'COMPLETED', completedAt: '2024-05-03' });
+
+    const payload = repo.update.mock.calls[0]?.[2] as { completedAt: Date };
+    expect(payload.completedAt.toISOString()).toBe('2024-05-03T00:00:00.000Z');
+  });
+
+  it('rejects a calendar date that does not exist', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      update: vi.fn(),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await expect(
+      service.update('entry-1', 'user-1', { status: 'COMPLETED', completedAt: '2023-02-29' }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('throws when the owner row disappears before the write', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      update: vi.fn().mockResolvedValue(null),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await expect(service.update('entry-1', 'user-1', { status: 'PLAYING' })).rejects.toThrow(
+      LibraryEntryNotFoundError,
     );
   });
 });
@@ -264,7 +338,7 @@ describe('LibraryService.refreshHltb', () => {
     await service.refreshHltb('entry-1', 'user-1');
 
     expect(games.lookupByName).toHaveBeenCalledWith('Elden Ring');
-    expect(repo.updateHltb).toHaveBeenCalledWith('entry-1', {
+    expect(repo.updateHltb).toHaveBeenCalledWith('entry-1', 'user-1', {
       hltbMain: 12,
       hltbMainExtra: null,
       hltbCompletionist: null,
@@ -284,7 +358,7 @@ describe('LibraryService.refreshHltb', () => {
 
     await service.refreshHltb('entry-1', 'user-1');
 
-    expect(repo.updateHltb).toHaveBeenCalledWith('entry-1', {
+    expect(repo.updateHltb).toHaveBeenCalledWith('entry-1', 'user-1', {
       hltbMain: null,
       hltbMainExtra: null,
       hltbCompletionist: null,
@@ -319,7 +393,17 @@ describe('LibraryService.remove', () => {
     const service = new LibraryService(repo as never, makeGames() as never);
 
     await service.remove('entry-1', 'user-1');
-    expect(repo.delete).toHaveBeenCalledWith('entry-1');
+    expect(repo.delete).toHaveBeenCalledWith('entry-1', 'user-1');
+  });
+
+  it('throws when the delete matches no row', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      delete: vi.fn().mockResolvedValue(0),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await expect(service.remove('entry-1', 'user-1')).rejects.toThrow(LibraryEntryNotFoundError);
   });
 
   it('throws LibraryEntryNotFoundError when entry not found', async () => {

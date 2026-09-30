@@ -66,8 +66,6 @@ export class PasswordResetService {
     if (!matchedId) throw new InvalidOrExpiredResetTokenError();
 
     const newHash = await hashPassword(input.password);
-    await this.users.updatePasswordHash(user.id, newHash);
-    await this.tokens.markUsed(matchedId);
-    await this.tokens.invalidateActiveForUser(user.id);
+    await this.tokens.commitVerifiedReset(user.id, matchedId, newHash);
   }
 }

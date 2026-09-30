@@ -1,6 +1,8 @@
 import fp from 'fastify-plugin';
 import { ZodError, z } from 'zod';
+import { mapDatabaseUnavailable } from '@/lib/databaseWake.js';
 import { AppError, ValidationError } from '@/lib/errors.js';
+import { mapPrismaWriteError } from '@/lib/prismaErrors.js';
 
 export default fp(async (app) => {
   app.setErrorHandler((err, req, reply) => {
@@ -11,9 +13,14 @@ export default fp(async (app) => {
       });
     }
 
-    if (err instanceof AppError) {
-      return reply.code(err.statusCode).send({
-        error: { code: err.code, message: err.message, details: err.details },
+    const appError =
+      err instanceof AppError ? err : (mapPrismaWriteError(err) ?? mapDatabaseUnavailable(err));
+    if (appError) {
+      if (appError.code === 'DATABASE_UNAVAILABLE') {
+        req.log.warn({ err }, 'database unavailable');
+      }
+      return reply.code(appError.statusCode).send({
+        error: { code: appError.code, message: appError.message, details: appError.details },
       });
     }
 

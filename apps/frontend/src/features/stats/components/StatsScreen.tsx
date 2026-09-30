@@ -97,7 +97,7 @@ export function StatsScreen() {
 					{[
 						{ label: "Total de jogos", value: stats.totalGames, unit: "" },
 						{
-							label: "Horas registradas",
+							label: "Horas jogadas",
 							value: Math.round(stats.totalHours),
 							unit: "h",
 						},

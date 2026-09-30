@@ -1,5 +1,6 @@
 import type { IgdbGame } from '@/lib/igdb/schemas.js';
 import type { GameService } from '@/modules/game/game.service.js';
+import { calendarToday, parseCalendarDate } from './library.dates.js';
 import { LibraryEntryAlreadyExistsError, LibraryEntryNotFoundError } from './library.errors.js';
 import type { LibraryRepository } from './library.repository.js';
 import type {
@@ -9,6 +10,17 @@ import type {
 } from './library.schema.js';
 
 const ALL_STATUSES = ['WISHLIST', 'BACKLOG', 'PLAYING', 'PAUSED', 'COMPLETED', 'DROPPED'] as const;
+
+function resolveCompletedAt(
+  nextStatus: string,
+  inputCompletedAt: string | null | undefined,
+  stored: Date | null,
+): Date | null | undefined {
+  if (nextStatus !== 'COMPLETED') return null;
+  if (inputCompletedAt === undefined) return stored == null ? calendarToday() : undefined;
+  if (inputCompletedAt === null) return null;
+  return parseCalendarDate(inputCompletedAt);
+}
 
 function blankToNull(value: string | null): string | null {
   if (value == null) return null;
@@ -57,7 +69,7 @@ export class LibraryService {
     const game = await this.games.getById(input.igdbId);
     if (!game) throw new LibraryEntryNotFoundError();
 
-    const completedAt = input.status === 'COMPLETED' ? new Date() : null;
+    const completedAt = input.status === 'COMPLETED' ? calendarToday() : null;
     const hltb = hltbSnapshot(game);
 
     return this.repo.create({
@@ -80,23 +92,15 @@ export class LibraryService {
 
     const nextStatus = input.status ?? entry.status;
     const { completedAt: inputCompletedAt, userPlatform, ...restInput } = input;
+    const completedAt = resolveCompletedAt(nextStatus, inputCompletedAt, entry.completedAt);
 
-    let completedAt: Date | null | undefined;
-    if (nextStatus !== 'COMPLETED') {
-      completedAt = null;
-    } else if (inputCompletedAt !== undefined) {
-      completedAt = inputCompletedAt ? new Date(inputCompletedAt) : null;
-    } else if (entry.completedAt == null) {
-      completedAt = new Date();
-    }
-
-    const platform = userPlatform === undefined ? undefined : blankToNull(userPlatform);
-
-    return this.repo.update(id, {
+    const updated = await this.repo.update(id, userId, {
       ...restInput,
-      ...(userPlatform !== undefined ? { userPlatform: platform } : {}),
-      completedAt,
+      ...(userPlatform !== undefined ? { userPlatform: blankToNull(userPlatform) } : {}),
+      ...(completedAt !== undefined ? { completedAt } : {}),
     });
+    if (!updated) throw new LibraryEntryNotFoundError();
+    return updated;
   }
 
   async refreshHltb(id: string, userId: string) {
@@ -105,18 +109,21 @@ export class LibraryService {
 
     const lookup = await this.games.lookupByName(entry.name);
     const times = lookup.status === 'FOUND' ? lookup.times : null;
-    return this.repo.updateHltb(id, {
+    const updated = await this.repo.updateHltb(id, userId, {
       hltbMain: times?.mainHours ?? null,
       hltbMainExtra: times?.mainExtraHours ?? null,
       hltbCompletionist: times?.completionistHours ?? null,
       hltbStatus: lookup.status,
     });
+    if (!updated) throw new LibraryEntryNotFoundError();
+    return updated;
   }
 
   async remove(id: string, userId: string) {
     const entry = await this.repo.findByIdAndUser(id, userId);
     if (!entry) throw new LibraryEntryNotFoundError();
-    await this.repo.delete(id);
+    const removed = await this.repo.delete(id, userId);
+    if (removed === 0) throw new LibraryEntryNotFoundError();
   }
 
   async getStats(userId: string): Promise<LibraryStats> {

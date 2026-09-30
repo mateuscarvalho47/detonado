@@ -17,6 +17,12 @@ import type { DetailFormValues } from "../schema/detailSchema";
 import { DetailInfoPanel } from "./DetailInfoPanel";
 
 const RATING_TICKS = Array.from({ length: 9 }, (_, i) => i);
+const HOURS_MAX = 99999.9;
+
+function clampHours(value: number) {
+	const clamped = Math.min(HOURS_MAX, Math.max(0, value));
+	return Math.round(clamped * 10) / 10;
+}
 
 function todayInputValue() {
 	const now = new Date();
@@ -136,7 +142,7 @@ export function DetailEditForm({
 											<button
 												type="button"
 												onClick={() =>
-													field.onChange(Math.max(0, field.value - 0.5))
+													field.onChange(clampHours(field.value - 0.5))
 												}
 												className="flex items-center justify-center w-9 shrink-0 h-full text-text-dim hover:text-text-hi hover:bg-bg-3 border-r border-border-soft transition-colors cursor-pointer bg-transparent"
 											>
@@ -154,7 +160,7 @@ export function DetailEditForm({
 															e.target.value.replace(",", "."),
 														);
 														field.onChange(
-															Number.isNaN(val) ? 0 : Math.max(0, val),
+															Number.isNaN(val) ? 0 : clampHours(val),
 														);
 													}}
 													className="w-14 text-center bg-transparent border-0 outline-none text-text-hi text-body"
@@ -163,7 +169,9 @@ export function DetailEditForm({
 											</div>
 											<button
 												type="button"
-												onClick={() => field.onChange(field.value + 0.5)}
+												onClick={() =>
+													field.onChange(clampHours(field.value + 0.5))
+												}
 												className="flex items-center justify-center w-9 shrink-0 h-full text-text-dim hover:text-text-hi hover:bg-bg-3 border-l border-border-soft transition-colors cursor-pointer bg-transparent"
 											>
 												<span className="text-[17px] leading-none select-none">
@@ -228,6 +236,7 @@ export function DetailEditForm({
 								{...register("notes")}
 								placeholder="Suas anotações sobre o jogo..."
 								rows={4}
+								maxLength={4000}
 								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo resize-y leading-relaxed"
 							/>
 						</div>

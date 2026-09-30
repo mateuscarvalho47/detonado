@@ -18,6 +18,7 @@ export interface DetailPatch {
 }
 
 export function detailPatch(values: DetailFormValues): DetailPatch {
+	// Queue statuses hide these fields. Omitting them leaves the stored hours and rating in place.
 	const withProgress = WITH_PROGRESS.has(values.status);
 	const platform = values.userPlatform.trim();
 	return {

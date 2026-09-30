@@ -163,9 +163,11 @@ describe('AuthService.login', () => {
     vi.mocked(verifyPassword).mockResolvedValue(true);
     const service = new AuthService(repo as never);
 
-    await expect(service.login({ email: 'a@b.com', password: '12345678' })).rejects.toThrow(
-      EmailNotVerifiedError,
-    );
+    await expect(service.login({ email: 'a@b.com', password: '12345678' })).rejects.toMatchObject({
+      name: EmailNotVerifiedError.name,
+      code: 'EMAIL_NOT_VERIFIED',
+      statusCode: 403,
+    });
   });
 });
 

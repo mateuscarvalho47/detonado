@@ -25,7 +25,8 @@ export function LoginForm() {
 	const email = watch("email");
 
 	const emailNotVerified =
-		login.error instanceof ApiError && login.error.status === 403;
+		login.error instanceof ApiError &&
+		login.error.code === "EMAIL_NOT_VERIFIED";
 
 	return (
 		<form onSubmit={onSubmit} className="flex flex-col gap-3.5">

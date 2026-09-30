@@ -1,5 +1,8 @@
+import { PROGRESS_STATUSES } from '@detonado/shared';
 import type { Prisma, PrismaClient } from '@/generated/prisma/client.js';
 import type { UpdateLibraryEntryInput } from './library.schema.js';
+
+const progressStatuses = { in: [...PROGRESS_STATUSES] };
 
 export class LibraryRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -23,15 +26,19 @@ export class LibraryRepository {
     return this.db.libraryEntry.create({ data });
   }
 
-  update(
+  async update(
     id: string,
+    userId: string,
     data: Omit<UpdateLibraryEntryInput, 'completedAt'> & { completedAt?: Date | null },
   ) {
-    return this.db.libraryEntry.update({ where: { id }, data });
+    const result = await this.db.libraryEntry.updateMany({ where: { id, userId }, data });
+    if (result.count === 0) return null;
+    return this.db.libraryEntry.findFirst({ where: { id, userId } });
   }
 
-  updateHltb(
+  async updateHltb(
     id: string,
+    userId: string,
     data: {
       hltbMain: number | null;
       hltbMainExtra: number | null;
@@ -39,11 +46,14 @@ export class LibraryRepository {
       hltbStatus: 'FOUND' | 'MISS' | 'FAILED';
     },
   ) {
-    return this.db.libraryEntry.update({ where: { id }, data });
+    const result = await this.db.libraryEntry.updateMany({ where: { id, userId }, data });
+    if (result.count === 0) return null;
+    return this.db.libraryEntry.findFirst({ where: { id, userId } });
   }
 
-  delete(id: string) {
-    return this.db.libraryEntry.delete({ where: { id } });
+  async delete(id: string, userId: string) {
+    const result = await this.db.libraryEntry.deleteMany({ where: { id, userId } });
+    return result.count;
   }
 
   async getStats(userId: string) {
@@ -57,7 +67,10 @@ export class LibraryRepository {
       completedTimeline,
     ] = await Promise.all([
       this.db.libraryEntry.count({ where: { userId } }),
-      this.db.libraryEntry.aggregate({ where: { userId }, _sum: { hoursPlayed: true } }),
+      this.db.libraryEntry.aggregate({
+        where: { userId, status: progressStatuses },
+        _sum: { hoursPlayed: true },
+      }),
       this.db.libraryEntry.groupBy({
         by: ['status'],
         where: { userId },
@@ -65,7 +78,7 @@ export class LibraryRepository {
       }),
       this.db.libraryEntry.groupBy({
         by: ['rating'],
-        where: { userId, rating: { not: null } },
+        where: { userId, rating: { not: null }, status: progressStatuses },
         _count: { rating: true },
         orderBy: { rating: 'asc' },
       }),

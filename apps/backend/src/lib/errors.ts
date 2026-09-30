@@ -28,6 +28,12 @@ export class ForbiddenError extends AppError {
   }
 }
 
+export class CsrfError extends AppError {
+  constructor() {
+    super('CSRF_INVALID', 403, 'Sessão expirada. Atualize a página e tente de novo.');
+  }
+}
+
 export class NotFoundError extends AppError {
   constructor(resource: string) {
     super('NOT_FOUND', 404, `${resource} não encontrado`);
@@ -52,6 +58,16 @@ export class EmailDeliveryError extends AppError {
       'EMAIL_DELIVERY_FAILED',
       503,
       'Não foi possível enviar o e-mail. Tente de novo em alguns minutos.',
+    );
+  }
+}
+
+export class DatabaseUnavailableError extends AppError {
+  constructor() {
+    super(
+      'DATABASE_UNAVAILABLE',
+      503,
+      'O banco está acordando. Espere alguns segundos e tente de novo.',
     );
   }
 }

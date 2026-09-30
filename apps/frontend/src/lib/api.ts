@@ -78,8 +78,18 @@ async function request<T>(
 	});
 
 	if (needsCsrf && res.status === 403 && attempt === 0) {
-		clearCsrfToken();
-		return request<T>(path, init, attempt + 1);
+		const body = await res.json().catch(() => ({}));
+		if (body?.error?.code === "CSRF_INVALID") {
+			clearCsrfToken();
+			return request<T>(path, init, attempt + 1);
+		}
+		const err = body?.error;
+		throw new ApiError(
+			err?.code ?? "UNKNOWN_ERROR",
+			err?.message ?? "An unexpected error occurred",
+			err?.details,
+			res.status,
+		);
 	}
 
 	if (!res.ok) {

@@ -103,12 +103,14 @@ describe("api.post", () => {
 		expect(spy).toHaveBeenCalledTimes(3);
 	});
 
-	it("fetches a new csrf token after a 403 and retries once", async () => {
+	it("fetches a new csrf token after a csrf rejection and retries once", async () => {
 		const spy = vi
 			.spyOn(globalThis, "fetch")
 			.mockResolvedValueOnce(jsonResponse(200, { token: "stale" }))
 			.mockResolvedValueOnce(
-				jsonResponse(403, { error: { code: "FORBIDDEN", message: "nope" } }),
+				jsonResponse(403, {
+					error: { code: "CSRF_INVALID", message: "nope" },
+				}),
 			)
 			.mockResolvedValueOnce(jsonResponse(200, { token: "fresh" }))
 			.mockResolvedValueOnce(jsonResponse(201, { id: "42" }));
@@ -118,19 +120,41 @@ describe("api.post", () => {
 		expect(new Headers(retry.headers).get("x-csrf-token")).toBe("fresh");
 	});
 
-	it("throws when the retried mutation is still forbidden", async () => {
+	it("throws when the retried mutation is still rejected", async () => {
 		vi.spyOn(globalThis, "fetch")
 			.mockResolvedValueOnce(jsonResponse(200, { token: "a" }))
 			.mockResolvedValueOnce(
-				jsonResponse(403, { error: { code: "FORBIDDEN", message: "nope" } }),
+				jsonResponse(403, {
+					error: { code: "CSRF_INVALID", message: "nope" },
+				}),
 			)
 			.mockResolvedValueOnce(jsonResponse(200, { token: "b" }))
 			.mockResolvedValueOnce(
-				jsonResponse(403, { error: { code: "FORBIDDEN", message: "nope" } }),
+				jsonResponse(403, {
+					error: { code: "CSRF_INVALID", message: "nope" },
+				}),
 			);
 		await expect(
 			api.post("/auth/login", { email: "a@b.com", password: "12345678" }),
-		).rejects.toMatchObject({ code: "FORBIDDEN", status: 403 });
+		).rejects.toMatchObject({ code: "CSRF_INVALID", status: 403 });
+	});
+
+	it("does not retry a business 403", async () => {
+		const spy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValueOnce(jsonResponse(200, { token: "csrf-token" }))
+			.mockResolvedValueOnce(
+				jsonResponse(403, {
+					error: {
+						code: "EMAIL_NOT_VERIFIED",
+						message: "Email não verificado. Verifique sua caixa de entrada.",
+					},
+				}),
+			);
+		await expect(
+			api.post("/auth/login", { email: "a@b.com", password: "12345678" }),
+		).rejects.toMatchObject({ code: "EMAIL_NOT_VERIFIED", status: 403 });
+		expect(spy).toHaveBeenCalledTimes(2);
 	});
 });
 

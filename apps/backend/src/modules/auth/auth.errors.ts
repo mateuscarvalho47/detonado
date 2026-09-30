@@ -1,4 +1,4 @@
-import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError } from '@/lib/errors.js';
+import { AppError, ConflictError, NotFoundError, UnauthorizedError } from '@/lib/errors.js';
 
 export class EmailAlreadyTakenError extends ConflictError {
   constructor() {
@@ -12,9 +12,9 @@ export class InvalidCredentialsError extends UnauthorizedError {
   }
 }
 
-export class EmailNotVerifiedError extends ForbiddenError {
+export class EmailNotVerifiedError extends AppError {
   constructor() {
-    super('Email não verificado. Verifique sua caixa de entrada.');
+    super('EMAIL_NOT_VERIFIED', 403, 'Email não verificado. Verifique sua caixa de entrada.');
   }
 }
 

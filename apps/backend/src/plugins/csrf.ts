@@ -1,6 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import fp from 'fastify-plugin';
-import { ForbiddenError } from '@/lib/errors.js';
+import { CsrfError } from '@/lib/errors.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -23,7 +23,7 @@ export default fp(async (app) => {
   app.addHook('onRequest', async (req) => {
     if (SAFE_METHODS.has(req.method)) return;
     if (!csrfTokensMatch(req.session.csrfToken, req.headers['x-csrf-token'])) {
-      throw new ForbiddenError('Sessão expirada. Atualize a página e tente de novo.');
+      throw new CsrfError();
     }
   });
 });

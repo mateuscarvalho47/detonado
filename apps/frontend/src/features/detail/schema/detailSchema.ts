@@ -11,8 +11,8 @@ export const detailSchema = z.object({
 	]),
 	userPlatform: z.string(),
 	rating: z.number().min(0).max(10),
-	hoursPlayed: z.number().min(0),
-	notes: z.string(),
+	hoursPlayed: z.number().min(0).max(99999.9),
+	notes: z.string().max(4000),
 	completedAt: z.string(),
 });
 

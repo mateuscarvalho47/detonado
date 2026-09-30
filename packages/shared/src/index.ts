@@ -22,13 +22,15 @@ export const resendVerificationSchema = z.object({
   email: emailField,
 });
 
-export const updateAccountSchema = z.object({
-  currentPassword: z.string().min(1, 'Senha atual obrigatória'),
-  email: emailField.optional(),
-  newPassword: z.string().min(8).max(100).optional(),
-}).refine((d) => d.email !== undefined || d.newPassword !== undefined, {
-  message: 'Informe pelo menos um campo para atualizar',
-});
+export const updateAccountSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Senha atual obrigatória'),
+    email: emailField.optional(),
+    newPassword: z.string().min(8).max(100).optional(),
+  })
+  .refine((d) => d.email !== undefined || d.newPassword !== undefined, {
+    message: 'Informe pelo menos um campo para atualizar',
+  });
 
 export const deleteAccountSchema = z.object({
   password: z.string().min(1, 'Senha obrigatória para confirmar a exclusão'),
@@ -76,6 +78,36 @@ export const LibraryStatusEnum = z.enum([
 
 export type LibraryStatus = z.infer<typeof LibraryStatusEnum>;
 
+// Hours and a rating belong to these statuses. Queue rows may still store both;
+// library stats ignore them.
+export const PROGRESS_STATUSES = ['PLAYING', 'PAUSED', 'COMPLETED', 'DROPPED'] as const;
+
+// Decimal(6, 1) on LibraryEntry.hoursPlayed.
+export const HOURS_MAX = 99999.9;
+export const NOTES_MAX = 4000;
+
+const calendarDateField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida')
+  .refine((value) => {
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) return false;
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return (
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
+    );
+  }, 'Data inválida');
+
+function roundHours(value: unknown): unknown {
+  if (value === undefined) return undefined;
+  if (value == null) return null;
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numeric)) return value;
+  return Math.round(numeric * 10) / 10;
+}
+
 export const createLibraryEntryInput = z.object({
   igdbId: z.number().int().positive(),
   status: LibraryStatusEnum,
@@ -86,10 +118,13 @@ export const updateLibraryEntryInput = z
   .object({
     status: LibraryStatusEnum,
     userPlatform: z.string().nullable(),
-    rating: z.preprocess((v) => (v != null ? Math.round(Number(v)) : null), z.number().int().min(0).max(10).nullable()),
-    hoursPlayed: z.number().min(0).nullable(),
-    notes: z.string().nullable(),
-    completedAt: z.string().nullable(),
+    rating: z.preprocess(
+      (v) => (v != null ? Math.round(Number(v)) : null),
+      z.number().int().min(0).max(10).nullable(),
+    ),
+    hoursPlayed: z.preprocess(roundHours, z.number().min(0).max(HOURS_MAX).nullable()),
+    notes: z.string().max(NOTES_MAX).nullable(),
+    completedAt: calendarDateField.nullable(),
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, { message: 'At least one field required' });
