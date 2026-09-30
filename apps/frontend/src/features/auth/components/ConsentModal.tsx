@@ -14,7 +14,7 @@ export function ConsentModal() {
 
 	return (
 		<Dialog open onOpenChange={() => {}}>
-			<DialogContent className="max-w-md bg-bg-1 border border-border rounded-xl [&>button]:hidden shadow-panel">
+			<DialogContent className="max-w-md bg-bg-1 border border-border [&>button]:hidden shadow-none">
 				<DialogHeader>
 					<DialogTitle className="text-heading text-text-hi">
 						Precisamos da sua confirmação

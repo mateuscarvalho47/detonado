@@ -36,7 +36,7 @@ export function LibraryCard({ game }: LibraryCardProps) {
 			}
 			className="flex flex-col gap-2.5 bg-transparent border-0 p-0 cursor-pointer text-left"
 		>
-			<div className="relative aspect-3/4 rounded-sm overflow-hidden">
+			<div className="relative aspect-3/4 rounded-[2px] overflow-hidden">
 				<Cover
 					game={{
 						name: game.name,
@@ -48,7 +48,7 @@ export function LibraryCard({ game }: LibraryCardProps) {
 					hover
 				/>
 				<div className="absolute top-1.5 right-1.5 max-w-[calc(100%-12px)] pointer-events-none">
-					<div className="inline-flex max-w-full bg-bg-0 border border-text-hi px-1.5 py-1">
+					<div className="inline-flex max-w-full bg-bg-0 border border-border-strong px-1.5 py-1">
 						<StatusBadge status={game.status} size="sm" />
 					</div>
 				</div>

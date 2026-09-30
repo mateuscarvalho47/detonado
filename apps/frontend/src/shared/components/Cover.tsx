@@ -112,7 +112,6 @@ export function Cover({
 
 	const c = coverColors(game.cover);
 	const seed = hashCode(game.name);
-	const angle = 90 + (seed % 60) - 30;
 	const xOff = 30 + (seed % 30);
 	const yOff = 50 + ((seed >> 4) % 30);
 
@@ -134,7 +133,6 @@ export function Cover({
 				...style,
 			}}
 		>
-			<div className="cv-stripe" style={{ transform: `rotate(${angle}deg)` }} />
 			<div
 				className="cv-glyph"
 				style={{ fontSize: s.glyph, color: c.ink, opacity: 0.08 }}

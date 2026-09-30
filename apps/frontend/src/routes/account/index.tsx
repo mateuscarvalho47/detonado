@@ -16,7 +16,7 @@ function AccountPage() {
 	return (
 		<div className="max-w-xl mx-auto px-6 py-12 flex flex-col gap-10">
 			<div>
-				<p className="font-mono text-overline tracking-widest uppercase text-accent-bright mb-2">
+				<p className="font-mono text-overline tracking-widest uppercase text-text-lo mb-2">
 					Conta
 				</p>
 				<h1 className="text-2xl font-semibold tracking-tight text-text-hi">

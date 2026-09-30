@@ -70,8 +70,7 @@ export function Sidebar({
 					{["Ctrl", "K"].map((k) => (
 						<kbd
 							key={k}
-							className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded text-overline font-medium font-mono text-text-md bg-bg-3 border border-border"
-							style={{ boxShadow: "0 1px 0 oklch(0 0 0 / 0.5)" }}
+							className="inline-flex items-center justify-center h-4 min-w-4 px-1 text-overline font-medium font-mono text-text-md bg-bg-3 border border-border"
 						>
 							{k}
 						</kbd>

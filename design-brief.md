@@ -29,9 +29,9 @@ Tempos do HowLongToBeat na ficha e no modal de adicionar: **Principal**, **+ Ext
 
 ## Visual
 
-Tema escuro, forçado. Tinta quente em cinco degraus (página, painel, faixa, fio, osso), um grotesco (IBM Plex Sans), números tabulares (IBM Plex Mono). A capa do jogo carrega a cor. O chrome não tem brilho, gradiente nem botão em degradê.
+Tema escuro, forçado. Tinta quente: página e painel ficam perto, e o fio é que separa. Um grotesco (IBM Plex Sans), números tabulares (IBM Plex Mono). A capa do jogo carrega a cor. Painéis, botões e campos têm canto reto. O chrome não tem brilho, vidro, sombra de card nem botão em degradê.
 
-Status aparece como texto e um filete de 2 px. Na grade, esse texto fica numa placa da cor da página, com fio de osso, para continuar legível em cima da capa. Lista densa no desktop, grade no celular. A landing é estática e tem duas ações: **Criar conta** e **Já tenho conta**.
+Status aparece como texto e um filete de 2 px. Na grade, esse texto fica numa placa da cor da página, com o fio forte, para continuar legível em cima da capa. A capa na grade e nas linhas tem um raio de 2 px; a capa da ficha é quadrada. Lista densa no desktop, grade no celular. A landing é estática e tem duas ações: **Criar conta** e **Já tenho conta**.
 
 A home logada é a prateleira:
 

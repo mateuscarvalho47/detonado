@@ -47,7 +47,7 @@ export function LibraryScreen() {
 					{Array.from({ length: 12 }, (_, i) => i).map((i) => (
 						<div
 							key={i}
-							className="aspect-3/4 bg-bg-1 rounded-sm animate-pulse"
+							className="aspect-3/4 bg-bg-1 rounded-[2px] animate-pulse"
 						/>
 					))}
 				</div>

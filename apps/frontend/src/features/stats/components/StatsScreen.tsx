@@ -18,11 +18,11 @@ function Card({
 	sub?: React.ReactNode;
 }) {
 	return (
-		<div className="bg-bg-1 border border-border-soft rounded-lg p-5.5">
+		<div className="bg-bg-1 border border-border-soft p-5">
 			{(title || sub) && (
 				<div className="flex items-start justify-between gap-4 mb-4.5">
 					{title && (
-						<div className="text-[15.5px] font-semibold tracking-tight text-text-hi">
+						<div className="text-heading font-semibold tracking-tight text-text-hi">
 							{title}
 						</div>
 					)}
@@ -43,7 +43,7 @@ export function StatsScreen() {
 			<div className="px-4 pt-6 lg:px-6 lg:pt-7">
 				<div className="flex flex-col gap-5">
 					{[1, 2, 3].map((i) => (
-						<div key={i} className="h-50 bg-bg-1 rounded-lg animate-pulse" />
+						<div key={i} className="h-50 bg-bg-1 animate-pulse" />
 					))}
 				</div>
 			</div>
@@ -93,7 +93,7 @@ export function StatsScreen() {
 
 			<div className="flex flex-col gap-5">
 				{/* Big numbers */}
-				<div className="grid grid-cols-2 md:grid-cols-4 bg-bg-1 border border-border-soft rounded-lg overflow-hidden">
+				<div className="grid grid-cols-2 md:grid-cols-4 bg-bg-1 border border-border-soft overflow-hidden">
 					{[
 						{ label: "Total de jogos", value: stats.totalGames, unit: "" },
 						{
@@ -123,14 +123,11 @@ export function StatsScreen() {
 						>
 							<div className="mono-label">{b.label}</div>
 							<div className="flex items-baseline gap-1.5">
-								<span
-									className="text-3xl font-semibold leading-none tabular-nums text-text-hi"
-									style={{ letterSpacing: "-0.04em" }}
-								>
+								<span className="text-2xl font-semibold leading-none tabular-nums text-text-hi">
 									{b.value}
 								</span>
 								{b.unit && (
-									<span className="text-[19px] md:text-[21px] font-medium text-text-lo font-mono">
+									<span className="text-body font-medium text-text-lo font-mono">
 										{b.unit}
 									</span>
 								)}

@@ -188,53 +188,54 @@
 /* ═══ Dark theme ═══ */
 :root[data-theme="dark"],
 .dark {
-	/* Warm ink. Steps are far enough apart to read; color stays on the covers. */
-	--background: oklch(0.17 0.006 70);
+	/* Warm ink. Page and panel stay close; the line does the separating. */
+	--radius: 0;
+	--background: oklch(0.145 0.006 70);
 	--foreground: oklch(0.97 0.008 90);
-	--card: oklch(0.23 0.008 70);
+	--card: oklch(0.215 0.008 70);
 	--card-foreground: oklch(0.97 0.008 90);
-	--popover: oklch(0.23 0.008 70);
+	--popover: oklch(0.215 0.008 70);
 	--popover-foreground: oklch(0.97 0.008 90);
 	--primary: oklch(0.94 0.012 90);
 	--primary-foreground: oklch(0.2 0.01 50);
-	--secondary: oklch(0.28 0.008 70);
+	--secondary: oklch(0.28 0.009 70);
 	--secondary-foreground: oklch(0.97 0.008 90);
-	--muted: oklch(0.25 0.008 70);
+	--muted: oklch(0.28 0.009 70);
 	--muted-foreground: oklch(0.78 0.012 85);
-	--accent: oklch(0.28 0.008 70);
+	--accent: oklch(0.28 0.009 70);
 	--accent-foreground: oklch(0.97 0.008 90);
 	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(0.42 0.012 70);
-	--input: oklch(0.28 0.008 70);
+	--border: oklch(0.52 0.012 75);
+	--input: oklch(0.28 0.009 70);
 	--ring: oklch(0.78 0.012 85);
 	--chart-1: oklch(0.81 0.117 11.638);
 	--chart-2: oklch(0.645 0.246 16.439);
 	--chart-3: oklch(0.586 0.253 17.585);
 	--chart-4: oklch(0.514 0.222 16.935);
 	--chart-5: oklch(0.455 0.188 13.697);
-	--sidebar: oklch(0.21 0.007 70);
+	--sidebar: oklch(0.145 0.006 70);
 	--sidebar-foreground: oklch(0.97 0.008 90);
 	--sidebar-primary: oklch(0.94 0.012 90);
 	--sidebar-primary-foreground: oklch(0.2 0.01 50);
-	--sidebar-accent: oklch(0.28 0.008 70);
+	--sidebar-accent: oklch(0.28 0.009 70);
 	--sidebar-accent-foreground: oklch(0.97 0.008 90);
-	--sidebar-border: oklch(0.42 0.012 70);
+	--sidebar-border: oklch(0.52 0.012 75);
 	--sidebar-ring: oklch(0.78 0.012 85);
 
 	/* Custom layers — dark ink */
-	--bg-0: oklch(0.17 0.006 70);
-	--bg-1: oklch(0.23 0.008 70);
+	--bg-0: oklch(0.145 0.006 70);
+	--bg-1: oklch(0.215 0.008 70);
 	--bg-2: oklch(0.28 0.009 70);
-	--bg-3: oklch(0.33 0.01 70);
-	--bg-4: oklch(0.39 0.011 70);
+	--bg-3: oklch(0.34 0.01 70);
+	--bg-4: oklch(0.4 0.011 70);
 
-	--border-soft: oklch(0.4 0.012 70);
-	--border-strong: oklch(0.55 0.014 75);
+	--border-soft: oklch(0.52 0.012 75);
+	--border-strong: oklch(0.68 0.012 80);
 
 	--text-hi: oklch(0.97 0.008 90);
-	--text-md: oklch(0.84 0.012 85);
-	--text-lo: oklch(0.74 0.012 80);
-	--text-dim: oklch(0.64 0.01 75);
+	--text-md: oklch(0.86 0.01 85);
+	--text-lo: oklch(0.78 0.012 85);
+	--text-dim: oklch(0.7 0.01 80);
 
 	--accent-bright: oklch(0.94 0.014 90);
 	--accent-soft: oklch(0.34 0.012 70 / 0.55);
@@ -242,13 +243,13 @@
 
 	--error: oklch(0.72 0.18 22);
 
-	--grid-line: oklch(0.3 0.008 70);
+	--grid-line: oklch(0.28 0.008 70);
 	--glow-accent: transparent;
-	--scrollbar-thumb: oklch(0.4 0.01 70);
-	--scrollbar-thumb-hover: oklch(0.5 0.012 70);
+	--scrollbar-thumb: oklch(0.42 0.01 70);
+	--scrollbar-thumb-hover: oklch(0.52 0.012 75);
 	--shadow-base: oklch(0 0 0 / 0.45);
-	--hero-overlay-start: oklch(0.17 0.006 70 / 0);
-	--hero-overlay-end: oklch(0.17 0.006 70);
+	--hero-overlay-start: oklch(0.145 0.006 70 / 0);
+	--hero-overlay-end: oklch(0.145 0.006 70);
 }
 
 @layer base {
@@ -398,30 +399,6 @@
 	height: 100%;
 	overflow: hidden;
 	isolation: isolate;
-	box-shadow:
-		0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-		0 8px 24px rgba(0, 0, 0, 0.35);
-	transition: box-shadow 0.25s;
-}
-.cv[data-hover="1"]:hover {
-	box-shadow:
-		0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-		0 8px 24px rgba(0, 0, 0, 0.45);
-}
-.cv-stripe {
-	position: absolute;
-	left: -25%;
-	right: -25%;
-	top: 55%;
-	height: 18%;
-	background: linear-gradient(
-		90deg,
-		transparent,
-		rgba(255, 255, 255, 0.18),
-		transparent
-	);
-	mix-blend-mode: overlay;
-	pointer-events: none;
 }
 .cv-glyph {
 	position: absolute;

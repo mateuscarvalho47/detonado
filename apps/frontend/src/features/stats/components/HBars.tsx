@@ -14,9 +14,9 @@ export function HBars({ items, color = "oklch(0.78 0.012 80)" }: HBarsProps) {
 					style={{ gridTemplateColumns: "130px 1fr 32px" }}
 				>
 					<span className="text-text-md truncate">{item.label}</span>
-					<div className="h-2.5 bg-bg-2 rounded-full overflow-hidden">
+					<div className="h-2.5 bg-bg-2 overflow-hidden">
 						<div
-							className="h-full rounded-full transition-[width] duration-700 ease-out"
+							className="h-full transition-[width] duration-700 ease-out"
 							style={{
 								width: `${(item.count / max) * 100}%`,
 								background: color,

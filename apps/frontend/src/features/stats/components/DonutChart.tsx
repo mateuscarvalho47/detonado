@@ -83,14 +83,11 @@ export function DonutChart({ stats }: DonutChartProps) {
 							className="grid gap-2.5 items-center text-body"
 							style={{ gridTemplateColumns: "12px 80px 1fr 28px" }}
 						>
-							<div
-								className="size-2.5 rounded-full"
-								style={{ background: s.color }}
-							/>
+							<div className="w-0.5 h-3" style={{ background: s.color }} />
 							<span className="text-text-md">{s.label}</span>
-							<div className="h-1.5 bg-bg-2 rounded-full overflow-hidden">
+							<div className="h-1.5 bg-bg-2 overflow-hidden">
 								<div
-									className="h-full rounded-full transition-[width] duration-700 ease-out"
+									className="h-full transition-[width] duration-700 ease-out"
 									style={{ width: `${pct}%`, background: s.color }}
 								/>
 							</div>

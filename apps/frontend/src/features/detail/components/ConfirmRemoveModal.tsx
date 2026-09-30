@@ -29,11 +29,8 @@ export function ConfirmRemoveModal({
 				if (!open) onCancel();
 			}}
 		>
-			<AlertDialogContent className="max-w-sm text-center bg-bg-1 border border-border rounded-xl shadow-panel">
+			<AlertDialogContent className="max-w-sm text-center bg-bg-1 border border-border shadow-none">
 				<div className="flex flex-col items-center gap-3">
-					<div className="size-12 flex items-center justify-center rounded-full text-xl bg-[oklch(0.3_0.1_25/0.3)] text-error">
-						⚠
-					</div>
 					<AlertDialogHeader className="space-y-0">
 						<AlertDialogTitle className="text-title text-text-hi">
 							Remover jogo?

@@ -27,6 +27,6 @@ describe("LibraryCard", () => {
 		render(<LibraryCard game={game} />);
 		const plate = screen.getByText("Jogando").closest(".bg-bg-0");
 		expect(plate).not.toBeNull();
-		expect(plate).toHaveClass("border-text-hi");
+		expect(plate).toHaveClass("border-border-strong");
 	});
 });

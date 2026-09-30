@@ -22,7 +22,7 @@ export function Histogram({ distribution }: HistogramProps) {
 					<div key={rating} className="flex flex-col gap-1.5 h-full">
 						<div className="flex-1 flex items-end justify-center">
 							<div
-								className="w-full min-h-1 rounded-t-sm flex items-start justify-center pt-1 transition-[height] duration-700 ease-out"
+								className="w-full min-h-1 flex items-start justify-center pt-1 transition-[height] duration-700 ease-out"
 								style={{
 									height: `${heightPct}%`,
 									background: isMode

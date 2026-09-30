@@ -31,7 +31,7 @@ export function LibraryList({ games }: LibraryListProps) {
 	const navigate = useNavigate();
 
 	return (
-		<div className="flex flex-col bg-bg-1 border border-border-soft rounded-lg overflow-hidden">
+		<div className="flex flex-col bg-bg-1 border border-border-soft overflow-hidden">
 			{/* Header — desktop only */}
 			<div
 				className="hidden md:grid gap-3.5 items-center px-4 py-3 font-mono text-overline uppercase tracking-[0.06em] text-text-lo border-b border-border-soft bg-bg-2"
@@ -72,7 +72,7 @@ export function LibraryList({ games }: LibraryListProps) {
 							className="md:hidden grid items-center gap-3 px-4 py-2.5"
 							style={{ gridTemplateColumns: MOBILE_GRID }}
 						>
-							<div className="w-10 h-13.5 rounded-xs overflow-hidden">
+							<div className="w-10 h-13.5 rounded-[2px] overflow-hidden">
 								<Cover
 									game={{
 										name: game.name,
@@ -85,10 +85,10 @@ export function LibraryList({ games }: LibraryListProps) {
 								/>
 							</div>
 							<div className="flex flex-col gap-0.5 min-w-0">
-								<span className="text-overline text-text-hi font-medium truncate">
+								<span className="text-body text-text-hi font-medium truncate">
 									{game.name}
 								</span>
-								<span className="text-[9px] font-mono text-text-lo truncate">
+								<span className="text-caption font-mono text-text-lo truncate">
 									{game.userPlatform ?? game.platforms[0] ?? "—"}
 								</span>
 							</div>
@@ -97,7 +97,7 @@ export function LibraryList({ games }: LibraryListProps) {
 								{game.rating != null && (
 									<span className="font-mono text-overline font-semibold text-text-hi">
 										{game.rating}
-										<span className="text-[9px] text-text-lo">/10</span>
+										<span className="text-caption text-text-lo">/10</span>
 									</span>
 								)}
 							</div>
@@ -108,7 +108,7 @@ export function LibraryList({ games }: LibraryListProps) {
 							className="hidden md:grid gap-3.5 items-center px-4 py-2.5"
 							style={{ gridTemplateColumns: DESKTOP_GRID }}
 						>
-							<div className="w-9 h-12 rounded-xs overflow-hidden">
+							<div className="w-9 h-12 rounded-[2px] overflow-hidden">
 								<Cover
 									game={{
 										name: game.name,

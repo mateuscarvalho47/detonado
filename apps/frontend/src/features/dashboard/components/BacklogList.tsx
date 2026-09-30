@@ -14,7 +14,7 @@ export function BacklogList({ games }: BacklogListProps) {
 	const shown = games.slice(0, 5);
 
 	return (
-		<div className="bg-bg-1 border border-border-soft rounded-lg px-6 py-5">
+		<div className="bg-bg-1 border border-border-soft p-5">
 			<div className="flex items-start justify-between mb-3.5">
 				<div>
 					<div className="text-heading font-semibold text-text-hi tracking-[-0.01em]">
@@ -56,7 +56,7 @@ export function BacklogList({ games }: BacklogListProps) {
 							<span className="text-caption text-text-dim font-medium">
 								#{idx + 1}
 							</span>
-							<div className="w-9 h-12 rounded-lg overflow-hidden">
+							<div className="w-9 h-12 rounded-[2px] overflow-hidden">
 								<Cover
 									game={{
 										name: game.name,

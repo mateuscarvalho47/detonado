@@ -44,7 +44,7 @@ export function AddToLibraryModal({
 			<DialogContent
 				showCloseButton={false}
 				aria-describedby={undefined}
-				className="p-0 gap-0 max-w-180 bg-bg-1 border border-border rounded-xl shadow-modal"
+				className="p-0 gap-0 max-w-180 bg-bg-1 border border-border shadow-none"
 			>
 				<DialogHeader className="flex flex-row items-center justify-between px-5 py-3.5 border-b border-border-soft">
 					<DialogTitle className="text-heading text-text-hi">
@@ -65,7 +65,7 @@ export function AddToLibraryModal({
 						style={{ gridTemplateColumns: "320px 1fr" }}
 					>
 						{/* Cover */}
-						<div className="w-40 sm:w-auto self-stretch rounded-md overflow-hidden mx-auto sm:mx-0">
+						<div className="w-40 sm:w-auto self-stretch rounded-[2px] overflow-hidden mx-auto sm:mx-0">
 							<Cover
 								game={{
 									name: game.name,

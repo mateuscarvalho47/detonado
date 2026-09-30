@@ -48,7 +48,7 @@ export function DetailEditForm({
 		<div className="px-6 py-6 pb-15">
 			<div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
 				{/* Edit form */}
-				<div className="bg-bg-1 border border-border-soft rounded-lg p-5.5">
+				<div className="bg-bg-1 border border-border-soft p-5">
 					<div className="text-heading font-semibold tracking-tight text-text-hi mb-5">
 						Editar entrada
 					</div>

@@ -6,7 +6,7 @@ interface DetailInfoPanelProps {
 
 export function DetailInfoPanel({ game }: DetailInfoPanelProps) {
 	return (
-		<div className="bg-bg-1 border border-border-soft rounded-lg p-5.5 self-start">
+		<div className="bg-bg-1 border border-border-soft p-5 self-start">
 			<div className="text-heading font-semibold tracking-tight text-text-hi mb-4">
 				Informações
 			</div>

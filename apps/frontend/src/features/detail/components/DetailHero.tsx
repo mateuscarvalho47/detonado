@@ -40,7 +40,7 @@ export function DetailHero({
 					variant="outline"
 					size="sm"
 					onClick={onBack}
-					className="min-h-11 lg:min-h-0 backdrop-blur-sm bg-bg-1/90 border-border-strong text-text-hi hover:bg-bg-1"
+					className="min-h-11 lg:min-h-0 bg-bg-1 border border-border-soft text-text-hi hover:bg-bg-2"
 				>
 					← Biblioteca
 				</Button>
@@ -52,7 +52,7 @@ export function DetailHero({
 						variant="ghost"
 						size="sm"
 						onClick={onRemove}
-						className="min-h-11 lg:min-h-0 backdrop-blur-sm bg-bg-1/90 border border-border-strong hover:bg-bg-1"
+						className="min-h-11 lg:min-h-0 bg-bg-1 border border-border-soft hover:bg-bg-2"
 						style={{ color: "oklch(0.75 0.14 25)" }}
 					>
 						Remover
@@ -89,7 +89,7 @@ export function DetailHero({
 					</div>
 
 					{/* Quick stats */}
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-2 p-4 border border-border-soft rounded-md backdrop-blur-sm bg-bg-1/70 text-left">
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-2 p-4 border border-border-soft bg-bg-1 text-left">
 						{[
 							{ label: "Status", val: statusDef.label },
 							{ label: "Plataforma", val: game.userPlatform ?? "—" },

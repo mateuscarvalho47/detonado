@@ -38,7 +38,7 @@ export function AgoraScreen() {
 			<div className="px-4 pt-6 lg:px-6 lg:pt-7">
 				<div className="flex flex-col gap-4">
 					{[1, 2, 3].map((i) => (
-						<div key={i} className="h-20 bg-bg-1 rounded-lg animate-pulse" />
+						<div key={i} className="h-20 bg-bg-1 animate-pulse" />
 					))}
 				</div>
 			</div>

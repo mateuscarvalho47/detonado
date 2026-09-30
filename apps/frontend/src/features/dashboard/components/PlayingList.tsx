@@ -16,7 +16,7 @@ export function PlayingList({ games }: PlayingListProps) {
 	const { setOpen } = useSearchModal();
 
 	return (
-		<div className="bg-bg-1 border border-border-soft rounded-lg px-6 py-5">
+		<div className="bg-bg-1 border border-border-soft p-5">
 			<div className="flex items-start justify-between mb-3.5">
 				<div>
 					<div className="text-heading font-semibold text-text-hi tracking-[-0.01em]">
@@ -40,8 +40,8 @@ export function PlayingList({ games }: PlayingListProps) {
 					Nenhum jogo em andamento
 				</div>
 			) : (
-				<div className="flex flex-col gap-2.5">
-					{games.map((game) => (
+				<div className="flex flex-col">
+					{games.map((game, idx) => (
 						<button
 							type="button"
 							key={game.igdbId}
@@ -51,9 +51,9 @@ export function PlayingList({ games }: PlayingListProps) {
 									params: { igdbId: String(game.igdbId) },
 								})
 							}
-							className="grid grid-cols-[48px_1fr_auto] gap-3.5 items-center p-2 bg-transparent border-0 rounded-lg cursor-pointer text-left transition-[background] w-full hover:bg-bg-2 font-[inherit]"
+							className={`grid grid-cols-[48px_1fr_auto] gap-3.5 items-center px-2 py-2.5 bg-transparent border-0 cursor-pointer text-left transition-[background] w-full hover:bg-bg-2 font-[inherit]${idx < games.length - 1 ? " border-b border-border-soft" : ""}`}
 						>
-							<div className="w-12 h-16 rounded-sm overflow-hidden">
+							<div className="w-12 h-16 rounded-[2px] overflow-hidden">
 								<Cover
 									game={{
 										name: game.name,
@@ -74,7 +74,7 @@ export function PlayingList({ games }: PlayingListProps) {
 								<span className="text-body font-medium text-text-hi truncate">
 									{game.name}
 								</span>
-								<span className="text-caption text-text-md tabular-nums">
+								<span className="text-caption font-mono text-text-lo tabular-nums">
 									{game.userPlatform ?? game.platforms[0]}
 									{game.hoursPlayed != null && game.hoursPlayed > 0
 										? ` · ${game.hoursPlayed}h`

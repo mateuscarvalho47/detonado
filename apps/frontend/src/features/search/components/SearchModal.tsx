@@ -62,12 +62,12 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 				}}
 			>
 				<DialogPortal>
-					<DialogOverlay className="bg-black/60 backdrop-blur-md supports-backdrop-filter:backdrop-blur-md" />
+					<DialogOverlay className="bg-black/60" />
 					<DialogPrimitive.Content
 						aria-describedby={undefined}
 						className="fixed top-5 sm:top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-160 px-4 outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-3 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-3 duration-200"
 					>
-						<div className="w-full rounded-xl border border-border overflow-hidden bg-bg-1 shadow-modal">
+						<div className="w-full border border-border overflow-hidden bg-bg-1">
 							{/* Header */}
 							<DialogPrimitive.Title asChild>
 								<div className="flex items-center gap-2.5 px-5 py-3.5 text-text-md border-b border-border-soft">
@@ -132,12 +132,12 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 													type="button"
 													key={game.igdbId}
 													onClick={() => handleSelect(game)}
-													className="grid gap-3 items-center w-full px-3 py-2.5 bg-transparent border-0 rounded-lg cursor-pointer text-left transition-[background] hover:bg-bg-2"
+													className="grid gap-3 items-center w-full px-3 py-2.5 bg-transparent border-0 cursor-pointer text-left transition-[background] hover:bg-bg-2"
 													style={{
 														gridTemplateColumns: "36px 1fr auto",
 													}}
 												>
-													<div className="w-9 h-12 rounded-lg overflow-hidden">
+													<div className="w-9 h-12 rounded-[2px] overflow-hidden">
 														<Cover
 															game={{
 																name: game.name,
