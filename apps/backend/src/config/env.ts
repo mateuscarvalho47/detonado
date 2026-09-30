@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { parseTrustProxy } from '@/lib/trustProxy.js';
+import { resolveTrustProxy } from '@/lib/trustProxy.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -19,7 +19,7 @@ const envSchema = z.object({
   TRUST_PROXY: z.preprocess(
     (value) => {
       try {
-        return parseTrustProxy(value);
+        return resolveTrustProxy(value, process.env.NODE_ENV);
       } catch {
         return value;
       }

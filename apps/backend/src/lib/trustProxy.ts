@@ -1,3 +1,10 @@
+export function resolveTrustProxy(value: unknown, nodeEnv: string | undefined): boolean | number {
+  if (value === undefined || value === null || value === '') {
+    return nodeEnv === 'production' ? 1 : false;
+  }
+  return parseTrustProxy(value);
+}
+
 export function parseTrustProxy(value: unknown): boolean | number {
   if (value === undefined || value === null || value === '') return false;
   if (typeof value === 'boolean') return value;
