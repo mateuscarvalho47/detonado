@@ -19,7 +19,7 @@ export class AuthController {
   register = async (req: FastifyRequest, reply: FastifyReply) => {
     const input = parse(registerSchema, req.body);
     await this.auth.register(input);
-    return reply.code(201).send({ message: 'Conta criada. Verifique seu email para ativar.' });
+    return reply.code(201).send({ message: 'Conta criada. Verifique seu e-mail para ativar.' });
   };
 
   login = async (req: FastifyRequest, reply: FastifyReply) => {

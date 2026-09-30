@@ -3,6 +3,7 @@ import { Cover } from "@/shared/components/Cover";
 import { StatusBadge } from "@/shared/components/StatusBadge";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import type { LibraryEntry } from "@/types/api";
+import { QueueMoveButtons } from "./QueueMoveButtons";
 
 function fmtDate(iso: string) {
 	return new Date(iso).toLocaleDateString("pt-BR", {
@@ -14,6 +15,7 @@ function fmtDate(iso: string) {
 
 interface LibraryListProps {
 	games: LibraryEntry[];
+	queueMode?: boolean;
 }
 
 const COLS = [
@@ -27,7 +29,7 @@ const COLS = [
 const DESKTOP_GRID = "48px 2.2fr 1.1fr 1fr 0.9fr 0.7fr 0.85fr";
 const MOBILE_GRID = "40px 1fr auto";
 
-export function LibraryList({ games }: LibraryListProps) {
+export function LibraryList({ games, queueMode = false }: LibraryListProps) {
 	const navigate = useNavigate();
 
 	return (
@@ -54,19 +56,8 @@ export function LibraryList({ games }: LibraryListProps) {
 					glyph: game.name[0],
 				};
 
-				return (
-					<button
-						type="button"
-						key={game.igdbId}
-						onClick={() =>
-							navigate({
-								to: "/library/$igdbId",
-								params: { igdbId: String(game.igdbId) },
-							})
-						}
-						className="bg-transparent border-0 cursor-pointer text-left text-heading transition-[background] w-full hover:bg-bg-2"
-						style={{ borderBottom: borderStyle }}
-					>
+				const row = (
+					<>
 						{/* Mobile row */}
 						<div
 							className="md:hidden grid items-center gap-3 px-4 py-2.5"
@@ -153,7 +144,55 @@ export function LibraryList({ games }: LibraryListProps) {
 								{fmtDate(game.createdAt)}
 							</div>
 						</div>
-					</button>
+					</>
+				);
+
+				if (!queueMode) {
+					return (
+						<button
+							type="button"
+							key={game.igdbId}
+							onClick={() =>
+								navigate({
+									to: "/library/$igdbId",
+									params: { igdbId: String(game.igdbId) },
+								})
+							}
+							className="bg-transparent border-0 cursor-pointer text-left text-heading transition-[background] w-full hover:bg-bg-2"
+							style={{ borderBottom: borderStyle }}
+						>
+							{row}
+						</button>
+					);
+				}
+
+				return (
+					<div
+						key={game.igdbId}
+						className="flex items-stretch"
+						style={{ borderBottom: borderStyle }}
+					>
+						<button
+							type="button"
+							onClick={() =>
+								navigate({
+									to: "/library/$igdbId",
+									params: { igdbId: String(game.igdbId) },
+								})
+							}
+							className="flex-1 min-w-0 bg-transparent border-0 cursor-pointer text-left text-heading transition-[background] hover:bg-bg-2"
+						>
+							{row}
+						</button>
+						<div className="flex items-center px-2 border-l border-border-soft">
+							<QueueMoveButtons
+								id={game.id}
+								name={game.name}
+								isFirst={idx === 0}
+								isLast={idx === games.length - 1}
+							/>
+						</div>
+					</div>
 				);
 			})}
 		</div>

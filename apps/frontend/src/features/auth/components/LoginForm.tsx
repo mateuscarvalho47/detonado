@@ -100,7 +100,9 @@ export function LoginForm() {
 						onClick={() => resend.mutate(email)}
 						className="w-full h-10"
 					>
-						{resend.isPending ? "Enviando..." : "Reenviar email de verificação"}
+						{resend.isPending
+							? "Enviando..."
+							: "Reenviar e-mail de verificação"}
 					</Button>
 					{resend.isSuccess && (
 						<p className="text-caption m-0 text-text-md text-center">

@@ -33,6 +33,14 @@ export class LibraryController {
     return reply.code(204).send();
   };
 
+  moveQueue = async (
+    req: FastifyRequest<{ Params: { id: string }; Body: { direction: 'up' | 'down' } }>,
+    reply: FastifyReply,
+  ) => {
+    const entry = await this.library.moveInQueue(req.params.id, req.userId, req.body.direction);
+    return reply.send(entry);
+  };
+
   refreshHltb = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const entry = await this.library.refreshHltb(req.params.id, req.userId);
     return reply.send(entry);

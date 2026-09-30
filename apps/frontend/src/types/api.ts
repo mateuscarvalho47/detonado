@@ -31,6 +31,7 @@ export interface LibraryEntry {
 	hltbMainExtra: number | null;
 	hltbCompletionist: number | null;
 	hltbStatus?: HltbStatus | null;
+	queuePosition?: number | null;
 	createdAt: string;
 	updatedAt: string;
 }

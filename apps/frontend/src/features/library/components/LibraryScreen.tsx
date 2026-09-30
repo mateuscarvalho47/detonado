@@ -21,6 +21,7 @@ import { StatusPills } from "./StatusPills";
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
 	{ value: "createdAt", label: "Data de adição" },
+	{ value: "queue", label: "Ordem da fila" },
 	{ value: "name", label: "Nome" },
 	{ value: "rating", label: "Avaliação" },
 	{ value: "hoursPlayed", label: "Horas jogadas" },
@@ -170,7 +171,14 @@ export function LibraryScreen() {
 			) : filters.view === "grid" ? (
 				<LibraryGrid games={filters.filtered} />
 			) : (
-				<LibraryList games={filters.filtered} />
+				<LibraryList
+					games={filters.filtered}
+					queueMode={
+						filters.statusFilter === "BACKLOG" &&
+						filters.sort === "queue" &&
+						filters.search.trim() === ""
+					}
+				/>
 			)}
 		</div>
 	);

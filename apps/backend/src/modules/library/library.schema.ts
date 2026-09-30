@@ -35,6 +35,7 @@ export const LibraryEntrySchema = z.object({
   hltbMainExtra: z.number().nullable(),
   hltbCompletionist: z.number().nullable(),
   hltbStatus: z.enum(['FOUND', 'MISS', 'FAILED']).nullable(),
+  queuePosition: z.number().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

@@ -3,7 +3,12 @@ import { persist } from "zustand/middleware";
 import type { GameStatus } from "@/types/api";
 
 export type LibraryView = "grid" | "list";
-export type LibrarySortField = "createdAt" | "name" | "rating" | "hoursPlayed";
+export type LibrarySortField =
+	| "createdAt"
+	| "name"
+	| "rating"
+	| "hoursPlayed"
+	| "queue";
 
 interface AppStore {
 	// Search modal

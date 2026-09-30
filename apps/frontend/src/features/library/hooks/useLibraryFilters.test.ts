@@ -42,6 +42,8 @@ const makeEntry = (
 		rating: number;
 		hoursPlayed: number;
 		createdAt: string;
+		notes: string;
+		queuePosition: number | null;
 	}> = {},
 ) => ({
 	id: "entry-1",
@@ -115,6 +117,39 @@ describe("useLibraryFilters — sorting", () => {
 		expect(result.current.filtered[1].name).toBe("Elden Ring");
 	});
 
+	it("sorts the queue with the first position ahead of an unnumbered game", () => {
+		mockState.librarySortField = "queue";
+		const library = [
+			makeEntry({
+				id: "1",
+				igdbId: 1,
+				name: "Terceiro",
+				queuePosition: 3,
+				createdAt: "2024-01-01T00:00:00Z",
+			}),
+			makeEntry({
+				id: "2",
+				igdbId: 2,
+				name: "Primeiro",
+				queuePosition: 1,
+				createdAt: "2024-03-01T00:00:00Z",
+			}),
+			makeEntry({
+				id: "3",
+				igdbId: 3,
+				name: "Sem lugar",
+				queuePosition: null,
+				createdAt: "2020-01-01T00:00:00Z",
+			}),
+		];
+		const { result } = renderHook(() => useLibraryFilters(library));
+		expect(result.current.filtered.map((entry) => entry.name)).toEqual([
+			"Primeiro",
+			"Terceiro",
+			"Sem lugar",
+		]);
+	});
+
 	it("sorts by hoursPlayed descending", () => {
 		mockState.librarySortField = "hoursPlayed";
 		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
@@ -150,6 +185,23 @@ describe("useLibraryFilters — search", () => {
 		mockState.librarySearch = "   ";
 		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
 		expect(result.current.filtered).toHaveLength(3);
+	});
+
+	it("finds a game by a word in the notes", () => {
+		mockState.librarySearch = "castelo";
+		const library = [
+			makeEntry({
+				id: "1",
+				igdbId: 1,
+				name: "Zelda",
+				notes: "Parei no castelo",
+			}),
+			makeEntry({ id: "2", igdbId: 2, name: "Elden Ring" }),
+		];
+		const { result } = renderHook(() => useLibraryFilters(library));
+		expect(result.current.filtered.map((entry) => entry.name)).toEqual([
+			"Zelda",
+		]);
 	});
 });
 

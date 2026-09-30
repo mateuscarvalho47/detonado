@@ -16,7 +16,7 @@ function TermsPage() {
 				Termos de Uso
 			</h1>
 			<p className="text-xs text-text-lo font-mono mb-8">
-				Última atualização: maio de 2026
+				Última atualização: setembro de 2026
 			</p>
 
 			<div className="flex flex-col gap-7 text-body text-text-md leading-relaxed">
@@ -43,11 +43,11 @@ function TermsPage() {
 						2. O serviço
 					</h2>
 					<p>
-						O Detonado é um aplicativo gratuito de rastreamento de biblioteca de
-						jogos pessoal. Oferecemos funcionalidades para catalogar jogos,
-						registrar status de progresso, notas e estatísticas de jogo. O
-						serviço é fornecido "no estado em que se encontra" e pode ser
-						alterado ou descontinuado a qualquer momento.
+						O Detonado é uma biblioteca pessoal de jogos. Você anota o que está
+						jogando, o que zerou e o que ficou na fila, com horas, nota e
+						anotações. A estante fica só na sua conta. O serviço é fornecido no
+						estado em que se encontra e pode ser alterado ou descontinuado a
+						qualquer momento.
 					</p>
 				</section>
 
@@ -78,7 +78,6 @@ function TermsPage() {
 						<li>Qualquer atividade ilegal ou fraudulenta.</li>
 						<li>Tentar acessar dados de outros usuários.</li>
 						<li>Sobrecarregar ou prejudicar a infraestrutura do serviço.</li>
-						<li>Publicar conteúdo que viole direitos de terceiros.</li>
 					</ul>
 				</section>
 
@@ -100,15 +99,10 @@ function TermsPage() {
 						6. Encerramento de conta
 					</h2>
 					<p>
-						Você pode excluir sua conta a qualquer momento em{" "}
-						<a
-							href="/account"
-							className="text-accent-bright no-underline hover:underline"
-						>
-							Configurações da Conta
-						</a>
-						. A exclusão é permanente e remove todos os seus dados.
-						Reservamo-nos o direito de suspender contas que violem estes termos.
+						Você pode excluir sua conta a qualquer momento em Configurações,
+						dentro da conta. A exclusão é permanente e remove todos os seus
+						dados. Reservamo-nos o direito de suspender contas que violem estes
+						termos.
 					</p>
 				</section>
 
@@ -119,8 +113,8 @@ function TermsPage() {
 					<p>
 						O serviço é fornecido sem garantias de disponibilidade contínua. Não
 						nos responsabilizamos por perda de dados decorrente de falhas
-						técnicas. Recomendamos exportar seus dados periodicamente usando a
-						função disponível em Configurações da Conta.
+						técnicas. Recomendamos exportar seus dados periodicamente em
+						Configurações, dentro da conta.
 					</p>
 				</section>
 

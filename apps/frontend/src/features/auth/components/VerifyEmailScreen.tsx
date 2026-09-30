@@ -1,7 +1,9 @@
 ﻿import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useVerifyEmail } from "../hooks/useAuth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useResendVerification, useVerifyEmail } from "../hooks/useAuth";
 
 const VERIFIED_KEY = "detonado_email_verified";
 
@@ -13,6 +15,8 @@ export function VerifyEmailScreen() {
 		() => localStorage.getItem(VERIFIED_KEY) === "true",
 	);
 	const verify = useVerifyEmail(token, !alreadyVerified);
+	const resend = useResendVerification();
+	const [email, setEmail] = useState("");
 
 	useEffect(() => {
 		if (verify.isSuccess) {
@@ -37,7 +41,7 @@ export function VerifyEmailScreen() {
 							Verificando
 						</span>
 						<h1 className="text-2xl font-semibold tracking-tight text-text-hi m-0">
-							Confirmando email...
+							Confirmando o e-mail...
 						</h1>
 						<p className="text-body text-text-md leading-prose m-0">
 							Aguarde um momento.
@@ -73,7 +77,7 @@ export function VerifyEmailScreen() {
 									/>
 								</svg>
 								<span className="font-mono text-overline tracking-widest uppercase text-accent-bright">
-									Email confirmado
+									E-mail confirmado
 								</span>
 							</div>
 							<h1 className="text-2xl font-semibold tracking-tight text-text-hi m-0">
@@ -86,7 +90,7 @@ export function VerifyEmailScreen() {
 
 						<div className="border border-accent-bright/20 bg-accent-bright/5 px-4 py-3">
 							<p className="text-caption text-accent-bright font-medium m-0 leading-normal">
-								Você já pode entrar na sua conta com o email e senha
+								Você já pode entrar na sua conta com o e-mail e a senha
 								cadastrados.
 							</p>
 						</div>
@@ -115,16 +119,37 @@ export function VerifyEmailScreen() {
 							</h1>
 							<p className="text-body text-text-md leading-prose m-0 max-w-[36ch]">
 								{(verify.error as Error)?.message ??
-									"Token de verificação inválido ou expirado."}
+									"O link de verificação é inválido ou expirou."}
 							</p>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label className="mono-label">E-mail</Label>
+							<Input
+								type="email"
+								value={email}
+								onChange={(event) => setEmail(event.target.value)}
+								placeholder="seu@email.com"
+								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11"
+							/>
 						</div>
 						<Button
 							variant="outline"
-							className="w-full h-11 mt-1"
-							onClick={() => navigate({ to: "/register" })}
+							className="w-full h-11"
+							disabled={
+								resend.isPending || resend.isSuccess || email.trim() === ""
+							}
+							onClick={() => resend.mutate(email.trim())}
 						>
-							Criar nova conta
+							{resend.isPending ? "Enviando..." : "Reenviar e-mail"}
 						</Button>
+						{resend.isSuccess && (
+							<p className="text-caption m-0 text-text-md">
+								Novo link enviado para {email.trim()}.
+							</p>
+						)}
+						{resend.error && (
+							<p className="text-body m-0 text-error">{resend.error.message}</p>
+						)}
 					</div>
 				)}
 
@@ -138,7 +163,7 @@ export function VerifyEmailScreen() {
 								Link incompleto
 							</h1>
 							<p className="text-body text-text-md leading-prose m-0 max-w-[36ch]">
-								Use o link enviado para o seu email.
+								Use o link enviado para o seu e-mail.
 							</p>
 						</div>
 						<Button

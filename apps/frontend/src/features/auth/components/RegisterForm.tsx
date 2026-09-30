@@ -23,7 +23,7 @@ export function RegisterForm() {
 			<div className="flex flex-col gap-4">
 				<div>
 					<span className="font-mono text-overline tracking-widest uppercase text-accent-bright block mb-2">
-						Verifique seu email
+						Verifique seu e-mail
 					</span>
 					<h1 className="text-2xl font-semibold tracking-tight m-0 mb-2 text-text-hi">
 						Confirme o e-mail
@@ -44,7 +44,7 @@ export function RegisterForm() {
 						onClick={() => resend.mutate(email)}
 						className="w-full h-10"
 					>
-						{resend.isPending ? "Enviando..." : "Reenviar email"}
+						{resend.isPending ? "Enviando..." : "Reenviar e-mail"}
 					</Button>
 					{resend.isSuccess && (
 						<p className="text-caption m-0 text-text-md text-center">

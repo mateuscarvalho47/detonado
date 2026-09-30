@@ -67,6 +67,18 @@ export async function libraryRoutes(app: FastifyInstance) {
     handler: controller.getById,
   });
 
+  app.post('/library/:id/queue', {
+    ...opts,
+    schema: {
+      ...opts.schema,
+      summary: 'Mover um jogo na fila',
+      params: idParam,
+      body: z.object({ direction: z.enum(['up', 'down']) }),
+      response: { 200: LibraryEntrySchema },
+    },
+    handler: controller.moveQueue,
+  });
+
   app.post('/library/:id/hltb', {
     ...opts,
     schema: {

@@ -111,6 +111,7 @@ export class UserRepository {
             hltbMainExtra: true,
             hltbCompletionist: true,
             hltbStatus: true,
+            queuePosition: true,
             createdAt: true,
             updatedAt: true,
           },

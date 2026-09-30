@@ -4,6 +4,7 @@ import { calendarToday } from '@/modules/library/library.dates.js';
 import {
   LibraryEntryAlreadyExistsError,
   LibraryEntryNotFoundError,
+  LibraryEntryNotInQueueError,
 } from '@/modules/library/library.errors.js';
 import { LibraryService } from '@/modules/library/library.service.js';
 
@@ -44,6 +45,8 @@ function makeRepo(overrides: Record<string, unknown> = {}) {
     update: vi.fn(),
     updateHltb: vi.fn(),
     delete: vi.fn(),
+    nextQueuePosition: vi.fn().mockResolvedValue(1),
+    moveInQueue: vi.fn(),
     ...overrides,
   };
 }
@@ -73,8 +76,10 @@ describe('LibraryService.create', () => {
         name: 'Elden Ring',
         status: 'BACKLOG',
         completedAt: null,
+        queuePosition: 1,
       }),
     );
+    expect(repo.nextQueuePosition).toHaveBeenCalledWith('user-1');
     expect(result).toEqual(ENTRY);
   });
 
@@ -87,8 +92,13 @@ describe('LibraryService.create', () => {
 
     await service.create('user-1', { igdbId: 1, status: 'COMPLETED' });
 
-    const passed = repo.create.mock.calls[0]?.[0] as { completedAt: Date };
+    const passed = repo.create.mock.calls[0]?.[0] as {
+      completedAt: Date;
+      queuePosition: number | null;
+    };
     expect(passed.completedAt.toISOString()).toBe(calendarToday().toISOString());
+    expect(passed.queuePosition).toBeNull();
+    expect(repo.nextQueuePosition).not.toHaveBeenCalled();
   });
 
   it('throws LibraryEntryAlreadyExistsError on duplicate', async () => {
@@ -181,7 +191,7 @@ describe('LibraryService.update', () => {
     expect(repo.update).toHaveBeenCalledWith(
       'entry-1',
       'user-1',
-      expect.objectContaining({ completedAt: calendarToday() }),
+      expect.objectContaining({ completedAt: calendarToday(), queuePosition: null }),
     );
   });
 
@@ -261,7 +271,25 @@ describe('LibraryService.update', () => {
     const payload = repo.update.mock.calls[0]?.[2] as { hoursPlayed?: number; rating?: number };
     expect(payload).not.toHaveProperty('hoursPlayed');
     expect(payload).not.toHaveProperty('rating');
-    expect(repo.update).toHaveBeenCalledWith('entry-1', 'user-1', expect.anything());
+    expect(payload).not.toHaveProperty('queuePosition');
+    expect(repo.nextQueuePosition).not.toHaveBeenCalled();
+  });
+
+  it('appends a game that enters the queue', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, status: 'PLAYING' }),
+      update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'BACKLOG', queuePosition: 4 }),
+      nextQueuePosition: vi.fn().mockResolvedValue(4),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await service.update('entry-1', 'user-1', { status: 'BACKLOG' });
+
+    expect(repo.update).toHaveBeenCalledWith(
+      'entry-1',
+      'user-1',
+      expect.objectContaining({ status: 'BACKLOG', queuePosition: 4 }),
+    );
   });
 
   it('stores hours sent for a wishlist entry', async () => {
@@ -433,5 +461,31 @@ describe('LibraryService.list', () => {
     const result = await service.list('user-1');
 
     expect(result).toEqual([]);
+  });
+});
+
+describe('LibraryService.moveInQueue', () => {
+  it('rejects a game that is not in the queue', async () => {
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, status: 'PLAYING' }),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await expect(service.moveInQueue('entry-1', 'user-1', 'up')).rejects.toThrow(
+      LibraryEntryNotInQueueError,
+    );
+    expect(repo.moveInQueue).not.toHaveBeenCalled();
+  });
+
+  it('asks the repository to move a queued game', async () => {
+    const moved = { ...ENTRY, queuePosition: 1 };
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
+      moveInQueue: vi.fn().mockResolvedValue(moved),
+    });
+    const service = new LibraryService(repo as never, makeGames() as never);
+
+    await expect(service.moveInQueue('entry-1', 'user-1', 'up')).resolves.toEqual(moved);
+    expect(repo.moveInQueue).toHaveBeenCalledWith('user-1', 'entry-1', 'up');
   });
 });

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { compareQueue } from "@/shared/lib/queueOrder";
 import { useAppStore } from "@/store/useAppStore";
 import type { LibraryEntry } from "@/types/api";
 
@@ -21,7 +22,10 @@ export function useLibraryFilters(library: LibraryEntry[]) {
 
 		if (search.trim()) {
 			const q = search.toLowerCase();
-			result = result.filter((g) => g.name.toLowerCase().includes(q));
+			result = result.filter((g) => {
+				const notes = g.notes?.toLowerCase() ?? "";
+				return g.name.toLowerCase().includes(q) || notes.includes(q);
+			});
 		}
 
 		result.sort((a, b) => {
@@ -32,6 +36,8 @@ export function useLibraryFilters(library: LibraryEntry[]) {
 					return (b.rating ?? -1) - (a.rating ?? -1);
 				case "hoursPlayed":
 					return (b.hoursPlayed ?? -1) - (a.hoursPlayed ?? -1);
+				case "queue":
+					return compareQueue(a, b);
 				default:
 					return b.createdAt.localeCompare(a.createdAt);
 			}

@@ -1,7 +1,11 @@
 import type { IgdbGame } from '@/lib/igdb/schemas.js';
 import type { GameService } from '@/modules/game/game.service.js';
 import { calendarToday, parseCalendarDate } from './library.dates.js';
-import { LibraryEntryAlreadyExistsError, LibraryEntryNotFoundError } from './library.errors.js';
+import {
+  LibraryEntryAlreadyExistsError,
+  LibraryEntryNotFoundError,
+  LibraryEntryNotInQueueError,
+} from './library.errors.js';
 import type { LibraryRepository } from './library.repository.js';
 import type {
   CreateLibraryEntryInput,
@@ -71,6 +75,8 @@ export class LibraryService {
 
     const completedAt = input.status === 'COMPLETED' ? calendarToday() : null;
     const hltb = hltbSnapshot(game);
+    const queuePosition =
+      input.status === 'BACKLOG' ? await this.repo.nextQueuePosition(userId) : null;
 
     return this.repo.create({
       user: { connect: { id: userId } },
@@ -82,6 +88,7 @@ export class LibraryService {
       status: input.status,
       userPlatform: input.userPlatform ?? null,
       completedAt,
+      queuePosition,
       ...hltb,
     });
   }
@@ -93,11 +100,20 @@ export class LibraryService {
     const nextStatus = input.status ?? entry.status;
     const { completedAt: inputCompletedAt, userPlatform, ...restInput } = input;
     const completedAt = resolveCompletedAt(nextStatus, inputCompletedAt, entry.completedAt);
+    let queuePosition: number | null | undefined;
+    if (input.status !== undefined && input.status !== entry.status) {
+      if (input.status === 'BACKLOG') {
+        queuePosition = await this.repo.nextQueuePosition(userId);
+      } else if (entry.status === 'BACKLOG') {
+        queuePosition = null;
+      }
+    }
 
     const updated = await this.repo.update(id, userId, {
       ...restInput,
       ...(userPlatform !== undefined ? { userPlatform: blankToNull(userPlatform) } : {}),
       ...(completedAt !== undefined ? { completedAt } : {}),
+      ...(queuePosition !== undefined ? { queuePosition } : {}),
     });
     if (!updated) throw new LibraryEntryNotFoundError();
     return updated;
@@ -115,6 +131,15 @@ export class LibraryService {
       hltbCompletionist: times?.completionistHours ?? null,
       hltbStatus: lookup.status,
     });
+    if (!updated) throw new LibraryEntryNotFoundError();
+    return updated;
+  }
+
+  async moveInQueue(id: string, userId: string, direction: 'up' | 'down') {
+    const entry = await this.repo.findByIdAndUser(id, userId);
+    if (!entry) throw new LibraryEntryNotFoundError();
+    if (entry.status !== 'BACKLOG') throw new LibraryEntryNotInQueueError();
+    const updated = await this.repo.moveInQueue(userId, id, direction);
     if (!updated) throw new LibraryEntryNotFoundError();
     return updated;
   }

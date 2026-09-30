@@ -1,5 +1,6 @@
 import { PROGRESS_STATUSES } from '@detonado/shared';
 import type { Prisma, PrismaClient } from '@/generated/prisma/client.js';
+import { compareQueuePosition, reorderIds } from './library.queue.js';
 import type { UpdateLibraryEntryInput } from './library.schema.js';
 
 const progressStatuses = { in: [...PROGRESS_STATUSES] };
@@ -26,10 +27,46 @@ export class LibraryRepository {
     return this.db.libraryEntry.create({ data });
   }
 
+  async nextQueuePosition(userId: string) {
+    const agg = await this.db.libraryEntry.aggregate({
+      where: { userId, status: 'BACKLOG' },
+      _max: { queuePosition: true },
+    });
+    return (agg._max.queuePosition ?? 0) + 1;
+  }
+
+  async moveInQueue(userId: string, id: string, direction: 'up' | 'down') {
+    return this.db.$transaction(async (tx) => {
+      const rows = await tx.libraryEntry.findMany({
+        where: { userId, status: 'BACKLOG' },
+        select: { id: true, queuePosition: true, createdAt: true },
+      });
+      const ordered = rows.slice().sort(compareQueuePosition);
+      const next = reorderIds(
+        ordered.map((row) => row.id),
+        id,
+        direction,
+      );
+      if (!next) return tx.libraryEntry.findFirst({ where: { id, userId } });
+      for (let index = 0; index < next.length; index++) {
+        const rowId = next[index];
+        if (!rowId) continue;
+        await tx.libraryEntry.update({
+          where: { id: rowId },
+          data: { queuePosition: index + 1 },
+        });
+      }
+      return tx.libraryEntry.findFirst({ where: { id, userId } });
+    });
+  }
+
   async update(
     id: string,
     userId: string,
-    data: Omit<UpdateLibraryEntryInput, 'completedAt'> & { completedAt?: Date | null },
+    data: Omit<UpdateLibraryEntryInput, 'completedAt'> & {
+      completedAt?: Date | null;
+      queuePosition?: number | null;
+    },
   ) {
     const result = await this.db.libraryEntry.updateMany({ where: { id, userId }, data });
     if (result.count === 0) return null;

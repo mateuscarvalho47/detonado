@@ -1,11 +1,11 @@
 ﻿import { useNavigate } from "@tanstack/react-router";
 import { Cover } from "@/shared/components/Cover";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
+import { useSearchModal } from "@/shared/hooks/useSearchModal";
+import { firstSentence } from "@/shared/lib/notes";
 import type { LibraryEntry } from "@/types/api";
 
 const PLAYING_HUE = STATUS_BY_KEY.PLAYING.hue;
-
-import { useSearchModal } from "@/shared/hooks/useSearchModal";
 
 interface PlayingListProps {
 	games: LibraryEntry[];
@@ -41,48 +41,56 @@ export function PlayingList({ games }: PlayingListProps) {
 				</div>
 			) : (
 				<div className="flex flex-col">
-					{games.map((game, idx) => (
-						<button
-							type="button"
-							key={game.igdbId}
-							onClick={() =>
-								navigate({
-									to: "/library/$igdbId",
-									params: { igdbId: String(game.igdbId) },
-								})
-							}
-							className={`grid grid-cols-[48px_1fr_auto] gap-3.5 items-center px-2 py-2.5 bg-transparent border-0 cursor-pointer text-left transition-[background] w-full hover:bg-bg-2 font-[inherit]${idx < games.length - 1 ? " border-b border-border-soft" : ""}`}
-						>
-							<div className="w-12 h-16">
-								<Cover
-									game={{
-										name: game.name,
-										year: undefined,
-										platforms: game.platforms,
-										cover: {
-											hue: PLAYING_HUE,
-											scheme: "duotone" as const,
-											glyph: game.name[0],
-										},
-										coverUrl: game.coverUrl,
-									}}
-									size="sm"
-									withTitle={false}
-								/>
-							</div>
-							<div className="flex flex-col gap-1 min-w-0">
-								<span className="text-body font-medium text-text-hi truncate">
-									{game.name}
-								</span>
-								<span className="text-caption font-mono text-text-lo tabular-nums">
-									{game.userPlatform ?? game.platforms[0]}
-									{game.hoursPlayed != null && game.hoursPlayed > 0
-										? ` · ${game.hoursPlayed}h`
-										: ""}
-								</span>
-							</div>
-						</button>
-					))}
+					{games.map((game, idx) => {
+						const sentence = firstSentence(game.notes);
+						return (
+							<button
+								type="button"
+								key={game.igdbId}
+								onClick={() =>
+									navigate({
+										to: "/library/$igdbId",
+										params: { igdbId: String(game.igdbId) },
+									})
+								}
+								className={`grid grid-cols-[48px_1fr_auto] gap-3.5 items-center px-2 py-2.5 bg-transparent border-0 cursor-pointer text-left transition-[background] w-full hover:bg-bg-2 font-[inherit]${idx < games.length - 1 ? " border-b border-border-soft" : ""}`}
+							>
+								<div className="w-12 h-16">
+									<Cover
+										game={{
+											name: game.name,
+											year: undefined,
+											platforms: game.platforms,
+											cover: {
+												hue: PLAYING_HUE,
+												scheme: "duotone" as const,
+												glyph: game.name[0],
+											},
+											coverUrl: game.coverUrl,
+										}}
+										size="sm"
+										withTitle={false}
+									/>
+								</div>
+								<div className="flex flex-col gap-1 min-w-0">
+									<span className="text-body font-medium text-text-hi truncate">
+										{game.name}
+									</span>
+									<span className="text-caption font-mono text-text-lo tabular-nums">
+										{game.userPlatform ?? game.platforms[0]}
+										{game.hoursPlayed != null && game.hoursPlayed > 0
+											? ` · ${game.hoursPlayed}h`
+											: ""}
+									</span>
+									{sentence && (
+										<span className="text-caption text-text-md line-clamp-2">
+											{sentence}
+										</span>
+									)}
+								</div>
+							</button>
+						);
+					})}
 				</div>
 			)}
 		</div>

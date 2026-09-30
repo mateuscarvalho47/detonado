@@ -31,6 +31,29 @@ function todayInputValue() {
 	return `${now.getFullYear()}-${month}-${day}`;
 }
 
+function NotesField({
+	register,
+	label,
+	placeholder,
+}: {
+	register: UseFormRegister<DetailFormValues>;
+	label: string;
+	placeholder: string;
+}) {
+	return (
+		<div>
+			<Label className="mono-label block mb-1.5">{label}</Label>
+			<Textarea
+				{...register("notes")}
+				placeholder={placeholder}
+				rows={4}
+				maxLength={4000}
+				className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo resize-y leading-relaxed"
+			/>
+		</div>
+	);
+}
+
 interface DetailEditFormProps {
 	game: LibraryEntry;
 	control: Control<DetailFormValues>;
@@ -50,6 +73,8 @@ export function DetailEditForm({
 	status,
 	rating,
 }: DetailEditFormProps) {
+	const whereILeftOff = status === "PLAYING" || status === "PAUSED";
+
 	return (
 		<div className="px-6 py-6 pb-15">
 			<div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
@@ -60,6 +85,14 @@ export function DetailEditForm({
 					</div>
 
 					<div className="grid grid-cols-1 gap-5">
+						{whereILeftOff && (
+							<NotesField
+								register={register}
+								label="Onde parei"
+								placeholder="Opcional"
+							/>
+						)}
+
 						{/* Status picker */}
 						<div>
 							<Label className="mono-label block mb-1.5">Status</Label>
@@ -229,17 +262,13 @@ export function DetailEditForm({
 							</div>
 						)}
 
-						{/* Notes */}
-						<div>
-							<Label className="mono-label block mb-1.5">Notas</Label>
-							<Textarea
-								{...register("notes")}
+						{!whereILeftOff && (
+							<NotesField
+								register={register}
+								label="Notas"
 								placeholder="Suas anotações sobre o jogo..."
-								rows={4}
-								maxLength={4000}
-								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo resize-y leading-relaxed"
 							/>
-						</div>
+						)}
 
 						{/* Completed at */}
 						{status === "COMPLETED" && (

@@ -74,9 +74,12 @@ model LibraryEntry {
   hltbMainExtra     Float?
   hltbCompletionist Float?
   hltbStatus        HltbStatus?
+  // Lower comes first. Set only while status is BACKLOG.
+  queuePosition     Int?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   @@unique([userId, igdbId])
   @@index([userId, status])
+  @@index([userId, status, queuePosition])
 }

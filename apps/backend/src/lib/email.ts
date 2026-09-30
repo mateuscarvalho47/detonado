@@ -9,11 +9,10 @@ export async function sendVerificationEmail(to: string, token: string) {
   const { error } = await resend.emails.send({
     from: env.EMAIL_FROM,
     to,
-    subject: 'Confirme seu email — Detonado',
+    subject: 'Confirme seu e-mail — Detonado',
     html: `
-      <p>Bem-vindo ao Detonado!</p>
-      <p>Clique no link abaixo para confirmar seu email:</p>
-      <a href="${url}">${url}</a>
+      <p>Confirme seu e-mail para entrar na sua biblioteca.</p>
+      <p><a href="${url}">${url}</a></p>
       <p>O link expira em 24 horas.</p>
     `,
   });

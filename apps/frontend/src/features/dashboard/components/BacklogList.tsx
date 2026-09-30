@@ -1,6 +1,9 @@
-﻿import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { QueueMoveButtons } from "@/features/library/components/QueueMoveButtons";
 import { Cover } from "@/shared/components/Cover";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
+import { queueCaption } from "@/shared/lib/queueOrder";
+import { useAppStore } from "@/store/useAppStore";
 import type { LibraryEntry } from "@/types/api";
 
 const BACKLOG_HUE = STATUS_BY_KEY.BACKLOG.hue;
@@ -11,7 +14,24 @@ interface BacklogListProps {
 
 export function BacklogList({ games }: BacklogListProps) {
 	const navigate = useNavigate();
+	const setStatusFilter = useAppStore((s) => s.setLibraryStatusFilter);
+	const setSort = useAppStore((s) => s.setLibrarySortField);
+	const setSearch = useAppStore((s) => s.setLibrarySearch);
 	const shown = games.slice(0, 5);
+
+	function openQueue() {
+		setStatusFilter("BACKLOG");
+		setSort("queue");
+		setSearch("");
+		void navigate({ to: "/library" });
+	}
+
+	function openGame(igdbId: number) {
+		void navigate({
+			to: "/library/$igdbId",
+			params: { igdbId: String(igdbId) },
+		});
+	}
 
 	return (
 		<div className="bg-bg-1 border border-border-soft p-5">
@@ -24,10 +44,10 @@ export function BacklogList({ games }: BacklogListProps) {
 						{games.length} na fila
 					</div>
 				</div>
-				{games.length > 5 && (
+				{games.length > 0 && (
 					<button
 						type="button"
-						onClick={() => navigate({ to: "/library" })}
+						onClick={openQueue}
 						className="inline-flex items-center gap-1 bg-transparent border-0 text-text-md text-caption font-mono cursor-pointer px-1.5 py-1"
 					>
 						Ver todos →
@@ -42,46 +62,50 @@ export function BacklogList({ games }: BacklogListProps) {
 			) : (
 				<div className="flex flex-col">
 					{shown.map((game, idx) => (
-						<button
-							type="button"
+						<div
 							key={game.igdbId}
-							onClick={() =>
-								navigate({
-									to: "/library/$igdbId",
-									params: { igdbId: String(game.igdbId) },
-								})
-							}
-							className={`grid grid-cols-[32px_36px_1fr_14px] gap-3 items-center px-2 py-2.5 bg-transparent border-0 cursor-pointer text-left w-full transition-[background] hover:bg-bg-2 font-[inherit]${idx < shown.length - 1 ? " border-b border-border-soft" : ""}`}
+							className={`flex items-center gap-3 px-2 py-2.5${idx < shown.length - 1 ? " border-b border-border-soft" : ""}`}
 						>
-							<span className="text-caption text-text-dim font-medium">
+							<span className="w-8 shrink-0 text-caption text-text-dim font-medium">
 								#{idx + 1}
 							</span>
-							<div className="w-9 h-12">
-								<Cover
-									game={{
-										name: game.name,
-										platforms: game.platforms,
-										cover: {
-											hue: BACKLOG_HUE,
-											scheme: "duotone" as const,
-											glyph: game.name[0],
-										},
-										coverUrl: game.coverUrl,
-									}}
-									size="xs"
-									withTitle={false}
-								/>
-							</div>
-							<div>
-								<div className="text-body font-medium text-text-hi">
-									{game.name}
+							<button
+								type="button"
+								onClick={() => openGame(game.igdbId)}
+								className="flex flex-1 items-center gap-3 min-w-0 bg-transparent border-0 cursor-pointer text-left font-[inherit] hover:bg-bg-2"
+							>
+								<div className="w-9 h-12 shrink-0">
+									<Cover
+										game={{
+											name: game.name,
+											platforms: game.platforms,
+											cover: {
+												hue: BACKLOG_HUE,
+												scheme: "duotone" as const,
+												glyph: game.name[0],
+											},
+											coverUrl: game.coverUrl,
+										}}
+										size="xs"
+										withTitle={false}
+									/>
 								</div>
-								<div className="text-caption font-mono text-text-lo mt-0.5">
-									{game.userPlatform ?? game.platforms[0] ?? "—"}
+								<div className="min-w-0">
+									<div className="text-body font-medium text-text-hi truncate">
+										{game.name}
+									</div>
+									<div className="text-caption font-mono text-text-lo mt-0.5">
+										{queueCaption(game)}
+									</div>
 								</div>
-							</div>
-							<span className="text-text-dim text-caption">›</span>
-						</button>
+							</button>
+							<QueueMoveButtons
+								id={game.id}
+								name={game.name}
+								isFirst={idx === 0}
+								isLast={idx === games.length - 1}
+							/>
+						</div>
 					))}
 				</div>
 			)}

@@ -12,3 +12,7 @@ export function addToLibrary(data: {
 }) {
 	return api.post<LibraryEntry>("/library", data);
 }
+
+export function moveInQueue(id: string, direction: "up" | "down") {
+	return api.post<LibraryEntry>(`/library/${id}/queue`, { direction });
+}

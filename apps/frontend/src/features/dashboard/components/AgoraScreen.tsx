@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,15 @@ import {
 	backlogHoursLegend,
 	formatBacklogHours,
 } from "@/shared/lib/backlogHours";
+import { compareQueue } from "@/shared/lib/queueOrder";
+import { useAppStore } from "@/store/useAppStore";
 import { BacklogList } from "./BacklogList";
 import { PlayingList } from "./PlayingList";
 
 export function AgoraScreen() {
+	const navigate = useNavigate();
+	const setStatusFilter = useAppStore((s) => s.setLibraryStatusFilter);
+	const setSearch = useAppStore((s) => s.setLibrarySearch);
 	const { setOpen } = useSearchModal();
 	const {
 		data: library,
@@ -29,9 +35,15 @@ export function AgoraScreen() {
 		[entries],
 	);
 	const backlog = useMemo(
-		() => entries.filter((g) => g.status === "BACKLOG"),
+		() => entries.filter((g) => g.status === "BACKLOG").sort(compareQueue),
 		[entries],
 	);
+
+	function openLibrary() {
+		setStatusFilter(null);
+		setSearch("");
+		void navigate({ to: "/library" });
+	}
 
 	if (libraryLoading) {
 		return (
@@ -100,10 +112,24 @@ export function AgoraScreen() {
 							{backlogHoursLegend(queue)}
 						</p>
 					)}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-						<PlayingList games={playing} />
-						<BacklogList games={backlog} />
-					</div>
+					{playing.length === 0 && backlog.length === 0 ? (
+						<p className="m-0 text-body text-text-md">
+							Nada em andamento nem na fila. O resto está na{" "}
+							<button
+								type="button"
+								onClick={openLibrary}
+								className="bg-transparent border-0 p-0 text-text-hi underline cursor-pointer font-[inherit]"
+							>
+								biblioteca
+							</button>
+							.
+						</p>
+					) : (
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+							<PlayingList games={playing} />
+							<BacklogList games={backlog} />
+						</div>
+					)}
 				</div>
 			)}
 		</div>
