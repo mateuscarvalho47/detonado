@@ -1,0 +1,17 @@
+{
+	"name": "Detonado",
+	"short_name": "Detonado",
+	"description": "Guarde onde você parou, organize sua fila e escolha o próximo jogo pelo tempo disponível.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#090b0d",
+	"theme_color": "#090b0d",
+	"icons": [
+		{
+			"src": "/favicon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	]
+}

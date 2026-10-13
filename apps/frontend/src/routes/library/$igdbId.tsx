@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DetailScreen } from "@/features/detail/components/DetailScreen";
 import { useLibraryEntry } from "@/features/detail/hooks/useLibraryEntry";
+import styles from "@/styles/Routes.module.css";
 
 export const Route = createFileRoute("/library/$igdbId")({
 	component: DetailPage,
@@ -12,32 +13,17 @@ function DetailPage() {
 
 	if (isLoading) {
 		return (
-			<div style={{ padding: "28px 22px" }}>
-				<div
-					style={{
-						height: 300,
-						background: "var(--color-bg-1)",
-						borderRadius: 14,
-					}}
-				/>
+			<div className={styles.detailState} role="status">
+				<span className="sr-only">Carregando jogo</span>
+				<div className={styles.detailSkeleton} aria-hidden="true" />
 			</div>
 		);
 	}
 
 	if (error || !game) {
 		return (
-			<div
-				style={{
-					padding: "28px 22px",
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					gap: 16,
-					paddingTop: 80,
-					textAlign: "center",
-				}}
-			>
-				<p style={{ color: "var(--color-text-md)", fontSize: 14 }}>
+			<div className={`${styles.detailState} ${styles.detailEmpty}`}>
+				<p className={styles.detailEmptyCopy}>
 					Jogo não encontrado na biblioteca.
 				</p>
 			</div>
