@@ -14,28 +14,24 @@ import {
 import { compareQueue } from "@/shared/lib/queueOrder";
 import { useAppStore } from "@/store/useAppStore";
 import { BacklogList } from "./BacklogList";
+import styles from "./Dashboard.module.css";
 import { PlayingList } from "./PlayingList";
 
 export function AgoraScreen() {
 	const navigate = useNavigate();
-	const setStatusFilter = useAppStore((s) => s.setLibraryStatusFilter);
-	const setSearch = useAppStore((s) => s.setLibrarySearch);
+	const setStatusFilter = useAppStore((state) => state.setLibraryStatusFilter);
+	const setSearch = useAppStore((state) => state.setLibrarySearch);
 	const { setOpen } = useSearchModal();
-	const {
-		data: library,
-		isLoading: libraryLoading,
-		isError: libraryError,
-		refetch: refetchLibrary,
-	} = useLibrary();
-
+	const { data: library, isLoading, isError, refetch } = useLibrary();
 	const entries = useMemo(() => library ?? [], [library]);
 	const queue = useMemo(() => backlogHours(entries), [entries]);
 	const playing = useMemo(
-		() => entries.filter((g) => g.status === "PLAYING"),
+		() => entries.filter((game) => game.status === "PLAYING"),
 		[entries],
 	);
 	const backlog = useMemo(
-		() => entries.filter((g) => g.status === "BACKLOG").sort(compareQueue),
+		() =>
+			entries.filter((game) => game.status === "BACKLOG").sort(compareQueue),
 		[entries],
 	);
 
@@ -45,87 +41,70 @@ export function AgoraScreen() {
 		void navigate({ to: "/library" });
 	}
 
-	if (libraryLoading) {
+	if (isLoading)
 		return (
-			<div className="px-4 pt-6 lg:px-6 lg:pt-7">
-				<div className="flex flex-col gap-4">
-					{[1, 2, 3].map((i) => (
-						<div key={i} className="h-20 bg-bg-1 animate-pulse" />
+			<div className={styles.page}>
+				<div className={styles.skeleton}>
+					{[1, 2, 3].map((item) => (
+						<div key={item} className={styles.skeletonItem} />
 					))}
 				</div>
 			</div>
 		);
-	}
-
-	if (libraryError || !library) {
+	if (isError || !library)
 		return (
-			<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
-				<LoadFailure onRetry={() => void refetchLibrary()} />
+			<div className={styles.page}>
+				<LoadFailure onRetry={() => void refetch()} />
 			</div>
 		);
-	}
 
 	const counts = [
-		{ label: "Jogando", value: String(playing.length) },
-		{ label: "Na fila", value: String(queue.count) },
-		{ label: "Horas na fila", value: formatBacklogHours(queue.total) },
+		{ label: "Em andamento", value: String(playing.length) },
+		{ label: "Próximos na fila", value: String(queue.count) },
+		{ label: "Tempo estimado", value: formatBacklogHours(queue.total) },
 	];
 
 	return (
-		<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
-			<div className="flex items-end justify-between gap-3 pb-5.5 mb-5.5 border-b border-border-soft flex-wrap">
+		<div className={styles.page}>
+			<div className={styles.top}>
 				<PageHeader
-					overline="Biblioteca"
-					title="Agora"
-					subtitle="O que está em andamento e o que vem na fila."
+					overline="Seu momento"
+					title="Continue de onde parou."
+					subtitle="Seu progresso recente e uma fila curta para decidir sem perder tempo."
 				/>
-				<Button variant="accent" size="sm" onClick={() => setOpen(true)}>
+				<Button variant="accent" onClick={() => setOpen(true)}>
 					Adicionar jogo
 				</Button>
 			</div>
-
 			{entries.length === 0 ? (
 				<ArchiveEmpty onAdd={() => setOpen(true)} />
 			) : (
-				<div className="flex flex-col gap-5">
-					<div className="grid grid-cols-3 border border-border-soft bg-bg-1">
-						{counts.map((item, index) => (
-							<div
-								key={item.label}
-								className={
-									index < counts.length - 1
-										? "px-4 py-3 border-r border-border-soft"
-										: "px-4 py-3"
-								}
-							>
-								<div className="font-mono text-caption text-text-lo">
-									{item.label}
-								</div>
-								<div className="mt-1 text-2xl font-semibold tabular-nums text-text-hi">
-									{item.value}
-								</div>
+				<div className={styles.layout}>
+					<div className={styles.metrics}>
+						{counts.map((item) => (
+							<div key={item.label} className={styles.metric}>
+								<div className={styles.metricLabel}>{item.label}</div>
+								<div className={styles.metricValue}>{item.value}</div>
 							</div>
 						))}
 					</div>
 					{queue.missing > 0 && (
-						<p className="m-0 -mt-2 text-caption text-text-lo">
-							{backlogHoursLegend(queue)}
-						</p>
+						<p className={styles.legend}>{backlogHoursLegend(queue)}</p>
 					)}
 					{playing.length === 0 && backlog.length === 0 ? (
-						<p className="m-0 text-body text-text-md">
-							Nada em andamento nem na fila. O resto está na{" "}
+						<p>
+							Nada em andamento nem na fila. Veja sua{" "}
 							<button
 								type="button"
 								onClick={openLibrary}
-								className="bg-transparent border-0 p-0 text-text-hi underline cursor-pointer font-[inherit]"
+								className={styles.inlineLink}
 							>
 								biblioteca
 							</button>
 							.
 						</p>
 					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+						<div className={styles.columns}>
 							<PlayingList games={playing} />
 							<BacklogList games={backlog} />
 						</div>
