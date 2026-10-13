@@ -23,10 +23,12 @@ const game: LibraryEntry = {
 };
 
 describe("LibraryCard", () => {
-	it("puts the status on a dark plate over the cover", () => {
+	it("shows the current status with the game cover", () => {
 		render(<LibraryCard game={game} />);
-		const plate = screen.getByText("Jogando").closest(".bg-bg-0");
-		expect(plate).not.toBeNull();
-		expect(plate).toHaveClass("border-border-strong");
+		expect(screen.getByText("Jogando")).toBeInTheDocument();
+		expect(
+			screen.getByRole("img", { name: "Titanfall 2" }),
+		).toBeInTheDocument();
+		expect(screen.getByRole("button")).toHaveTextContent("Titanfall 2");
 	});
 });

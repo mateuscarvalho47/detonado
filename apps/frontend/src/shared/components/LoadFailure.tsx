@@ -1,41 +1,36 @@
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "./EmptyState";
-
-interface LoadFailureProps {
-	onRetry: () => void;
-	title?: string;
-	body?: string;
-	compact?: boolean;
-}
-
+import styles from "./Shared.module.css";
 export function LoadFailure({
 	onRetry,
 	title = "Não foi possível carregar",
 	body = "A requisição falhou. Tente de novo.",
 	compact = false,
-}: LoadFailureProps) {
+}: {
+	onRetry: () => void;
+	title?: string;
+	body?: string;
+	compact?: boolean;
+}) {
 	const retry = (
 		<Button type="button" variant="accent" size="sm" onClick={onRetry}>
 			Tentar de novo
 		</Button>
 	);
-
-	if (compact) {
+	if (compact)
 		return (
-			<div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-bg-1 border border-border-soft">
-				<div className="min-w-0">
-					<p className="text-body font-medium text-text-hi m-0">{title}</p>
-					<p className="text-caption text-text-md m-0 mt-1">{body}</p>
+			<div className={styles.compactFailure}>
+				<div>
+					<p className={styles.compactTitle}>{title}</p>
+					<p className={styles.compactBody}>{body}</p>
 				</div>
 				{retry}
 			</div>
 		);
-	}
-
 	return (
 		<EmptyState
-			icon={<AlertTriangle className="size-7" />}
+			icon={<AlertTriangle />}
 			title={title}
 			body={body}
 			action={retry}

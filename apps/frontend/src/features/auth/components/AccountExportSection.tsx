@@ -1,49 +1,47 @@
-﻿import { Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useExportData } from "../hooks/useAuth";
-
+import styles from "./Auth.module.css";
 export function AccountExportSection() {
-	const exportMutation = useExportData();
-
-	function handleExport() {
-		exportMutation.mutate(undefined, {
+	const mutation = useExportData();
+	function exportData() {
+		mutation.mutate(undefined, {
 			onSuccess: (data) => {
-				const blob = new Blob([JSON.stringify(data, null, 2)], {
-					type: "application/json",
-				});
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement("a");
-				a.href = url;
-				a.download = "detonado-dados.json";
-				a.click();
+				const url = URL.createObjectURL(
+					new Blob([JSON.stringify(data, null, 2)], {
+						type: "application/json",
+					}),
+				);
+				const anchor = document.createElement("a");
+				anchor.href = url;
+				anchor.download = "detonado-dados.json";
+				anchor.click();
 				URL.revokeObjectURL(url);
 			},
 		});
 	}
-
 	return (
-		<section className="flex flex-col gap-3">
-			<h2 className="text-body font-semibold text-text-hi flex items-center gap-2">
-				<Download size={14} className="text-accent-bright" />
+		<section className={styles.accountSection}>
+			<h2>
+				<Download />
 				Exportar meus dados
 			</h2>
-			<p className="text-caption text-text-lo">
-				Baixe um arquivo JSON com todos os seus dados — perfil e biblioteca
-				completa. Seu direito de portabilidade pela LGPD (Art. 19).
+			<p>
+				Baixe perfil e biblioteca completa em JSON. É o seu direito de
+				portabilidade pela LGPD.
 			</p>
-			<Button
-				variant="outline"
-				onClick={handleExport}
-				disabled={exportMutation.isPending}
-				className="w-fit h-9 text-caption"
-			>
-				<Download size={12} />
-				{exportMutation.isPending ? "Preparando..." : "Baixar dados (.json)"}
-			</Button>
-			{exportMutation.error && (
-				<p className="text-body m-0 text-error">
-					{exportMutation.error.message}
-				</p>
+			<div>
+				<Button
+					variant="outline"
+					onClick={exportData}
+					disabled={mutation.isPending}
+				>
+					<Download />
+					{mutation.isPending ? "Preparando…" : "Baixar dados (.json)"}
+				</Button>
+			</div>
+			{mutation.error && (
+				<p className={styles.error}>{mutation.error.message}</p>
 			)}
 		</section>
 	);

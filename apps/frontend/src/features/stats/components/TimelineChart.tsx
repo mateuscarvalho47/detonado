@@ -1,105 +1,73 @@
-﻿import type { LibraryStats } from "@/types/api";
-
-interface TimelineChartProps {
+import type { LibraryStats } from "@/types/api";
+import styles from "./Stats.module.css";
+export function TimelineChart({
+	timeline,
+}: {
 	timeline: LibraryStats["completedTimeline"];
-}
-
-export function TimelineChart({ timeline }: TimelineChartProps) {
-	if (timeline.length < 2) {
+}) {
+	if (timeline.length < 2)
 		return (
-			<div className="h-45 flex items-center justify-center text-text-lo text-sm">
-				Dados insuficientes para o gráfico
+			<div className={styles.chartEmpty}>
+				Complete mais jogos para ver sua linha do tempo.
 			</div>
 		);
-	}
-
-	const W = 800;
-	const H = 160;
-	const PAD = { top: 10, right: 20, bottom: 30, left: 30 };
-	const innerW = W - PAD.left - PAD.right;
-	const innerH = H - PAD.top - PAD.bottom;
-
-	const maxCount = Math.max(...timeline.map((d) => d.count), 1);
-
-	const points = timeline.map((d, i) => ({
-		x: PAD.left + (i / (timeline.length - 1)) * innerW,
-		y: PAD.top + innerH - (d.count / maxCount) * innerH,
-		count: d.count,
-		month: d.month,
+	const width = 800,
+		height = 160,
+		pad = { top: 10, right: 20, bottom: 30, left: 30 };
+	const innerWidth = width - pad.left - pad.right,
+		innerHeight = height - pad.top - pad.bottom,
+		max = Math.max(...timeline.map((item) => item.count), 1);
+	const points = timeline.map((item, index) => ({
+		x: pad.left + (index / (timeline.length - 1)) * innerWidth,
+		y: pad.top + innerHeight - (item.count / max) * innerHeight,
+		...item,
 	}));
-
-	const pathD = points
-		.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+	const path = points
+		.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`)
 		.join(" ");
-	const areaD = `${pathD} L ${points[points.length - 1].x} ${H - PAD.bottom} L ${points[0].x} ${H - PAD.bottom} Z`;
-
 	return (
-		<div className="w-full h-45">
+		<div className={styles.timeline}>
 			<svg
 				role="img"
-				aria-label="Gráfico de jogos completados ao longo do tempo"
+				aria-label="Jogos concluídos ao longo do tempo"
 				width="100%"
 				height="100%"
-				viewBox={`0 0 ${W} ${H}`}
-				preserveAspectRatio="xMidYMid meet"
+				viewBox={`0 0 ${width} ${height}`}
 			>
-				<path d={areaD} fill="oklch(0.78 0.012 80 / 0.12)" />
 				<path
-					d={pathD}
-					fill="none"
-					stroke="oklch(0.78 0.012 80)"
-					strokeWidth={2}
-					strokeLinecap="round"
-					strokeLinejoin="round"
+					d={`${path} L ${points.at(-1)?.x} ${height - pad.bottom} L ${points[0].x} ${height - pad.bottom} Z`}
+					fill="color-mix(in oklab, var(--color-accent) 12%, transparent)"
 				/>
-				{points.map((p) => (
+				<path
+					d={path}
+					fill="none"
+					stroke="var(--color-accent)"
+					strokeWidth="2"
+				/>
+				{points.map((point) => (
 					<circle
-						key={p.month}
-						cx={p.x}
-						cy={p.y}
-						r={4}
-						fill="oklch(0.92 0.012 80)"
+						key={point.month}
+						cx={point.x}
+						cy={point.y}
+						r="4"
+						fill="var(--color-accent)"
 					/>
 				))}
 				{points
-					.filter((_, i) => i % Math.ceil(points.length / 8) === 0)
-					.map((p) => (
+					.filter((_, index) => index % Math.ceil(points.length / 8) === 0)
+					.map((point) => (
 						<text
-							key={p.month}
-							x={p.x}
-							y={H - 8}
+							key={point.month}
+							x={point.x}
+							y={height - 8}
 							textAnchor="middle"
-							fontSize={10}
-							fill="var(--color-text-dim)"
-							fontFamily="'Geist Mono', monospace"
+							fontSize="10"
+							fill="var(--color-ink-faint)"
+							fontFamily="var(--font-mono)"
 						>
-							{p.month.slice(5)}
+							{point.month.slice(5)}
 						</text>
 					))}
-				{[0, Math.round(maxCount / 2), maxCount].map((v) => (
-					<text
-						key={v}
-						x={PAD.left - 6}
-						y={PAD.top + innerH - (v / maxCount) * innerH + 4}
-						textAnchor="end"
-						fontSize={10}
-						fill="var(--color-text-dim)"
-						fontFamily="'Geist Mono', monospace"
-					>
-						{v}
-					</text>
-				))}
-				{[0.25, 0.5, 0.75, 1].map((frac) => (
-					<line
-						key={frac}
-						x1={PAD.left}
-						y1={PAD.top + innerH * (1 - frac)}
-						x2={W - PAD.right}
-						y2={PAD.top + innerH * (1 - frac)}
-						stroke="var(--color-grid-line)"
-						strokeWidth={1}
-					/>
-				))}
 			</svg>
 		</div>
 	);

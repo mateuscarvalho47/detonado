@@ -1,4 +1,4 @@
-﻿import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -12,12 +12,8 @@ import {
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { useCheckPasswordReset, useVerifyResetForm } from "../hooks/useAuth";
-
-interface VerifyResetFormProps {
-	email: string;
-}
-
-export function VerifyResetForm({ email }: VerifyResetFormProps) {
+import styles from "./Auth.module.css";
+export function VerifyResetForm({ email }: { email: string }) {
 	const navigate = useNavigate();
 	const { form, onSubmit, mutation } = useVerifyResetForm(email, () =>
 		navigate({ to: "/reset-success" }),
@@ -26,7 +22,6 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 	const [codeValidated, setCodeValidated] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirm, setShowConfirm] = useState(false);
-
 	const {
 		register,
 		control,
@@ -35,8 +30,7 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 		clearErrors,
 		formState: { errors },
 	} = form;
-
-	const handleValidateCode = async () => {
+	async function validateCode() {
 		clearErrors("code");
 		const code = getValues("code");
 		if (!/^\d{6}$/.test(code)) {
@@ -46,160 +40,128 @@ export function VerifyResetForm({ email }: VerifyResetFormProps) {
 		try {
 			await check.mutateAsync({ email, code });
 			setCodeValidated(true);
-		} catch (e) {
+		} catch (error) {
 			setError("code", {
-				message: e instanceof Error ? e.message : "Código inválido",
+				message: error instanceof Error ? error.message : "Código inválido",
 			});
 		}
-	};
-
+	}
 	return (
-		<form onSubmit={onSubmit} className="flex flex-col gap-3.5">
-			<div>
-				<span className="font-mono text-overline tracking-widest uppercase text-accent-bright block mb-2">
-					Redefinir senha
-				</span>
-				<h1 className="text-2xl font-semibold tracking-tight m-0 mb-2 text-text-hi">
-					{codeValidated ? "Defina sua nova senha" : "Verifique o código"}
+		<form onSubmit={onSubmit} className={styles.form}>
+			<header className={styles.heading}>
+				<span className={styles.eyebrow}>Redefinir senha</span>
+				<h1 className={styles.title}>
+					{codeValidated ? "Crie uma nova senha." : "Confira seu e-mail."}
 				</h1>
-				<p className="text-body text-text-md leading-prose mt-0 mb-6 max-w-[36ch]">
-					{codeValidated ? (
-						<>
-							Crie uma nova senha para a conta{" "}
-							<span className="text-text-hi font-medium">{email}</span>.
-						</>
-					) : (
-						<>
-							Enviamos um código de 6 dígitos para{" "}
-							<span className="text-text-hi font-medium">{email}</span>. Digite
-							o código para continuar.
-						</>
-					)}
+				<p className={styles.intro}>
+					{codeValidated
+						? `Defina a nova senha de ${email}.`
+						: `Digite o código de 6 dígitos enviado para ${email}.`}
 				</p>
-			</div>
-
+			</header>
 			<input type="hidden" {...register("email")} />
-
-			{!codeValidated && (
-				<div className="flex flex-col items-center gap-1.5">
-					<Controller
-						control={control}
-						name="code"
-						render={({ field }) => (
-							<InputOTP
-								maxLength={6}
-								pattern={REGEXP_ONLY_DIGITS}
-								value={field.value}
-								onChange={field.onChange}
-							>
-								<InputOTPGroup className="gap-1.5">
-									{[0, 1, 2, 3, 4, 5].map((i) => (
-										<InputOTPSlot
-											key={i}
-											index={i}
-											className="bg-bg-2 border-border-soft text-text-hi size-10 border"
-										/>
-									))}
-								</InputOTPGroup>
-							</InputOTP>
-						)}
-					/>
-					{errors.code && (
-						<p className="text-body m-0 text-error self-start">
-							{errors.code.message}
-						</p>
-					)}
-				</div>
-			)}
-
-			{!codeValidated && (
-				<Button
-					variant="accent"
-					type="button"
-					disabled={check.isPending}
-					onClick={handleValidateCode}
-					className="w-full h-11 mt-5"
-				>
-					{check.isPending ? "Validando..." : "Validar código"}
-				</Button>
-			)}
-
-			{codeValidated && (
+			{!codeValidated ? (
 				<>
-					<div className="flex flex-col gap-1.5">
-						<Label className="mono-label">Nova senha</Label>
-						<div className="relative">
-							<Input
-								type={showPassword ? "text" : "password"}
-								{...register("password")}
-								placeholder="mínimo 8 caracteres"
-								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11 pr-9"
-							/>
-							<button
-								type="button"
-								onClick={() => setShowPassword((v) => !v)}
-								className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-lo hover:text-text-md transition-colors"
-								tabIndex={-1}
-							>
-								{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-							</button>
-						</div>
-						{errors.password && (
-							<p className="text-body m-0 text-error">
-								{errors.password.message}
-							</p>
+					<div className={styles.field}>
+						<Controller
+							control={control}
+							name="code"
+							render={({ field }) => (
+								<InputOTP
+									maxLength={6}
+									pattern={REGEXP_ONLY_DIGITS}
+									value={field.value}
+									onChange={field.onChange}
+								>
+									<InputOTPGroup className={styles.otp}>
+										{[0, 1, 2, 3, 4, 5].map((index) => (
+											<InputOTPSlot key={index} index={index} />
+										))}
+									</InputOTPGroup>
+								</InputOTP>
+							)}
+						/>
+						{errors.code && (
+							<p className={styles.error}>{errors.code.message}</p>
 						)}
 					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<Label className="mono-label">Confirmar nova senha</Label>
-						<div className="relative">
-							<Input
-								type={showConfirm ? "text" : "password"}
-								{...register("confirmPassword")}
-								placeholder="repita a nova senha"
-								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11 pr-9"
-							/>
-							<button
-								type="button"
-								onClick={() => setShowConfirm((v) => !v)}
-								className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-lo hover:text-text-md transition-colors"
-								tabIndex={-1}
-							>
-								{showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
-							</button>
-						</div>
-						{errors.confirmPassword && (
-							<p className="text-body m-0 text-error">
-								{errors.confirmPassword.message}
-							</p>
-						)}
-					</div>
-
+					<Button
+						variant="accent"
+						type="button"
+						disabled={check.isPending}
+						onClick={validateCode}
+						className={styles.submit}
+					>
+						{check.isPending ? "Validando…" : "Validar código"}
+					</Button>
+				</>
+			) : (
+				<>
+					<PasswordField
+						id="new-password"
+						label="Nova senha"
+						shown={showPassword}
+						setShown={setShowPassword}
+						inputProps={register("password")}
+						error={errors.password?.message}
+					/>
+					<PasswordField
+						id="confirm-password"
+						label="Confirmar nova senha"
+						shown={showConfirm}
+						setShown={setShowConfirm}
+						inputProps={register("confirmPassword")}
+						error={errors.confirmPassword?.message}
+					/>
 					{mutation.error && (
-						<p className="text-body m-0 text-error">{mutation.error.message}</p>
+						<p className={styles.error}>{mutation.error.message}</p>
 					)}
-
 					<Button
 						variant="accent"
 						type="submit"
 						disabled={mutation.isPending}
-						className="w-full h-11 mt-1.5"
+						className={styles.submit}
 					>
-						{mutation.isPending ? "Redefinindo..." : "Redefinir senha"}
+						{mutation.isPending ? "Redefinindo…" : "Redefinir senha"}
 					</Button>
 				</>
 			)}
-
-			<p className="text-center text-caption text-text-lo mt-1">
-				Não recebeu?{" "}
-				<a
-					href="/forgot-password"
-					className="text-accent-bright font-semibold no-underline"
-				>
-					Solicitar novo código
-				</a>
+			<p className={styles.centerLink}>
+				<a href="/forgot-password">Solicitar novo código</a>
 			</p>
 		</form>
+	);
+}
+function PasswordField({
+	id,
+	label,
+	shown,
+	setShown,
+	inputProps,
+	error,
+}: {
+	id: string;
+	label: string;
+	shown: boolean;
+	setShown: (value: boolean) => void;
+	inputProps: React.InputHTMLAttributes<HTMLInputElement>;
+	error?: string;
+}) {
+	return (
+		<div className={styles.field}>
+			<Label htmlFor={id}>{label}</Label>
+			<div className={styles.password}>
+				<Input id={id} type={shown ? "text" : "password"} {...inputProps} />
+				<button
+					type="button"
+					className={styles.reveal}
+					onClick={() => setShown(!shown)}
+					aria-label={shown ? "Ocultar senha" : "Mostrar senha"}
+				>
+					{shown ? <EyeOff /> : <Eye />}
+				</button>
+			</div>
+			{error && <p className={styles.error}>{error}</p>}
+		</div>
 	);
 }

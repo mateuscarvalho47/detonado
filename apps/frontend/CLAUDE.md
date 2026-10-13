@@ -35,9 +35,9 @@ Feature-sliced. Each `src/features/<name>/` owns its slice with a consistent sha
 Features: `auth`, `dashboard`, `detail`, `landing`, `library`, `search`, `stats`.
 
 Shared layers:
-- `src/components/ui/` — shadcn primitives (style `radix-vega`, `components.json`). Generated; don't hand-edit casually.
+- `src/components/ui/` — primitivas Radix leves. O visual compartilhado vive em `styles/primitives.css` via `data-slot`.
 - `src/shared/` — cross-feature components (`Sidebar`, `BottomNav`, `StatusBadge`…), hooks, constants.
-- `src/lib/` — `api.ts` (fetch wrapper + `ApiError`), `utils.ts`.
+- `src/lib/` — `api.ts` (fetch wrapper + `ApiError`).
 - `src/store/useAppStore.ts` — Zustand for UI state only (search modal, sidebar, library view/sort/filter). Persisted slice (`detonado-ui`, version 2) is `libraryView`, `librarySortField`, and `sidebarOpen`. Default view is `list`. There is no theme in the store: `__root.tsx` forces `data-theme="dark"`.
 - `src/types/api.ts` — local API types. This app does not depend on `@detonado/shared`.
 
@@ -56,5 +56,5 @@ Auth gating is **centralized in `src/routes/__root.tsx`**, not per-route `before
 - **Biome** formats with **tabs** and (frontend default) **double quotes** — note this differs from the backend. Run `pnpm lint:fix` before committing.
 - Path alias `@` → `src/`.
 - Dark only. `__root.tsx` sets `data-theme="dark"` and `.dark` on `<html>`. Type is IBM Plex Sans / IBM Plex Mono. The logged-in home is the shelf (`Agora`: playing, queue, backlog hours), not a metrics dashboard.
-- Shelf color lives in `--bg-*`, `--text-*`, and `--border-soft` / `--border-strong` in `src/index.css`. In the dark block the shadcn names (`--background`, `--card`, `--muted`, `--border`, …) point at those. Primitives in `src/components/ui/` use the shelf utilities (`bg-bg-1`, `text-text-hi`, `border-border-soft`). Chrome is square: do not add `rounded-*` to panels, buttons, or fields. The 2px cover radius is the `rounded-cover` utility (`--radius-cover`); `Cover` applies it, and the ficha passes `square`.
+- Brand tokens live in `src/styles/tokens.css`; global primitives and Radix slots live in `src/styles/primitives.css`. Feature UI uses colocated CSS Modules. Prefer semantic class names and shared tokens; do not add utility CSS frameworks. The palette is warm dark with coral for actions, lime for positive state, IBM Plex for UI, and Georgia for editorial display type.
 - Tests colocated as `*.test.ts(x)`, jsdom env, globals on, `@testing-library/react` (`src/test/setup.ts`).

@@ -1,63 +1,50 @@
-﻿import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-interface ConfirmRemoveModalProps {
-	gameName: string;
-	onConfirm: () => void;
-	onCancel: () => void;
-	isPending: boolean;
-}
-
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import styles from "./Detail.module.css";
 export function ConfirmRemoveModal({
 	gameName,
 	onConfirm,
 	onCancel,
 	isPending,
-}: ConfirmRemoveModalProps) {
+}: {
+	gameName: string;
+	onConfirm: () => void;
+	onCancel: () => void;
+	isPending: boolean;
+}) {
 	return (
-		<AlertDialog
+		<Dialog
 			open
 			onOpenChange={(open) => {
 				if (!open) onCancel();
 			}}
 		>
-			<AlertDialogContent className="max-w-sm text-center bg-bg-1 border border-border-soft shadow-none">
-				<div className="flex flex-col items-center gap-3">
-					<AlertDialogHeader className="space-y-0">
-						<AlertDialogTitle className="text-title text-text-hi">
-							Remover jogo?
-						</AlertDialogTitle>
-						<AlertDialogDescription className="text-text-md text-body leading-relaxed max-w-[34ch]">
-							<strong className="text-text-hi">{gameName}</strong> será removido
-							permanentemente da sua biblioteca.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-				</div>
-
-				<AlertDialogFooter className="flex-row justify-center gap-2.5 sm:justify-center">
-					<AlertDialogCancel
-						onClick={onCancel}
-						className="h-9 border border-border-soft text-text-md"
-					>
+			<DialogContent showCloseButton={false} className={styles.modal}>
+				<DialogHeader>
+					<DialogTitle className={styles.modalTitle}>
+						Remover este jogo?
+					</DialogTitle>
+					<DialogDescription className={styles.modalText}>
+						<strong>{gameName}</strong> e todo o seu registro serão removidos da
+						biblioteca.
+					</DialogDescription>
+				</DialogHeader>
+				<DialogFooter className={styles.modalFooter}>
+					<Button variant="ghost" onClick={onCancel}>
 						Cancelar
-					</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={onConfirm}
-						disabled={isPending}
-						className="h-9 bg-error text-white hover:bg-error/90"
-					>
-						{isPending ? "Removendo..." : "Remover"}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+					</Button>
+					<Button variant="danger" onClick={onConfirm} disabled={isPending}>
+						{isPending ? "Removendo…" : "Remover jogo"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

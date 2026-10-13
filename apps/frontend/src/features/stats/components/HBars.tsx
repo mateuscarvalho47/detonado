@@ -1,31 +1,28 @@
-﻿interface HBarsProps {
+import styles from "./Stats.module.css";
+export function HBars({
+	items,
+	color = "var(--color-accent)",
+}: {
 	items: { label: string; count: number }[];
 	color?: string;
-}
-
-export function HBars({ items, color = "oklch(0.78 0.012 80)" }: HBarsProps) {
-	const max = Math.max(...items.map((i) => i.count), 1);
+}) {
+	const max = Math.max(...items.map((item) => item.count), 1);
 	return (
-		<div className="flex flex-col gap-1.5">
+		<div className={styles.bars}>
 			{items.map((item) => (
-				<div
-					key={item.label}
-					className="grid gap-3 items-center text-body"
-					style={{ gridTemplateColumns: "130px 1fr 32px" }}
-				>
-					<span className="text-text-md truncate">{item.label}</span>
-					<div className="h-2.5 bg-bg-2 overflow-hidden">
-						<div
-							className="h-full transition-[width] duration-700 ease-out"
+				<div key={item.label} className={styles.barRow}>
+					<span className={styles.truncate}>{item.label}</span>
+					<span className={styles.track}>
+						<span
+							className={styles.bar}
 							style={{
+								display: "block",
 								width: `${(item.count / max) * 100}%`,
 								background: color,
 							}}
 						/>
-					</div>
-					<span className="text-text-hi text-right font-medium">
-						{item.count}
 					</span>
+					<span className={styles.count}>{item.count}</span>
 				</div>
 			))}
 		</div>

@@ -1,12 +1,14 @@
-﻿import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useResendVerification, useVerifyEmail } from "../hooks/useAuth";
+import styles from "./Auth.module.css";
+import { AuthShell } from "./AuthShell";
 
 const VERIFIED_KEY = "detonado_email_verified";
-
 export function VerifyEmailScreen() {
 	const search = useSearch({ strict: false });
 	const token = (search as Record<string, string>).token ?? "";
@@ -17,169 +19,76 @@ export function VerifyEmailScreen() {
 	const verify = useVerifyEmail(token, !alreadyVerified);
 	const resend = useResendVerification();
 	const [email, setEmail] = useState("");
-
 	useEffect(() => {
-		if (verify.isSuccess) {
-			localStorage.setItem(VERIFIED_KEY, "true");
-		}
+		if (verify.isSuccess) localStorage.setItem(VERIFIED_KEY, "true");
 	}, [verify.isSuccess]);
-
-	return (
-		<div className="min-h-screen flex items-center justify-center px-5 py-10 bg-bg-0">
-			<div className="w-full max-w-105 border border-border-soft bg-bg-1 p-8">
-				{/* Brand */}
-				<div className="flex items-center gap-2.5 mb-7">
-					<img src="/logo.svg" alt="Detonado" width="22" height="22" />
-					<span className="text-title font-bold tracking-[-0.02em] text-text-hi">
-						Detonado
-					</span>
-				</div>
-
-				{verify.isLoading && (
-					<div className="flex flex-col gap-3">
-						<span className="font-mono text-overline tracking-widest uppercase text-accent-bright block">
-							Verificando
-						</span>
-						<h1 className="text-2xl font-semibold tracking-tight text-text-hi m-0">
-							Confirmando o e-mail...
-						</h1>
-						<p className="text-body text-text-md leading-prose m-0">
-							Aguarde um momento.
-						</p>
-					</div>
-				)}
-
-				{(verify.isSuccess || alreadyVerified) && (
-					<div className="flex flex-col gap-5">
-						<div className="flex flex-col gap-2">
-							<div className="flex items-center gap-2 mb-1">
-								<svg
-									aria-hidden="true"
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-									className="text-accent-bright shrink-0"
-								>
-									<circle
-										cx="8"
-										cy="8"
-										r="7"
-										stroke="currentColor"
-										strokeWidth="1.5"
-									/>
-									<path
-										d="M5 8l2 2 4-4"
-										stroke="currentColor"
-										strokeWidth="1.5"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-									/>
-								</svg>
-								<span className="font-mono text-overline tracking-widest uppercase text-accent-bright">
-									E-mail confirmado
-								</span>
-							</div>
-							<h1 className="text-2xl font-semibold tracking-tight text-text-hi m-0">
-								E-mail confirmado
-							</h1>
-							<p className="text-body text-text-md leading-prose m-0 max-w-[38ch]">
-								Seu e-mail foi verificado. Você já pode entrar.
-							</p>
-						</div>
-
-						<div className="border border-accent-bright/20 bg-accent-bright/5 px-4 py-3">
-							<p className="text-caption text-accent-bright font-medium m-0 leading-normal">
-								Você já pode entrar na sua conta com o e-mail e a senha
-								cadastrados.
-							</p>
-						</div>
-
-						<Button
-							variant="accent"
-							className="w-full h-11"
-							onClick={() => {
-								localStorage.removeItem(VERIFIED_KEY);
-								navigate({ to: "/login" });
-							}}
-						>
-							Entrar na conta
-						</Button>
-					</div>
-				)}
-
-				{verify.isError && !alreadyVerified && (
-					<div className="flex flex-col gap-4">
-						<div>
-							<span className="font-mono text-overline tracking-widest uppercase text-error block mb-2">
-								Erro
-							</span>
-							<h1 className="text-2xl font-semibold tracking-tight text-text-hi m-0 mb-2">
-								Link inválido
-							</h1>
-							<p className="text-body text-text-md leading-prose m-0 max-w-[36ch]">
-								{(verify.error as Error)?.message ??
-									"O link de verificação é inválido ou expirou."}
-							</p>
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<Label className="mono-label">E-mail</Label>
-							<Input
-								type="email"
-								value={email}
-								onChange={(event) => setEmail(event.target.value)}
-								placeholder="seu@email.com"
-								className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11"
-							/>
-						</div>
-						<Button
-							variant="outline"
-							className="w-full h-11"
-							disabled={
-								resend.isPending || resend.isSuccess || email.trim() === ""
-							}
-							onClick={() => resend.mutate(email.trim())}
-						>
-							{resend.isPending ? "Enviando..." : "Reenviar e-mail"}
-						</Button>
-						{resend.isSuccess && (
-							<p className="text-caption m-0 text-text-md">
-								Novo link enviado para {email.trim()}.
-							</p>
-						)}
-						{resend.error && (
-							<p className="text-body m-0 text-error">{resend.error.message}</p>
-						)}
-					</div>
-				)}
-
-				{!token && !verify.isLoading && !alreadyVerified && (
-					<div className="flex flex-col gap-4">
-						<div>
-							<span className="font-mono text-overline tracking-widest uppercase text-error block mb-2">
-								Erro
-							</span>
-							<h1 className="text-2xl font-semibold tracking-tight text-text-hi m-0 mb-2">
-								Link incompleto
-							</h1>
-							<p className="text-body text-text-md leading-prose m-0 max-w-[36ch]">
-								Use o link enviado para o seu e-mail.
-							</p>
-						</div>
-						<Button
-							variant="outline"
-							className="w-full h-11 mt-1"
-							onClick={() => navigate({ to: "/login" })}
-						>
-							Voltar ao login
-						</Button>
-					</div>
-				)}
-
-				<div className="mt-5 pt-4 border-t border-border-soft font-mono text-overline text-text-dim text-center tracking-[0.04em]">
-					Detonado · biblioteca pessoal
-				</div>
+	let content: React.ReactNode;
+	if (verify.isLoading)
+		content = (
+			<div className={styles.form}>
+				<span className={styles.eyebrow}>Verificando</span>
+				<h1 className={styles.title}>Confirmando seu e-mail…</h1>
+				<p className={styles.intro}>Isso leva só um momento.</p>
 			</div>
-		</div>
-	);
+		);
+	else if (verify.isSuccess || alreadyVerified)
+		content = (
+			<div className={styles.form}>
+				<div className={styles.successIcon}>
+					<CheckCircle2 />
+				</div>
+				<span className={styles.eyebrow}>E-mail confirmado</span>
+				<h1 className={styles.title}>Sua biblioteca está pronta.</h1>
+				<p className={styles.intro}>Entre para adicionar o primeiro jogo.</p>
+				<Button
+					variant="accent"
+					onClick={() => {
+						localStorage.removeItem(VERIFIED_KEY);
+						navigate({ to: "/login" });
+					}}
+				>
+					Entrar na conta
+				</Button>
+			</div>
+		);
+	else if (verify.isError && token)
+		content = (
+			<div className={styles.form}>
+				<span className={styles.eyebrow}>Link expirado</span>
+				<h1 className={styles.title}>Peça um novo link.</h1>
+				<p className={styles.intro}>
+					{(verify.error as Error)?.message ?? "O link não é mais válido."}
+				</p>
+				<div className={styles.field}>
+					<Label htmlFor="resend-email">E-mail</Label>
+					<Input
+						id="resend-email"
+						type="email"
+						value={email}
+						onChange={(event) => setEmail(event.target.value)}
+					/>
+				</div>
+				<Button
+					variant="outline"
+					disabled={resend.isPending || !email.trim()}
+					onClick={() => resend.mutate(email.trim())}
+				>
+					{resend.isPending ? "Enviando…" : "Reenviar e-mail"}
+				</Button>
+				{resend.isSuccess && (
+					<p className={styles.success}>Novo link enviado.</p>
+				)}
+			</div>
+		);
+	else
+		content = (
+			<div className={styles.form}>
+				<span className={styles.eyebrow}>Link incompleto</span>
+				<h1 className={styles.title}>Abra o link do seu e-mail.</h1>
+				<Button variant="outline" onClick={() => navigate({ to: "/login" })}>
+					Voltar ao login
+				</Button>
+			</div>
+		);
+	return <AuthShell>{content}</AuthShell>;
 }

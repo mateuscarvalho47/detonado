@@ -33,8 +33,9 @@ Biblioteca pessoal de jogos. Monorepo com backend Fastify e frontend React: busc
 - **Vite 8** — bundler
 - **TanStack Router** — roteamento type-safe
 - **TanStack Query** — data fetching e cache
-- **Tailwind CSS 4** — estilos
-- **shadcn/ui** — componentes (via `class-variance-authority`)
+- **CSS Modules** — estilos locais por feature
+- **CSS custom properties** — tokens de marca e temas
+- **Radix UI** — primitivas acessíveis sem camada de utilitários
 
 ## Estrutura do monorepo
 

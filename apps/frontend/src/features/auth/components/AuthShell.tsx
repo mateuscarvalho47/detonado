@@ -1,29 +1,42 @@
 import type { ReactNode } from "react";
+import styles from "./Auth.module.css";
 import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
-
-interface AuthShellProps {
+export function AuthShell({
+	mode,
+	children,
+}: {
 	mode?: "login" | "register";
 	children?: ReactNode;
-}
-
-export function AuthShell({ mode, children }: AuthShellProps) {
+}) {
 	return (
-		<div className="min-h-screen flex items-center justify-center px-5 py-10 bg-bg-0">
-			<div className="w-full max-w-105 border border-border-soft bg-bg-1 p-8">
-				<div className="flex items-center gap-2.5 mb-7">
-					<img src="/logo.svg" alt="" width="22" height="22" />
-					<span className="text-title font-semibold tracking-tight text-text-hi">
-						Detonado
-					</span>
+		<div className={styles.page}>
+			<aside className={styles.story}>
+				<div className={styles.brand}>
+					<img src="/logo.svg" alt="" />
+					<span>Detonado</span>
 				</div>
-
-				{children ?? (mode === "login" ? <LoginForm /> : <RegisterForm />)}
-
-				<div className="mt-5 pt-4 border-t border-border-soft font-mono text-overline text-text-dim text-center">
-					Detonado · biblioteca pessoal
+				<div className={styles.storyCopy}>
+					<p>Seu backlog, com contexto</p>
+					<h2>Volte ao jogo. Não à estaca zero.</h2>
+					<p>
+						Guarde onde parou, organize o que vem depois e escolha sua próxima
+						sessão sem depender da memória.
+					</p>
 				</div>
-			</div>
+				<div className={styles.storyFooter}>
+					Uma biblioteca pessoal. Sem feed. Sem disputa.
+				</div>
+			</aside>
+			<main className={styles.formSide}>
+				<div className={styles.card}>
+					<div className={`${styles.brand} ${styles.mobileBrand}`}>
+						<img src="/logo.svg" alt="" />
+						<span>Detonado</span>
+					</div>
+					{children ?? (mode === "login" ? <LoginForm /> : <RegisterForm />)}
+				</div>
+			</main>
 		</div>
 	);
 }

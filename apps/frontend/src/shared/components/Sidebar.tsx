@@ -1,4 +1,4 @@
-﻿import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
 	BarChart3,
 	BookMarked,
@@ -8,16 +8,15 @@ import {
 	Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useLogout } from "@/features/auth/hooks/useAuth";
-import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
+import styles from "@/styles/Shell.module.css";
 import type { User } from "@/types/api";
 
 const NAV_ITEMS = [
 	{ to: "/", label: "Agora", icon: Home },
 	{ to: "/library", label: "Biblioteca", icon: BookMarked },
-	{ to: "/stats", label: "Estatísticas", icon: BarChart3 },
+	{ to: "/stats", label: "Retrospecto", icon: BarChart3 },
 ] as const;
 
 export function Sidebar({
@@ -28,52 +27,31 @@ export function Sidebar({
 	libraryCount?: number;
 }) {
 	const navigate = useNavigate();
-	const routerState = useRouterState();
-	const currentPath = routerState.location.pathname;
-	const setSearchOpen = useAppStore((s) => s.setSearchOpen);
+	const currentPath = useRouterState().location.pathname;
+	const setSearchOpen = useAppStore((state) => state.setSearchOpen);
 	const logout = useLogout();
-
 	const isActive = (to: string) =>
 		to === "/" ? currentPath === "/" : currentPath.startsWith(to);
 
 	return (
-		<aside
-			className="sticky top-0 self-start h-screen flex flex-col gap-3 p-[18px_14px] w-full"
-			style={{
-				background: "var(--color-bg-1)",
-				borderRight: "1px solid var(--color-border-soft)",
-			}}
-		>
-			{/* Brand */}
-			<div className="flex items-center gap-2 px-1.5 pb-1">
-				<img src="/logo.svg" alt="" width="22" height="22" />
-				<span className="text-heading font-bold tracking-[-0.02em] text-text-hi">
-					Detonado
-				</span>
+		<aside className={styles.sidebar}>
+			<div className={`${styles.wordmark} ${styles.sidebarBrand}`}>
+				<img src="/logo.svg" alt="" />
+				<span>Detonado</span>
 			</div>
-
-			{/* Search button */}
 			<button
 				type="button"
 				onClick={() => setSearchOpen(true)}
-				className="flex items-center gap-2 px-2.5 py-2 text-caption transition-all cursor-pointer w-full bg-bg-2 border border-border-soft text-text-md"
+				className={styles.search}
 			>
-				<Search className="size-3.5" />
-				<span className="flex-1 text-left text-body">Buscar jogos</span>
-				<div className="flex gap-0.5">
-					{["Ctrl", "K"].map((k) => (
-						<kbd
-							key={k}
-							className="inline-flex items-center justify-center h-4 min-w-4 px-1 text-overline font-medium font-mono text-text-md bg-bg-3 border border-border-soft"
-						>
-							{k}
-						</kbd>
-					))}
+				<Search size={16} />
+				<span>Buscar jogos</span>
+				<div className={styles.shortcut}>
+					<kbd>Ctrl</kbd>
+					<kbd>K</kbd>
 				</div>
 			</button>
-
-			{/* Nav */}
-			<nav className="flex flex-col gap-px pt-1">
+			<nav className={styles.nav} aria-label="Principal">
 				{NAV_ITEMS.map(({ to, label, icon: Icon }) => {
 					const active = isActive(to);
 					return (
@@ -81,75 +59,39 @@ export function Sidebar({
 							type="button"
 							key={to}
 							onClick={() => navigate({ to })}
-							className={cn(
-								"flex items-center gap-2.5 px-2.5 py-2",
-								"text-body font-medium text-left w-full cursor-pointer transition-[background,color]",
-								"border-0",
-							)}
-							style={{
-								background: active ? "var(--color-bg-3)" : "transparent",
-								color: active ? "var(--color-text-hi)" : "var(--color-text-md)",
-								boxShadow: active
-									? "inset 2px 0 0 var(--color-text-hi)"
-									: undefined,
-							}}
+							className={styles.navButton}
+							data-active={active}
+							aria-current={active ? "page" : undefined}
 						>
-							<span className="flex opacity-85">
-								<Icon className="size-4" />
-							</span>
-							<span className="flex-1">{label}</span>
+							<Icon />
+							<span className={styles.navLabel}>{label}</span>
 							{to === "/library" && libraryCount !== undefined && (
-								<span
-									className="text-overline px-1.5 py-px rounded font-mono"
-									style={{
-										color: "var(--color-text-lo)",
-										background: "var(--color-bg-3)",
-									}}
-								>
-									{libraryCount}
-								</span>
+								<span className={styles.count}>{libraryCount}</span>
 							)}
 						</button>
 					);
 				})}
 			</nav>
-
-			<Separator className="bg-border-soft" />
-
-			{/* Footer user */}
-			<div className="mt-auto flex flex-col gap-2">
-				<div className="flex flex-col gap-2.5 p-3 bg-bg-2 border border-border-soft">
-					<div className="flex items-center gap-2.5">
-						<div className="flex-1 min-w-0">
-							<div className="text-body font-semibold text-text-hi leading-tight">
-								Minha conta
-							</div>
-							<div className="text-caption truncate font-mono text-text-lo mt-0.5">
-								{me?.email ?? "—"}
-							</div>
-						</div>
-					</div>
-					<div className="flex gap-1.5">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => navigate({ to: "/account" })}
-							title="Configurações"
-							className="flex-1 h-7 text-text-md gap-1.5 justify-start px-1"
-						>
-							<Settings className="size-3.5" />
-							<span className="text-overline">Configurações</span>
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							onClick={() => logout.mutate()}
-							title="Sair"
-							className="shrink-0 h-7 w-7 text-text-md"
-						>
-							<LogOut className="size-3.5" />
-						</Button>
-					</div>
+			<div className={styles.account}>
+				<p className={styles.accountEmail}>{me.email}</p>
+				<div className={styles.accountActions}>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => navigate({ to: "/account" })}
+					>
+						<Settings />
+						<span>Configurações</span>
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => logout.mutate()}
+						title="Sair"
+						aria-label="Sair"
+					>
+						<LogOut />
+					</Button>
 				</div>
 			</div>
 		</aside>

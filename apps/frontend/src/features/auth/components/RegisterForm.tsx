@@ -1,128 +1,93 @@
-﻿import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegisterForm, useResendVerification } from "../hooks/useAuth";
-
+import styles from "./Auth.module.css";
 export function RegisterForm() {
-	const { form, onSubmit, mutation: register } = useRegisterForm();
+	const { form, onSubmit, mutation } = useRegisterForm();
 	const resend = useResendVerification();
 	const [showPassword, setShowPassword] = useState(false);
-
 	const {
-		register: registerField,
+		register,
 		watch,
 		formState: { errors },
 	} = form;
 	const email = watch("email");
-
-	if (register.isSuccess) {
+	if (mutation.isSuccess)
 		return (
-			<div className="flex flex-col gap-4">
-				<div>
-					<span className="font-mono text-overline tracking-widest uppercase text-accent-bright block mb-2">
-						Verifique seu e-mail
-					</span>
-					<h1 className="text-2xl font-semibold tracking-tight m-0 mb-2 text-text-hi">
-						Confirme o e-mail
-					</h1>
-					<p className="text-body text-text-md leading-prose mt-0 mb-2 max-w-[36ch]">
-						Enviamos um link de confirmação para{" "}
-						<span className="text-text-hi font-medium">{email}</span>. Clique no
-						link para ativar sua conta.
+			<div className={styles.form}>
+				<header className={styles.heading}>
+					<span className={styles.eyebrow}>Só falta confirmar</span>
+					<h1 className={styles.title}>Abra seu e-mail.</h1>
+					<p className={styles.intro}>
+						Enviamos um link para <strong>{email}</strong>. Ele ativa sua
+						biblioteca.
 					</p>
-					<p className="text-caption text-text-lo leading-normal">
-						Não recebeu? Verifique a pasta de spam.
-					</p>
-				</div>
-				<div className="flex flex-col gap-2">
-					<Button
-						variant="outline"
-						disabled={resend.isPending || resend.isSuccess}
-						onClick={() => resend.mutate(email)}
-						className="w-full h-10"
-					>
-						{resend.isPending ? "Enviando..." : "Reenviar e-mail"}
-					</Button>
-					{resend.isSuccess && (
-						<p className="text-caption m-0 text-text-md text-center">
-							Novo link enviado para {email}.
-						</p>
-					)}
-					{resend.error && (
-						<p className="text-body m-0 text-error text-center">
-							{resend.error.message}
-						</p>
-					)}
-				</div>
-				<p className="text-center text-caption text-text-lo mt-2">
-					<a
-						href="/login"
-						className="text-accent-bright font-semibold no-underline"
-					>
-						Voltar ao login
-					</a>
+				</header>
+				<Button
+					variant="outline"
+					disabled={resend.isPending || resend.isSuccess}
+					onClick={() => resend.mutate(email)}
+				>
+					{resend.isPending ? "Enviando…" : "Reenviar e-mail"}
+				</Button>
+				{resend.isSuccess && (
+					<p className={styles.success}>Novo link enviado.</p>
+				)}
+				<p className={styles.centerLink}>
+					<a href="/login">Voltar ao login</a>
 				</p>
 			</div>
 		);
-	}
-
 	return (
-		<form onSubmit={onSubmit} className="flex flex-col gap-3.5">
-			<div>
-				<span className="font-mono text-overline tracking-widest uppercase text-accent-bright block mb-2">
-					Crie sua conta
-				</span>
-				<h1 className="text-2xl font-semibold tracking-tight m-0 mb-2 text-text-hi">
-					Criar conta
-				</h1>
-				<p className="text-body text-text-md leading-prose mt-0 mb-6 max-w-[36ch]">
-					A biblioteca fica só na sua conta.
+		<form onSubmit={onSubmit} className={styles.form}>
+			<header className={styles.heading}>
+				<span className={styles.eyebrow}>Sua biblioteca pessoal</span>
+				<h1 className={styles.title}>Comece pelo próximo jogo.</h1>
+				<p className={styles.intro}>
+					A conta é gratuita. Seus registros ficam privados.
 				</p>
-			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<Label className="mono-label">E-mail</Label>
+			</header>
+			<div className={styles.field}>
+				<Label htmlFor="register-email">E-mail</Label>
 				<Input
+					id="register-email"
 					type="email"
-					{...registerField("email")}
+					{...register("email")}
 					placeholder="seu@email.com"
-					className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11"
+					autoComplete="email"
 				/>
-				{errors.email && (
-					<p className="text-body m-0 text-error">{errors.email.message}</p>
-				)}
+				{errors.email && <p className={styles.error}>{errors.email.message}</p>}
 			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<Label className="mono-label">Senha</Label>
-				<div className="relative">
+			<div className={styles.field}>
+				<Label htmlFor="register-password">Senha</Label>
+				<div className={styles.password}>
 					<Input
+						id="register-password"
 						type={showPassword ? "text" : "password"}
-						{...registerField("password")}
+						{...register("password")}
 						placeholder="mínimo 8 caracteres"
-						className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-10 pr-9"
+						autoComplete="new-password"
 					/>
 					<button
 						type="button"
-						onClick={() => setShowPassword((v) => !v)}
-						className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-lo hover:text-text-md transition-colors"
-						tabIndex={-1}
+						onClick={() => setShowPassword((value) => !value)}
+						className={styles.reveal}
+						aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
 					>
-						{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+						{showPassword ? <EyeOff /> : <Eye />}
 					</button>
 				</div>
 				{errors.password && (
-					<p className="text-body m-0 text-error">{errors.password.message}</p>
+					<p className={styles.error}>{errors.password.message}</p>
 				)}
 			</div>
-
-			<div className="flex items-start gap-2.5 mt-1">
+			<div className={styles.consent}>
 				<Checkbox
 					id="consent"
-					className="mt-0.5 shrink-0"
 					onCheckedChange={(checked) =>
 						form.setValue(
 							"consent",
@@ -131,55 +96,34 @@ export function RegisterForm() {
 						)
 					}
 				/>
-				<label
-					htmlFor="consent"
-					className="text-caption text-text-lo leading-relaxed cursor-pointer"
-				>
+				<label htmlFor="consent">
 					Li e concordo com a{" "}
-					<a
-						href="/privacy"
-						className="text-accent-bright no-underline hover:underline"
-						target="_blank"
-						rel="noreferrer"
-					>
+					<a href="/privacy" target="_blank" rel="noreferrer">
 						Política de Privacidade
 					</a>{" "}
 					e os{" "}
-					<a
-						href="/terms"
-						className="text-accent-bright no-underline hover:underline"
-						target="_blank"
-						rel="noreferrer"
-					>
+					<a href="/terms" target="_blank" rel="noreferrer">
 						Termos de Uso
 					</a>
+					.
 				</label>
 			</div>
 			{errors.consent && (
-				<p className="text-body m-0 text-error">{errors.consent.message}</p>
+				<p className={styles.error}>{errors.consent.message}</p>
 			)}
-
-			{register.error && (
-				<p className="text-body m-0 text-error">{register.error.message}</p>
+			{mutation.error && (
+				<p className={styles.error}>{mutation.error.message}</p>
 			)}
-
 			<Button
 				variant="accent"
 				type="submit"
-				disabled={register.isPending}
-				className="w-full h-10 mt-1.5"
+				disabled={mutation.isPending}
+				className={styles.submit}
 			>
-				{register.isPending ? "Criando..." : "Criar conta"}
+				{mutation.isPending ? "Criando…" : "Criar minha biblioteca"}
 			</Button>
-
-			<p className="text-center text-caption text-text-lo mt-1">
-				Já tem conta?{" "}
-				<a
-					href="/login"
-					className="text-accent-bright font-semibold no-underline"
-				>
-					Entrar
-				</a>
+			<p className={styles.centerLink}>
+				Já tem conta? <a href="/login">Entrar</a>
 			</p>
 		</form>
 	);

@@ -7,35 +7,33 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 describe("LandingScreen", () => {
-	it("presents a library, not a feature grid", () => {
+	it("explains the core job and shows real product context", () => {
 		render(<LandingScreen />);
 		expect(
-			screen.getByRole("heading", { name: "Sua biblioteca de jogos." }),
+			screen.getByRole("heading", {
+				name: /Lembre onde parou\.Escolha o próximo\./,
+			}),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "Criar conta" }),
+			screen.getByRole("button", { name: /Montar minha biblioteca/ }),
 		).toBeInTheDocument();
-		expect(screen.queryByText("Criar conta grátis")).not.toBeInTheDocument();
-		expect(screen.queryByText("📚")).not.toBeInTheDocument();
-		expect(screen.getAllByText(/HowLongToBeat/).length).toBeGreaterThan(0);
 		expect(
-			screen.getByText(
-				"Não é um guia. A estante não aparece para mais ninguém.",
-			),
+			screen.getByText(/Conta gratuita · leva menos de um minuto/),
 		).toBeInTheDocument();
-		expect(screen.getByText("Exemplo")).toBeInTheDocument();
-		expect(screen.getByText("Próximos na fila")).toBeInTheDocument();
 		expect(screen.getByText("Jogando agora")).toBeInTheDocument();
-		expect(screen.getByText("PC · sem estimativa")).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: "Política de Privacidade" }),
-		).toHaveAttribute("href", "/privacy");
+		expect(screen.getByText("Parei no Banco.")).toBeInTheDocument();
+		expect(screen.getByText("Dê uma ordem à fila")).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "Privacidade" })).toHaveAttribute(
+			"href",
+			"/privacy",
+		);
 		expect(screen.getByRole("link", { name: "Termos" })).toHaveAttribute(
 			"href",
 			"/terms",
 		);
-		expect(
-			screen.getByRole("link", { name: "sac@carvalholabs.com.br" }),
-		).toHaveAttribute("href", "mailto:sac@carvalholabs.com.br");
+		expect(screen.getByRole("link", { name: "Contato" })).toHaveAttribute(
+			"href",
+			"mailto:sac@carvalholabs.com.br",
+		);
 	});
 });

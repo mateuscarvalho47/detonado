@@ -8,7 +8,7 @@ export const ARCHIVE_EMPTY_BODY =
 export function ArchiveEmpty({ onAdd }: { onAdd: () => void }) {
 	return (
 		<EmptyState
-			icon={<BookMarked className="size-7" />}
+			icon={<BookMarked />}
 			title="Nenhum jogo ainda"
 			body={ARCHIVE_EMPTY_BODY}
 			action={

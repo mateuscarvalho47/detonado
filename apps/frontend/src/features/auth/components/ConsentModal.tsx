@@ -1,4 +1,4 @@
-﻿import { Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -8,58 +8,42 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { useConsent } from "../hooks/useAuth";
-
+import styles from "./Auth.module.css";
 export function ConsentModal() {
 	const { mutate, isPending } = useConsent();
-
 	return (
 		<Dialog open onOpenChange={() => {}}>
-			<DialogContent className="max-w-md bg-bg-1 border border-border-soft [&>button]:hidden shadow-none">
+			<DialogContent className={styles.modal}>
 				<DialogHeader>
-					<DialogTitle className="text-heading text-text-hi">
-						Precisamos da sua confirmação
-					</DialogTitle>
-					<DialogDescription className="sr-only">
-						Confirmação de leitura dos Termos de Uso e Política de Privacidade.
+					<DialogTitle>Antes de continuar</DialogTitle>
+					<DialogDescription>
+						Confirme os termos para usar sua biblioteca.
 					</DialogDescription>
 				</DialogHeader>
-
-				<div className="flex flex-col gap-4 text-body text-text-md leading-relaxed">
+				<div className={styles.modalText}>
 					<p>
 						Atualizamos nossa{" "}
-						<Link
-							to="/privacy"
-							target="_blank"
-							className="text-accent-bright no-underline hover:underline"
-						>
+						<Link to="/privacy" target="_blank">
 							Política de Privacidade
 						</Link>{" "}
-						e nossos{" "}
-						<Link
-							to="/terms"
-							target="_blank"
-							className="text-accent-bright no-underline hover:underline"
-						>
+						e os{" "}
+						<Link to="/terms" target="_blank">
 							Termos de Uso
 						</Link>
-						. Para continuar usando o Detonado, confirme que você leu e concorda
-						com esses documentos.
+						.
 					</p>
-					<p className="text-caption text-text-lo">
-						Seus dados são armazenados com segurança e nunca serão
-						compartilhados para fins de marketing. Você pode excluir sua conta a
-						qualquer momento.
+					<p>
+						Seus dados não são compartilhados para marketing e você pode excluir
+						a conta a qualquer momento.
 					</p>
 				</div>
-
-				<div className="flex justify-end mt-2">
+				<div className={styles.modalFoot}>
 					<Button
 						variant="accent"
 						disabled={isPending}
 						onClick={() => mutate()}
-						className="h-9"
 					>
-						{isPending ? "Salvando..." : "Aceitar e continuar"}
+						{isPending ? "Salvando…" : "Aceitar e continuar"}
 					</Button>
 				</div>
 			</DialogContent>

@@ -1,54 +1,33 @@
-﻿import type { LibraryStats } from "@/types/api";
-
-interface HistogramProps {
+import type { LibraryStats } from "@/types/api";
+import styles from "./Stats.module.css";
+export function Histogram({
+	distribution,
+}: {
 	distribution: LibraryStats["ratingDistribution"];
-}
-
-export function Histogram({ distribution }: HistogramProps) {
-	const maxCount = Math.max(...distribution.map((d) => d.count), 1);
-	const ratings = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
+}) {
+	const max = Math.max(...distribution.map((item) => item.count), 1);
 	return (
-		<div
-			className="grid gap-2 h-50 items-end"
-			style={{ gridTemplateColumns: "repeat(11, 1fr)" }}
-		>
-			{ratings.map((rating) => {
-				const entry = distribution.find((d) => d.rating === rating);
-				const count = entry?.count ?? 0;
-				const heightPct = (count / maxCount) * 100;
-				const isMode = count === maxCount && count > 0;
+		<div className={styles.histogram}>
+			{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => {
+				const count =
+					distribution.find((item) => item.rating === rating)?.count ?? 0;
 				return (
-					<div key={rating} className="flex flex-col gap-1.5 h-full">
-						<div className="flex-1 flex items-end justify-center">
+					<div key={rating} className={styles.histColumn}>
+						<div className={styles.histBarWrap}>
 							<div
-								className="w-full min-h-1 flex items-start justify-center pt-1 transition-[height] duration-700 ease-out"
+								className={styles.histBar}
 								style={{
-									height: `${heightPct}%`,
-									background: isMode
-										? "oklch(0.92 0.012 80)"
-										: count > 0
-											? "oklch(0.55 0.012 70)"
-											: "oklch(0.22 0.009 28)",
+									height: `${(count / max) * 100}%`,
+									background:
+										count === max && count > 0
+											? "var(--color-accent)"
+											: undefined,
 								}}
 							>
-								{count > 0 && (
-									<span
-										className="text-caption font-semibold"
-										style={{
-											color: isMode
-												? "oklch(0.2 0.012 50)"
-												: "var(--color-text-hi)",
-										}}
-									>
-										{count}
-									</span>
-								)}
+								{count || ""}
 							</div>
 						</div>
-						<div className="text-center text-[11.5px] text-text-lo">
-							{rating}
-						</div>
+						<span className={styles.histLabel}>{rating}</span>
 					</div>
 				);
 			})}

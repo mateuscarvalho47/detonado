@@ -1,4 +1,4 @@
-﻿import { XIcon } from "lucide-react";
+import { X } from "lucide-react";
 import { Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { SelectOptions } from "@/components/ui/select-options";
 import { Cover } from "@/shared/components/Cover";
 import { HltbStat, HltbStatSkeleton } from "@/shared/components/HltbStat";
 import { STATUSES } from "@/shared/constants/statuses";
@@ -17,96 +16,76 @@ import { hltbCaption } from "@/shared/lib/hltbCaption";
 import type { GameSearchResult } from "@/types/api";
 import { useAddToLibraryForm } from "../hooks/useAddToLibraryForm";
 import { useGameDetail } from "../hooks/useGameSearch";
-
-interface AddToLibraryModalProps {
-	game: GameSearchResult;
-	onClose: () => void;
-	onAdded: (igdbId: number) => void;
-}
-
+import styles from "./Search.module.css";
 export function AddToLibraryModal({
 	game,
 	onClose,
 	onAdded,
-}: AddToLibraryModalProps) {
+}: {
+	game: GameSearchResult;
+	onClose: () => void;
+	onAdded: (igdbId: number) => void;
+}) {
 	const { form, onSubmit, isPending } = useAddToLibraryForm(game, onAdded);
 	const { control } = form;
-	const { data: detail, isLoading: hltbLoading } = useGameDetail(game.igdbId);
+	const { data: detail, isLoading } = useGameDetail(game.igdbId);
 	const hltb = detail?.hltb;
-
 	return (
 		<Dialog
 			open
-			onOpenChange={(open) => {
-				if (!open) onClose();
+			onOpenChange={(value) => {
+				if (!value) onClose();
 			}}
 		>
 			<DialogContent
 				showCloseButton={false}
 				aria-describedby={undefined}
-				className="p-0 gap-0 max-w-180 bg-bg-1 border border-border-soft shadow-none"
+				className={styles.addModal}
 			>
-				<DialogHeader className="flex flex-row items-center justify-between px-5 py-3.5 border-b border-border-soft">
-					<DialogTitle className="text-heading text-text-hi">
-						Adicionar à biblioteca
-					</DialogTitle>
+				<DialogHeader className={styles.modalHead}>
+					<DialogTitle>Adicionar à biblioteca</DialogTitle>
 					<DialogClose asChild>
-						<Button variant="ghost" size="icon-sm">
-							<XIcon />
-							<span className="sr-only">Fechar</span>
+						<Button variant="ghost" size="icon-sm" aria-label="Fechar">
+							<X />
 						</Button>
 					</DialogClose>
 				</DialogHeader>
-
-				<form onSubmit={onSubmit} className="flex flex-col gap-5 p-5 sm:p-6">
-					{/* Grid: cover + fields (sem botões) */}
-					<div
-						className="flex flex-col sm:grid sm:gap-7 gap-5"
-						style={{ gridTemplateColumns: "320px 1fr" }}
-					>
-						{/* Cover */}
-						<div className="w-40 sm:w-auto self-stretch mx-auto sm:mx-0">
+				<form onSubmit={onSubmit} className={styles.addForm}>
+					<div className={styles.gameGrid}>
+						<div className={styles.addCover}>
 							<Cover
 								game={{
 									name: game.name,
 									year: game.releaseYear,
 									platforms: game.platforms,
-									cover: { hue: 295, scheme: "duotone", glyph: game.name[0] },
+									cover: { hue: 20, scheme: "duotone", glyph: game.name[0] },
 									coverUrl: game.coverUrl,
 								}}
 								size="lg"
 							/>
 						</div>
-
-						{/* Form fields */}
-						<div className="flex flex-col gap-4">
+						<div className={styles.gameFields}>
 							<div>
-								<div className="mono-label text-accent-bright">
+								<div className={styles.meta}>
 									{game.genres.slice(0, 2).join(" · ")}
 								</div>
-								<h2 className="text-xl font-semibold tracking-tight mt-1 mb-0 text-text-hi">
-									{game.name}
-								</h2>
-								<div className="text-body text-text-md font-mono mt-0.5">
+								<h3>{game.name}</h3>
+								<div className={styles.meta}>
 									{game.releaseYear ?? "TBA"} ·{" "}
 									{game.platforms.slice(0, 3).join(", ")}
 								</div>
 							</div>
-
-							{/* HowLongToBeat */}
-							{(hltbLoading || detail) && (
-								<div>
-									<Label className="mono-label block mb-2">
-										Tempo para zerar
-									</Label>
-									{hltbLoading ? (
-										<div className="grid grid-cols-3 gap-1.5">
+							{(isLoading || detail) && (
+								<div className={styles.field}>
+									<Label>Tempo para terminar</Label>
+									{isLoading ? (
+										<div className={styles.hltbGrid}>
 											<HltbStatSkeleton />
 											<HltbStatSkeleton />
 											<HltbStatSkeleton />
 										</div>
 									) : hltb ? (
-										<div className="grid grid-cols-3 gap-1.5">
+										<div className={styles.hltbGrid}>
 											<HltbStat label="Principal" hours={hltb.mainHours} />
 											<HltbStat label="+ Extras" hours={hltb.mainExtraHours} />
 											<HltbStat
@@ -115,95 +94,68 @@ export function AddToLibraryModal({
 											/>
 										</div>
 									) : (
-										<p className="m-0 text-body text-text-md">
-											{hltbCaption(detail?.hltbStatus, false)}
-										</p>
+										<p>{hltbCaption(detail?.hltbStatus, false)}</p>
 									)}
 								</div>
 							)}
-
-							{/* Status picker */}
-							<div>
-								<Label className="mono-label block mb-2">Status</Label>
+							<div className={styles.field}>
+								<Label>Status</Label>
 								<Controller
 									control={control}
 									name="status"
 									render={({ field }) => (
-										<div className="grid grid-cols-2 gap-1.5">
-											{STATUSES.map((s) => (
+										<div className={styles.statusGrid}>
+											{STATUSES.map((status) => (
 												<button
 													type="button"
-													key={s.key}
-													onClick={() => field.onChange(s.key)}
-													className="flex items-center gap-2 h-8 px-2.5 cursor-pointer text-caption font-medium border"
-													style={{
-														background:
-															field.value === s.key
-																? "var(--color-bg-3)"
-																: "var(--color-bg-2)",
-														borderColor:
-															field.value === s.key
-																? "var(--color-border-strong)"
-																: "var(--color-border-soft)",
-														boxShadow:
-															field.value === s.key
-																? `inset 2px 0 0 ${s.color}`
-																: undefined,
-														color:
-															field.value === s.key
-																? "var(--color-text-hi)"
-																: "var(--color-text-md)",
-													}}
+													key={status.key}
+													onClick={() => field.onChange(status.key)}
+													className={styles.status}
+													data-active={field.value === status.key}
+													style={
+														{
+															"--status-color": status.color,
+														} as React.CSSProperties
+													}
 												>
-													<div
-														className="size-1.5 rounded-full shrink-0"
-														style={{ background: s.color }}
-													/>
-													{s.label}
+													<span className={styles.dot} />
+													{status.label}
 												</button>
 											))}
 										</div>
 									)}
 								/>
 							</div>
-
-							{/* Platform */}
-							<div>
-								<Label className="mono-label block mb-1.5">Plataforma</Label>
+							<div className={styles.field}>
+								<Label htmlFor="add-platform">Plataforma</Label>
 								<Controller
 									control={control}
 									name="userPlatform"
 									render={({ field }) => (
-										<SelectOptions
-											options={game.platforms}
-											value={field.value}
+										<select
+											id="add-platform"
+											className={styles.select}
+											value={field.value ?? ""}
 											onChange={field.onChange}
-											placeholder="Plataforma"
-											className="w-full h-10 bg-bg-2 border-border-soft text-text-hi"
-										/>
+										>
+											<option value="">Escolha uma plataforma</option>
+											{game.platforms.map((platform) => (
+												<option key={platform} value={platform}>
+													{platform}
+												</option>
+											))}
+										</select>
 									)}
 								/>
 							</div>
 						</div>
 					</div>
-
-					{/* Botões fora do grid */}
-					<div className="flex gap-2.5 justify-end">
-						<Button
-							type="button"
-							variant="ghost"
-							onClick={onClose}
-							className="h-9 border border-border-soft text-text-md"
-						>
+					<div className={styles.actions}>
+						<Button type="button" variant="ghost" onClick={onClose}>
 							Cancelar
 						</Button>
-						<Button
-							variant="accent"
-							type="submit"
-							disabled={isPending}
-							className="h-9"
-						>
-							{isPending ? "Adicionando..." : "Adicionar"}
+						<Button variant="accent" type="submit" disabled={isPending}>
+							{isPending ? "Adicionando…" : "Adicionar jogo"}
 						</Button>
 					</div>
 				</form>

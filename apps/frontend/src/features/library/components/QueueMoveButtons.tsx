@@ -1,29 +1,26 @@
 import { useMoveInQueue } from "../hooks/useLibrary";
-
-interface QueueMoveButtonsProps {
-	id: string;
-	name: string;
-	isFirst: boolean;
-	isLast: boolean;
-}
-
+import styles from "./Library.module.css";
 export function QueueMoveButtons({
 	id,
 	name,
 	isFirst,
 	isLast,
-}: QueueMoveButtonsProps) {
+}: {
+	id: string;
+	name: string;
+	isFirst: boolean;
+	isLast: boolean;
+}) {
 	const move = useMoveInQueue();
 	const pending = move.isPending && move.variables?.id === id;
-
 	return (
-		<div className="flex flex-col">
+		<div className={styles.queueButtons}>
 			<button
 				type="button"
 				aria-label={`Subir ${name}`}
 				disabled={isFirst || pending}
 				onClick={() => move.mutate({ id, direction: "up" })}
-				className="flex items-center justify-center size-7 bg-transparent border border-border-soft text-text-md text-caption cursor-pointer disabled:opacity-30 disabled:cursor-default"
+				className={styles.queueButton}
 			>
 				↑
 			</button>
@@ -32,7 +29,7 @@ export function QueueMoveButtons({
 				aria-label={`Descer ${name}`}
 				disabled={isLast || pending}
 				onClick={() => move.mutate({ id, direction: "down" })}
-				className="flex items-center justify-center size-7 bg-transparent border border-t-0 border-border-soft text-text-md text-caption cursor-pointer disabled:opacity-30 disabled:cursor-default"
+				className={styles.queueButton}
 			>
 				↓
 			</button>
