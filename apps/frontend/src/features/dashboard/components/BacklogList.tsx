@@ -5,110 +5,87 @@ import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import { queueCaption } from "@/shared/lib/queueOrder";
 import { useAppStore } from "@/store/useAppStore";
 import type { LibraryEntry } from "@/types/api";
+import styles from "./Dashboard.module.css";
 
-const BACKLOG_HUE = STATUS_BY_KEY.BACKLOG.hue;
-
-interface BacklogListProps {
-	games: LibraryEntry[];
-}
-
-export function BacklogList({ games }: BacklogListProps) {
+export function BacklogList({ games }: { games: LibraryEntry[] }) {
 	const navigate = useNavigate();
-	const setStatusFilter = useAppStore((s) => s.setLibraryStatusFilter);
-	const setSort = useAppStore((s) => s.setLibrarySortField);
-	const setSearch = useAppStore((s) => s.setLibrarySearch);
+	const setStatusFilter = useAppStore((state) => state.setLibraryStatusFilter);
+	const setSort = useAppStore((state) => state.setLibrarySortField);
+	const setSearch = useAppStore((state) => state.setLibrarySearch);
 	const shown = games.slice(0, 5);
-
 	function openQueue() {
 		setStatusFilter("BACKLOG");
 		setSort("queue");
 		setSearch("");
 		void navigate({ to: "/library" });
 	}
-
-	function openGame(igdbId: number) {
+	const openGame = (igdbId: number) =>
 		void navigate({
 			to: "/library/$igdbId",
 			params: { igdbId: String(igdbId) },
 		});
-	}
-
 	return (
-		<div className="bg-bg-1 border border-border-soft p-5">
-			<div className="flex items-start justify-between mb-3.5">
+		<section className={styles.panel}>
+			<div className={styles.panelHead}>
 				<div>
-					<div className="text-heading font-semibold text-text-hi tracking-[-0.01em]">
-						Próximos na fila
-					</div>
-					<div className="font-mono text-caption text-text-lo mt-0.5">
-						{games.length} na fila
-					</div>
+					<h2 className={styles.panelTitle}>Próximos na fila</h2>
+					<p className={styles.panelCount}>
+						{games.length} jogo{games.length !== 1 ? "s" : ""}
+					</p>
 				</div>
 				{games.length > 0 && (
 					<button
 						type="button"
 						onClick={openQueue}
-						className="inline-flex items-center gap-1 bg-transparent border-0 text-text-md text-caption font-mono cursor-pointer px-1.5 py-1"
+						className={styles.textAction}
 					>
-						Ver todos →
+						Ver fila →
 					</button>
 				)}
 			</div>
-
 			{shown.length === 0 ? (
-				<div className="py-6 text-center text-text-lo text-body">
-					Fila vazia
+				<div className={styles.empty}>
+					Sua fila está livre. Escolha algo quando der vontade.
 				</div>
 			) : (
-				<div className="flex flex-col">
-					{shown.map((game, idx) => (
-						<div
-							key={game.igdbId}
-							className={`flex items-center gap-3 px-2 py-2.5${idx < shown.length - 1 ? " border-b border-border-soft" : ""}`}
+				shown.map((game, index) => (
+					<div key={game.igdbId} className={styles.queueRow}>
+						<span className={styles.position}>#{index + 1}</span>
+						<button
+							type="button"
+							onClick={() => openGame(game.igdbId)}
+							className={styles.queueGame}
 						>
-							<span className="w-8 shrink-0 text-caption text-text-dim font-medium">
-								#{idx + 1}
-							</span>
-							<button
-								type="button"
-								onClick={() => openGame(game.igdbId)}
-								className="flex flex-1 items-center gap-3 min-w-0 bg-transparent border-0 cursor-pointer text-left font-[inherit] hover:bg-bg-2"
-							>
-								<div className="w-9 h-12 shrink-0">
-									<Cover
-										game={{
-											name: game.name,
-											platforms: game.platforms,
-											cover: {
-												hue: BACKLOG_HUE,
-												scheme: "duotone" as const,
-												glyph: game.name[0],
-											},
-											coverUrl: game.coverUrl,
-										}}
-										size="xs"
-										withTitle={false}
-									/>
-								</div>
-								<div className="min-w-0">
-									<div className="text-body font-medium text-text-hi truncate">
-										{game.name}
-									</div>
-									<div className="text-caption font-mono text-text-lo mt-0.5">
-										{queueCaption(game)}
-									</div>
-								</div>
-							</button>
-							<QueueMoveButtons
-								id={game.id}
-								name={game.name}
-								isFirst={idx === 0}
-								isLast={idx === games.length - 1}
-							/>
-						</div>
-					))}
-				</div>
+							<div className={styles.queueCover}>
+								<Cover
+									game={{
+										name: game.name,
+										platforms: game.platforms,
+										cover: {
+											hue: STATUS_BY_KEY.BACKLOG.hue,
+											scheme: "duotone",
+											glyph: game.name[0],
+										},
+										coverUrl: game.coverUrl,
+									}}
+									size="xs"
+									withTitle={false}
+								/>
+							</div>
+							<div className={styles.queueCopy}>
+								<div className={styles.gameName}>{game.name}</div>
+								<div className={styles.gameMeta}>{queueCaption(game)}</div>
+							</div>
+						</button>
+						<QueueMoveButtons
+							id={game.id}
+							name={game.name}
+							isFirst={index === 0}
+							isLast={index === games.length - 1}
+						/>
+					</div>
+				))
 			)}
-		</div>
+		</section>
 	);
 }

@@ -1,98 +1,131 @@
-﻿import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowRight, Play } from "lucide-react";
 import { Cover } from "@/shared/components/Cover";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import { useSearchModal } from "@/shared/hooks/useSearchModal";
 import { firstSentence } from "@/shared/lib/notes";
 import type { LibraryEntry } from "@/types/api";
+import styles from "./Dashboard.module.css";
 
-const PLAYING_HUE = STATUS_BY_KEY.PLAYING.hue;
-
-interface PlayingListProps {
-	games: LibraryEntry[];
+function openGame(
+	navigate: ReturnType<typeof useNavigate>,
+	game: LibraryEntry,
+) {
+	void navigate({
+		to: "/library/$igdbId",
+		params: { igdbId: String(game.igdbId) },
+	});
 }
 
-export function PlayingList({ games }: PlayingListProps) {
+function GameCover({
+	game,
+	size = "sm",
+}: {
+	game: LibraryEntry;
+	size?: "sm" | "lg";
+}) {
+	return (
+		<Cover
+			game={{
+				name: game.name,
+				platforms: game.platforms,
+				cover: {
+					hue: STATUS_BY_KEY.PLAYING.hue,
+					scheme: "duotone",
+					glyph: game.name[0],
+				},
+				coverUrl: game.coverUrl,
+			}}
+			size={size}
+			withTitle={false}
+		/>
+	);
+}
+
+export function PlayingList({ games }: { games: LibraryEntry[] }) {
 	const navigate = useNavigate();
 	const { setOpen } = useSearchModal();
-
+	const featured = games[0];
 	return (
-		<div className="bg-bg-1 border border-border-soft p-5">
-			<div className="flex items-start justify-between mb-3.5">
+		<section className={`${styles.panel} ${styles.playingPanel}`}>
+			<div className={styles.panelHead}>
 				<div>
-					<div className="text-heading font-semibold text-text-hi tracking-[-0.01em]">
-						Jogando agora
+					<div className={styles.sectionSignal}>
+						<Play /> Slot ativo
 					</div>
-					<div className="font-mono text-caption text-text-lo mt-0.5">
-						{games.length} jogo{games.length !== 1 ? "s" : ""}
-					</div>
+					<h2 className={styles.panelTitle}>Continue sua campanha</h2>
 				</div>
 				<button
 					type="button"
 					onClick={() => setOpen(true)}
-					className="inline-flex items-center gap-1 bg-transparent border-0 text-text-md text-caption font-mono cursor-pointer px-1.5 py-1"
+					className={styles.textAction}
 				>
 					+ Adicionar
 				</button>
 			</div>
-
-			{games.length === 0 ? (
-				<div className="py-6 text-center text-text-lo text-body">
-					Nenhum jogo em andamento
+			{!featured ? (
+				<div className={styles.empty}>
+					Marque um jogo como “Jogando” para criar seu slot de retomada.
 				</div>
 			) : (
-				<div className="flex flex-col">
-					{games.map((game, idx) => {
-						const sentence = firstSentence(game.notes);
-						return (
-							<button
-								type="button"
-								key={game.igdbId}
-								onClick={() =>
-									navigate({
-										to: "/library/$igdbId",
-										params: { igdbId: String(game.igdbId) },
-									})
-								}
-								className={`grid grid-cols-[48px_1fr_auto] gap-3.5 items-center px-2 py-2.5 bg-transparent border-0 cursor-pointer text-left transition-[background] w-full hover:bg-bg-2 font-[inherit]${idx < games.length - 1 ? " border-b border-border-soft" : ""}`}
-							>
-								<div className="w-12 h-16">
-									<Cover
-										game={{
-											name: game.name,
-											year: undefined,
-											platforms: game.platforms,
-											cover: {
-												hue: PLAYING_HUE,
-												scheme: "duotone" as const,
-												glyph: game.name[0],
-											},
-											coverUrl: game.coverUrl,
-										}}
-										size="sm"
-										withTitle={false}
-									/>
-								</div>
-								<div className="flex flex-col gap-1 min-w-0">
-									<span className="text-body font-medium text-text-hi truncate">
-										{game.name}
+				<>
+					<button
+						type="button"
+						onClick={() => openGame(navigate, featured)}
+						className={styles.featuredGame}
+					>
+						<div className={styles.featuredCover}>
+							<GameCover game={featured} size="lg" />
+						</div>
+						<div className={styles.featuredCopy}>
+							<span className={styles.gameMeta}>
+								JOGANDO ·{" "}
+								{featured.userPlatform ??
+									featured.platforms[0] ??
+									"PLATAFORMA LIVRE"}
+							</span>
+							<strong className={styles.featuredName}>{featured.name}</strong>
+							{firstSentence(featured.notes) ? (
+								<span className={styles.checkpoint}>
+									Checkpoint · {firstSentence(featured.notes)}
+								</span>
+							) : (
+								<span className={styles.checkpoint}>
+									Abra o registro e anote onde você parou.
+								</span>
+							)}
+							<span className={styles.resume}>
+								Abrir registro <ArrowRight />
+							</span>
+						</div>
+					</button>
+					{games.slice(1).map((game) => (
+						<button
+							type="button"
+							key={game.igdbId}
+							onClick={() => openGame(navigate, game)}
+							className={styles.gameRow}
+						>
+							<div className={styles.cover}>
+								<GameCover game={game} />
+							</div>
+							<div className={styles.gameCopy}>
+								<span className={styles.gameName}>{game.name}</span>
+								<span className={styles.gameMeta}>
+									{game.userPlatform ?? game.platforms[0]}
+									{game.hoursPlayed ? ` · ${game.hoursPlayed}h` : ""}
+								</span>
+								{firstSentence(game.notes) && (
+									<span className={styles.note}>
+										{firstSentence(game.notes)}
 									</span>
-									<span className="text-caption font-mono text-text-lo tabular-nums">
-										{game.userPlatform ?? game.platforms[0]}
-										{game.hoursPlayed != null && game.hoursPlayed > 0
-											? ` · ${game.hoursPlayed}h`
-											: ""}
-									</span>
-									{sentence && (
-										<span className="text-caption text-text-md line-clamp-2">
-											{sentence}
-										</span>
-									)}
-								</div>
-							</button>
-						);
-					})}
-				</div>
+								)}
+							</div>
+							<ArrowRight className={styles.rowArrow} />
+						</button>
+					))}
+				</>
 			)}
-		</div>
+		</section>
 	);
 }
