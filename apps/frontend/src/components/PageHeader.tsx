@@ -1,4 +1,5 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
+import styles from "./PageHeader.module.css";
 
 type PageHeaderProps = {
 	overline: string;
@@ -9,13 +10,9 @@ type PageHeaderProps = {
 export function PageHeader({ overline, title, subtitle }: PageHeaderProps) {
 	return (
 		<header>
-			<div className="page-overline">{overline}</div>
-			<h1 className="text-2xl font-semibold tracking-tight m-0 text-text-hi">
-				{title}
-			</h1>
-			{subtitle && (
-				<p className="text-text-md text-body mt-1.5 mb-0">{subtitle}</p>
-			)}
+			<div className={styles.overline}>{overline}</div>
+			<h1 className={styles.title}>{title}</h1>
+			{subtitle && <p className={styles.subtitle}>{subtitle}</p>}
 		</header>
 	);
 }

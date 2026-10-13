@@ -87,8 +87,8 @@ function resolveIgdbUrl(url: string, size: CoverSize): string {
 	return url.replace(/t_[a-z0-9_]+\//, `${token}/`);
 }
 
-function coverFrame(square: boolean, className?: string) {
-	return `cv ${square ? "rounded-none" : "rounded-cover"} ${className ?? ""}`.trim();
+function coverFrame(className?: string) {
+	return `cv ${className ?? ""}`.trim();
 }
 
 export function Cover({
@@ -103,8 +103,9 @@ export function Cover({
 	if (game.coverUrl) {
 		return (
 			<div
-				className={coverFrame(square, className)}
+				className={coverFrame(className)}
 				data-hover={hover ? "1" : "0"}
+				data-square={square ? "true" : "false"}
 				style={style}
 			>
 				<img
@@ -132,8 +133,9 @@ export function Cover({
 
 	return (
 		<div
-			className={coverFrame(square, className)}
+			className={coverFrame(className)}
 			data-hover={hover ? "1" : "0"}
+			data-square={square ? "true" : "false"}
 			style={{
 				background: `radial-gradient(120% 90% at ${xOff}% ${yOff}%, ${c.c} 0%, ${c.b} 35%, ${c.a} 100%)`,
 				...style,

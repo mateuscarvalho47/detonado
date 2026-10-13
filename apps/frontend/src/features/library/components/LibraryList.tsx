@@ -1,24 +1,19 @@
-﻿import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Cover } from "@/shared/components/Cover";
 import { StatusBadge } from "@/shared/components/StatusBadge";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import type { LibraryEntry } from "@/types/api";
+import styles from "./Library.module.css";
 import { QueueMoveButtons } from "./QueueMoveButtons";
 
-function fmtDate(iso: string) {
+function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString("pt-BR", {
 		day: "2-digit",
 		month: "short",
 		year: "2-digit",
 	});
 }
-
-interface LibraryListProps {
-	games: LibraryEntry[];
-	queueMode?: boolean;
-}
-
-const COLS = [
+const COLUMNS = [
 	"Jogo",
 	"Status",
 	"Plataforma",
@@ -26,44 +21,33 @@ const COLS = [
 	"Horas",
 	"Adicionado",
 ];
-const DESKTOP_GRID = "48px 2.2fr 1.1fr 1fr 0.9fr 0.7fr 0.85fr";
-const MOBILE_GRID = "40px 1fr auto";
 
-export function LibraryList({ games, queueMode = false }: LibraryListProps) {
+export function LibraryList({
+	games,
+	queueMode = false,
+}: {
+	games: LibraryEntry[];
+	queueMode?: boolean;
+}) {
 	const navigate = useNavigate();
-
 	return (
-		<div className="flex flex-col bg-bg-1 border border-border-soft overflow-hidden">
-			{/* Header — desktop only */}
-			<div
-				className="hidden md:grid gap-3.5 items-center px-4 py-3 font-mono text-overline uppercase tracking-[0.06em] text-text-lo border-b border-border-soft bg-bg-2"
-				style={{ gridTemplateColumns: DESKTOP_GRID }}
-			>
+		<div className={styles.list}>
+			<div className={styles.listHeader}>
 				<div />
-				{COLS.map((c) => (
-					<div key={c}>{c}</div>
+				{COLUMNS.map((column) => (
+					<div key={column}>{column}</div>
 				))}
 			</div>
-
-			{games.map((game, idx) => {
-				const borderStyle =
-					idx < games.length - 1
-						? "1px solid var(--color-border-soft)"
-						: undefined;
+			{games.map((game, index) => {
 				const cover = {
 					hue: STATUS_BY_KEY[game.status]?.hue ?? 280,
 					scheme: "duotone" as const,
 					glyph: game.name[0],
 				};
-
-				const row = (
+				const content = (
 					<>
-						{/* Mobile row */}
-						<div
-							className="md:hidden grid items-center gap-3 px-4 py-2.5"
-							style={{ gridTemplateColumns: MOBILE_GRID }}
-						>
-							<div className="w-10 h-13.5">
+						<div className={styles.mobileRow}>
+							<div className={styles.rowCover}>
 								<Cover
 									game={{
 										name: game.name,
@@ -75,31 +59,21 @@ export function LibraryList({ games, queueMode = false }: LibraryListProps) {
 									withTitle={false}
 								/>
 							</div>
-							<div className="flex flex-col gap-0.5 min-w-0">
-								<span className="text-body text-text-hi font-medium truncate">
-									{game.name}
-								</span>
-								<span className="text-caption font-mono text-text-lo truncate">
+							<div>
+								<div className={styles.rowName}>{game.name}</div>
+								<div className={styles.rowSub}>
 									{game.userPlatform ?? game.platforms[0] ?? "—"}
-								</span>
+								</div>
 							</div>
-							<div className="flex flex-col items-end gap-1">
+							<div className={styles.mobileAside}>
 								<StatusBadge status={game.status} size="sm" />
 								{game.rating != null && (
-									<span className="font-mono text-overline font-semibold text-text-hi">
-										{game.rating}
-										<span className="text-caption text-text-lo">/10</span>
-									</span>
+									<span className={styles.number}>{game.rating}/10</span>
 								)}
 							</div>
 						</div>
-
-						{/* Desktop row */}
-						<div
-							className="hidden md:grid gap-3.5 items-center px-4 py-2.5"
-							style={{ gridTemplateColumns: DESKTOP_GRID }}
-						>
-							<div className="w-9 h-12">
+						<div className={styles.desktopRow}>
+							<div className={styles.rowCover}>
 								<Cover
 									game={{
 										name: game.name,
@@ -111,67 +85,32 @@ export function LibraryList({ games, queueMode = false }: LibraryListProps) {
 									withTitle={false}
 								/>
 							</div>
-							<div className="flex flex-col gap-0.5 min-w-0">
-								<span className="text-text-hi font-medium truncate">
-									{game.name}
-								</span>
+							<div>
+								<div className={styles.rowName}>{game.name}</div>
 								{game.genres.length > 0 && (
-									<span className="text-caption font-mono text-text-lo truncate">
+									<div className={styles.rowSub}>
 										{game.genres.slice(0, 2).join(" · ")}
-									</span>
+									</div>
 								)}
 							</div>
 							<div>
 								<StatusBadge status={game.status} size="sm" />
 							</div>
-							<div className="text-text-md text-body">
+							<div className={styles.cell}>
 								{game.userPlatform ?? game.platforms[0] ?? "—"}
 							</div>
-							<div className="font-mono font-semibold text-text-hi">
-								{game.rating != null ? (
-									<>
-										{game.rating}
-										<span className="text-caption text-text-lo">/10</span>
-									</>
-								) : (
-									<span className="text-text-dim">—</span>
-								)}
+							<div className={styles.number}>
+								{game.rating != null ? `${game.rating}/10` : "—"}
 							</div>
-							<div className="font-mono text-text-md text-body">
+							<div className={styles.number}>
 								{game.hoursPlayed != null ? `${game.hoursPlayed}h` : "—"}
 							</div>
-							<div className="font-mono text-text-lo text-body">
-								{fmtDate(game.createdAt)}
-							</div>
+							<div className={styles.rowSub}>{formatDate(game.createdAt)}</div>
 						</div>
 					</>
 				);
-
-				if (!queueMode) {
-					return (
-						<button
-							type="button"
-							key={game.igdbId}
-							onClick={() =>
-								navigate({
-									to: "/library/$igdbId",
-									params: { igdbId: String(game.igdbId) },
-								})
-							}
-							className="bg-transparent border-0 cursor-pointer text-left text-heading transition-[background] w-full hover:bg-bg-2"
-							style={{ borderBottom: borderStyle }}
-						>
-							{row}
-						</button>
-					);
-				}
-
 				return (
-					<div
-						key={game.igdbId}
-						className="flex items-stretch"
-						style={{ borderBottom: borderStyle }}
-					>
+					<div key={game.igdbId} className={styles.rowWrap}>
 						<button
 							type="button"
 							onClick={() =>
@@ -180,18 +119,20 @@ export function LibraryList({ games, queueMode = false }: LibraryListProps) {
 									params: { igdbId: String(game.igdbId) },
 								})
 							}
-							className="flex-1 min-w-0 bg-transparent border-0 cursor-pointer text-left text-heading transition-[background] hover:bg-bg-2"
+							className={styles.rowButton}
 						>
-							{row}
+							{content}
 						</button>
-						<div className="flex items-center px-2 border-l border-border-soft">
-							<QueueMoveButtons
-								id={game.id}
-								name={game.name}
-								isFirst={idx === 0}
-								isLast={idx === games.length - 1}
-							/>
-						</div>
+						{queueMode && (
+							<div className={styles.queueControls}>
+								<QueueMoveButtons
+									id={game.id}
+									name={game.name}
+									isFirst={index === 0}
+									isLast={index === games.length - 1}
+								/>
+							</div>
+						)}
 					</div>
 				);
 			})}

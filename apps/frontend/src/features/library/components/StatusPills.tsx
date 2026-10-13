@@ -1,70 +1,46 @@
-﻿import { useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import { STATUSES } from "@/shared/constants/statuses";
 import type { GameStatus, LibraryEntry } from "@/types/api";
-
-interface StatusPillsProps {
+import styles from "./Library.module.css";
+export function StatusPills({
+	library,
+	active,
+	onChange,
+}: {
 	library: LibraryEntry[];
 	active: GameStatus | null;
-	onChange: (s: GameStatus | null) => void;
-}
-
-export function StatusPills({ library, active, onChange }: StatusPillsProps) {
-	const total = library.length;
-	const countByStatus = useMemo(() => {
-		const counts = {} as Record<GameStatus, number>;
-		for (const g of library) counts[g.status] = (counts[g.status] ?? 0) + 1;
-		return counts;
+	onChange: (status: GameStatus | null) => void;
+}) {
+	const counts = useMemo(() => {
+		const result = {} as Record<GameStatus, number>;
+		for (const game of library)
+			result[game.status] = (result[game.status] ?? 0) + 1;
+		return result;
 	}, [library]);
-
 	return (
-		<div className="flex gap-1 flex-wrap">
+		<div className={styles.pills}>
 			<button
 				type="button"
 				onClick={() => onChange(null)}
-				className={cn(
-					"inline-flex items-center gap-1.5 h-8 min-h-11 lg:min-h-0 px-3 text-body font-medium cursor-pointer transition-colors border",
-					active === null
-						? "text-text-hi border-border-strong bg-bg-3"
-						: "text-text-md border-border-soft bg-bg-1",
-				)}
+				className={styles.pill}
+				data-active={active === null}
 			>
-				Todos
-				<span
-					className={cn(
-						"text-overline pl-1.5 ml-0.5 border-l border-border-soft",
-						active === null ? "text-text-md" : "text-text-lo",
-					)}
-				>
-					{total}
-				</span>
+				<span>Todos</span>
+				<span className={styles.pillCount}>{library.length}</span>
 			</button>
-
-			{STATUSES.map((s) => {
-				const count = countByStatus[s.key] ?? 0;
-				const isActive = active === s.key;
-				return (
-					<button
-						type="button"
-						key={s.key}
-						onClick={() => onChange(isActive ? null : s.key)}
-						className={cn(
-							"inline-flex items-center gap-1.5 h-8 min-h-11 lg:min-h-0 px-3 text-body font-medium cursor-pointer transition-colors border",
-							isActive
-								? "text-text-hi border-border-strong bg-bg-3"
-								: "text-text-md border-border-soft bg-bg-1",
-						)}
-						style={
-							isActive ? { boxShadow: `inset 2px 0 0 ${s.color}` } : undefined
-						}
-					>
-						{s.label}
-						<span className="text-overline pl-1.5 ml-0.5 border-l border-border-soft text-text-lo">
-							{count}
-						</span>
-					</button>
-				);
-			})}
+			{STATUSES.map((status) => (
+				<button
+					type="button"
+					key={status.key}
+					onClick={() => onChange(active === status.key ? null : status.key)}
+					className={styles.pill}
+					data-active={active === status.key}
+					style={{ "--pill-color": status.color } as React.CSSProperties}
+				>
+					<span>{status.label}</span>
+					<span className={styles.pillCount}>{counts[status.key] ?? 0}</span>
+				</button>
+			))}
 		</div>
 	);
 }

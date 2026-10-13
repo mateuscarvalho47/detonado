@@ -1,4 +1,4 @@
-﻿import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/PageHeader";
 import { ArchiveEmpty } from "@/shared/components/ArchiveEmpty";
 import { LoadFailure } from "@/shared/components/LoadFailure";
 import { useSearchModal } from "@/shared/hooks/useSearchModal";
@@ -6,6 +6,7 @@ import { useStats } from "../hooks/useStats";
 import { DonutChart } from "./DonutChart";
 import { HBars } from "./HBars";
 import { Histogram } from "./Histogram";
+import styles from "./Stats.module.css";
 import { TimelineChart } from "./TimelineChart";
 
 function Card({
@@ -18,158 +19,127 @@ function Card({
 	sub?: React.ReactNode;
 }) {
 	return (
-		<div className="bg-bg-1 border border-border-soft p-5">
+		<section className={styles.card}>
 			{(title || sub) && (
-				<div className="flex items-start justify-between gap-4 mb-4.5">
-					{title && (
-						<div className="text-heading font-semibold tracking-tight text-text-hi">
-							{title}
-						</div>
-					)}
-					{sub && <div className="mono-label">{sub}</div>}
+				<div className={styles.cardHead}>
+					{title && <h2 className={styles.cardTitle}>{title}</h2>}
+					{sub && <div className={styles.label}>{sub}</div>}
 				</div>
 			)}
 			{children}
-		</div>
+		</section>
 	);
 }
-
 export function StatsScreen() {
 	const { setOpen } = useSearchModal();
 	const { data: stats, isLoading, isError, refetch } = useStats();
-
-	if (isLoading) {
+	if (isLoading)
 		return (
-			<div className="px-4 pt-6 lg:px-6 lg:pt-7">
-				<div className="flex flex-col gap-5">
-					{[1, 2, 3].map((i) => (
-						<div key={i} className="h-50 bg-bg-1 animate-pulse" />
+			<div className={styles.page}>
+				<div className={styles.stack}>
+					{[1, 2, 3].map((item) => (
+						<div key={item} className={styles.skeleton} />
 					))}
 				</div>
 			</div>
 		);
-	}
-
-	if (isError || !stats) {
+	if (isError || !stats)
 		return (
-			<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
-				<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
+			<div className={styles.page}>
+				<div className={styles.top}>
 					<PageHeader
-						overline="Biblioteca"
-						title="Estatísticas"
-						subtitle="Números da sua biblioteca"
+						overline="Seu histórico"
+						title="Retrospecto"
+						subtitle="O que sua biblioteca conta sobre seu jeito de jogar."
 					/>
 				</div>
-				<LoadFailure onRetry={() => void refetch()} />
+				<div className={styles.stack}>
+					<LoadFailure onRetry={() => void refetch()} />
+				</div>
 			</div>
 		);
-	}
-
-	if (stats.totalGames === 0) {
+	if (stats.totalGames === 0)
 		return (
-			<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
-				<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
+			<div className={styles.page}>
+				<div className={styles.top}>
 					<PageHeader
-						overline="Biblioteca"
-						title="Estatísticas"
-						subtitle="Números da sua biblioteca"
+						overline="Seu histórico"
+						title="Retrospecto"
+						subtitle="Os padrões aparecem conforme sua biblioteca cresce."
 					/>
 				</div>
-				<ArchiveEmpty onAdd={() => setOpen(true)} />
+				<div className={styles.stack}>
+					<ArchiveEmpty onAdd={() => setOpen(true)} />
+				</div>
 			</div>
 		);
-	}
-
+	const metrics = [
+		{ label: "Jogos guardados", value: stats.totalGames, unit: "" },
+		{
+			label: "Horas registradas",
+			value: Math.round(stats.totalHours),
+			unit: "h",
+		},
+		{
+			label: "Concluídos",
+			value: stats.countByStatus.COMPLETED ?? 0,
+			unit: "",
+		},
+		{
+			label: "Na lista de desejos",
+			value: stats.countByStatus.WISHLIST ?? 0,
+			unit: "",
+		},
+	];
 	return (
-		<div className="px-4 pt-6 lg:px-6 lg:pt-7 pb-15">
-			{/* Topbar */}
-			<div className="flex items-end justify-between gap-6 pb-5.5 mb-5.5 border-b border-border-soft">
+		<div className={styles.page}>
+			<div className={styles.top}>
 				<PageHeader
-					overline="Biblioteca"
-					title="Estatísticas"
-					subtitle="Números da sua biblioteca"
+					overline="Seu histórico"
+					title="Retrospecto"
+					subtitle="Uma leitura simples do que você joga e termina."
 				/>
 			</div>
-
-			<div className="flex flex-col gap-5">
-				{/* Big numbers */}
-				<div className="grid grid-cols-2 md:grid-cols-4 bg-bg-1 border border-border-soft overflow-hidden">
-					{[
-						{ label: "Total de jogos", value: stats.totalGames, unit: "" },
-						{
-							label: "Horas jogadas",
-							value: Math.round(stats.totalHours),
-							unit: "h",
-						},
-						{
-							label: "Zerados",
-							value: stats.countByStatus.COMPLETED ?? 0,
-							unit: "",
-						},
-						{
-							label: "Quero jogar",
-							value: stats.countByStatus.WISHLIST ?? 0,
-							unit: "",
-						},
-					].map((b, i) => (
-						<div
-							key={b.label}
-							className={[
-								"flex flex-col gap-2.5 p-5 md:p-6.5 border-border-soft",
-								i % 2 === 0 ? "border-r" : "",
-								i < 2 ? "border-b md:border-b-0" : "",
-								i < 3 ? "md:border-r" : "",
-							].join(" ")}
-						>
-							<div className="mono-label">{b.label}</div>
-							<div className="flex items-baseline gap-1.5">
-								<span className="text-2xl font-semibold leading-none tabular-nums text-text-hi">
-									{b.value}
-								</span>
-								{b.unit && (
-									<span className="text-body font-medium text-text-lo font-mono">
-										{b.unit}
-									</span>
-								)}
+			<div className={styles.stack}>
+				<div className={styles.metrics}>
+					{metrics.map((metric) => (
+						<div key={metric.label} className={styles.metric}>
+							<div className={styles.label}>{metric.label}</div>
+							<div className={styles.value}>
+								{metric.value}
+								{metric.unit && <small>{metric.unit}</small>}
 							</div>
 						</div>
 					))}
 				</div>
-
-				{/* Status donut + genre bars */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+				<div className={styles.columns}>
 					<Card title="Por status">
 						<DonutChart stats={stats} />
 					</Card>
-					<Card title="Top gêneros">
+					<Card title="Gêneros mais presentes">
 						<HBars
-							items={stats.topGenres.map((g) => ({
-								label: g.genre,
-								count: g.count,
+							items={stats.topGenres.map((item) => ({
+								label: item.genre,
+								count: item.count,
 							}))}
-							color="oklch(0.78 0.012 80)"
 						/>
 					</Card>
 				</div>
-
-				{/* Platform bars + rating histogram */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-					<Card title="Top plataformas">
+				<div className={styles.columns}>
+					<Card title="Plataformas">
 						<HBars
-							items={stats.topPlatforms.map((p) => ({
-								label: p.platform,
-								count: p.count,
+							items={stats.topPlatforms.map((item) => ({
+								label: item.platform,
+								count: item.count,
 							}))}
-							color="oklch(0.62 0.012 70)"
+							color="var(--color-lime)"
 						/>
 					</Card>
-					<Card title="Distribuição de avaliações" sub="nota 0–10">
+					<Card title="Suas avaliações" sub="nota 0–10">
 						<Histogram distribution={stats.ratingDistribution} />
 					</Card>
 				</div>
-
-				{/* Timeline */}
-				<Card title="Jogos completados por mês">
+				<Card title="Jogos concluídos por mês">
 					<TimelineChart timeline={stats.completedTimeline} />
 				</Card>
 			</div>

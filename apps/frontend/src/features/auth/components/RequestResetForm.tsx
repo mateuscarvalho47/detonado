@@ -1,69 +1,50 @@
-﻿import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRequestResetForm } from "../hooks/useAuth";
-
+import styles from "./Auth.module.css";
 export function RequestResetForm() {
 	const navigate = useNavigate();
 	const { form, onSubmit, mutation } = useRequestResetForm((email) =>
 		navigate({ to: "/reset-password", search: { email } }),
 	);
-
 	const {
 		register,
 		formState: { errors },
 	} = form;
-
 	return (
-		<form onSubmit={onSubmit} className="flex flex-col gap-3.5">
-			<div>
-				<span className="font-mono text-overline tracking-widest uppercase text-accent-bright block mb-2">
-					Recuperar acesso
-				</span>
-				<h1 className="text-2xl font-semibold tracking-tight m-0 mb-2 text-text-hi">
-					Esqueceu sua senha?
-				</h1>
-				<p className="text-body text-text-md leading-prose mt-0 mb-6 max-w-[36ch]">
-					Informe seu e-mail e enviaremos um código para você redefinir sua
-					senha.
+		<form onSubmit={onSubmit} className={styles.form}>
+			<header className={styles.heading}>
+				<span className={styles.eyebrow}>Recuperar acesso</span>
+				<h1 className={styles.title}>Vamos trazer você de volta.</h1>
+				<p className={styles.intro}>
+					Enviaremos um código para redefinir sua senha.
 				</p>
-			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<Label className="mono-label">E-mail</Label>
+			</header>
+			<div className={styles.field}>
+				<Label htmlFor="reset-email">E-mail</Label>
 				<Input
+					id="reset-email"
 					type="email"
 					{...register("email")}
 					placeholder="seu@email.com"
-					className="bg-bg-2 border-border-soft text-text-hi placeholder:text-text-lo h-11"
 				/>
-				{errors.email && (
-					<p className="text-body m-0 text-error">{errors.email.message}</p>
-				)}
+				{errors.email && <p className={styles.error}>{errors.email.message}</p>}
 			</div>
-
 			{mutation.error && (
-				<p className="text-body m-0 text-error">{mutation.error.message}</p>
+				<p className={styles.error}>{mutation.error.message}</p>
 			)}
-
 			<Button
 				variant="accent"
 				type="submit"
 				disabled={mutation.isPending}
-				className="w-full h-10 mt-1.5"
+				className={styles.submit}
 			>
-				{mutation.isPending ? "Enviando..." : "Enviar código"}
+				{mutation.isPending ? "Enviando…" : "Enviar código"}
 			</Button>
-
-			<p className="text-center text-caption text-text-lo mt-1">
-				Lembrou a senha?{" "}
-				<a
-					href="/login"
-					className="text-accent-bright font-semibold no-underline"
-				>
-					Entrar
-				</a>
+			<p className={styles.centerLink}>
+				<a href="/login">Voltar ao login</a>
 			</p>
 		</form>
 	);

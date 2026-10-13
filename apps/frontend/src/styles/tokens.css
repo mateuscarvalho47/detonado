@@ -1,0 +1,39 @@
+:root {
+	color-scheme: dark;
+	--font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "IBM Plex Mono", ui-monospace, monospace;
+	--font-display:
+		"IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-editorial: Georgia, "Times New Roman", serif;
+	--color-canvas: #090b0d;
+	--color-surface: #111518;
+	--color-surface-raised: #192025;
+	--color-surface-soft: #222c32;
+	--color-ink: #f2f4ef;
+	--color-ink-muted: #b7c0bc;
+	--color-ink-faint: #74817d;
+	--color-line: #273239;
+	--color-line-strong: #40515a;
+	--color-accent: #ff744d;
+	--color-accent-hover: #ff8d6c;
+	--color-accent-soft: #352018;
+	--color-signal: #72e6d1;
+	--color-signal-soft: #102b29;
+	--color-lime: #d8f06a;
+	--color-danger: #ff766d;
+	--color-success: #9bdd8d;
+	--shadow-float: 0 24px 70px rgb(0 0 0 / 0.42);
+	--radius-xs: 2px;
+	--radius-sm: 5px;
+	--radius-md: 9px;
+	--radius-lg: 14px;
+	--text-xs: 0.75rem;
+	--text-sm: 0.875rem;
+	--text-body: 1rem;
+	--text-lg: 1.125rem;
+	--text-xl: clamp(1.35rem, 2vw, 1.65rem);
+	--text-2xl: clamp(2rem, 5vw, 3.7rem);
+	--text-hero: clamp(3rem, 8vw, 6.8rem);
+	--space-page: clamp(1rem, 3vw, 2.5rem);
+	--content-width: 1180px;
+}

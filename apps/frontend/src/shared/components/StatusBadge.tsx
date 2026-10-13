@@ -1,27 +1,22 @@
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import type { GameStatus } from "@/types/api";
-
-interface StatusBadgeProps {
+import styles from "./Shared.module.css";
+export function StatusBadge({
+	status,
+	size = "md",
+}: {
 	status: GameStatus;
 	size?: "sm" | "md";
-}
-
-export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
-	const def = STATUS_BY_KEY[status];
+}) {
+	const definition = STATUS_BY_KEY[status];
 	return (
-		<span
-			className={
-				size === "sm"
-					? "inline-flex items-center gap-1.5 text-caption text-text-hi whitespace-nowrap"
-					: "inline-flex items-center gap-1.5 text-body text-text-hi whitespace-nowrap"
-			}
-		>
+		<span className={styles.status} data-size={size}>
 			<span
 				aria-hidden
-				className="w-0.5 h-3 shrink-0"
-				style={{ background: def.color }}
+				className={styles.statusMark}
+				style={{ "--status-color": definition.color } as React.CSSProperties}
 			/>
-			{def.label}
+			{definition.label}
 		</span>
 	);
 }
