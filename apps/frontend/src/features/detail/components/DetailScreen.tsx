@@ -4,6 +4,7 @@ import { CampaignsPanel } from "@/features/campaigns/components/CampaignsPanel";
 import { CompletionPanel } from "@/features/completion/components/CompletionPanel";
 import { MembershipPanel } from "@/features/organization/components/MembershipPanel";
 import { SessionsPanel } from "@/features/sessions/components/SessionsPanel";
+import { SourcesPanel } from "@/features/sources/components/SourcesPanel";
 import type { LibraryEntry } from "@/types/api";
 import { useDetailForm } from "../hooks/useDetailForm";
 import {
@@ -56,6 +57,7 @@ export function DetailScreen({ game }: DetailScreenProps) {
 				<CampaignsPanel game={game} disabled={isSaving || hasPendingChanges} />
 				<CompletionPanel game={game} />
 				<MembershipPanel game={game} />
+				<SourcesPanel game={game} />
 				<SessionsPanel game={game} />
 			</div>
 

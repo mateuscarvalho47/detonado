@@ -12,9 +12,20 @@ interface HltbSnapshotChanges {
 }
 
 const membershipInclude = {
+  sources: {
+    select: {
+      id: true,
+      kind: true,
+      label: true,
+      expiresAt: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  },
   collections: { select: { collectionId: true } },
   tags: { select: { tagId: true } },
-} as const;
+} satisfies Prisma.LibraryEntryInclude;
 function withMemberships<
   T extends { collections: { collectionId: string }[]; tags: { tagId: string }[] },
 >(entry: T) {
@@ -138,6 +149,7 @@ export class LibraryRepository {
       ...entry,
       collections: links?.collections ?? [],
       tags: links?.tags ?? [],
+      sources: links?.sources ?? [],
     });
   }
 

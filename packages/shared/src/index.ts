@@ -2,6 +2,7 @@ export * from "./auth.js";
 export * from "./campaign.js";
 export * from "./checklist-item.js";
 export * from "./game.js";
+export * from "./game-source.js";
 export * from "./library.js";
 export * from "./library-import.js";
 export * from "./organization.js";

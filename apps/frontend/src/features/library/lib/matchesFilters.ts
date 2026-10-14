@@ -3,7 +3,22 @@ import type { LibraryFilterValues } from "../schema/savedFilterSchema";
 export function matchesFilters(
 	entry: LibraryEntry,
 	filters: LibraryFilterValues,
+	now = Date.now(),
 ) {
+	const sources = (entry.sources ?? []).filter(
+		(source) => !filters.sourceKind || source.kind === filters.sourceKind,
+	);
+	if (filters.sourceKind && sources.length === 0) return false;
+	if (filters.availability) {
+		const available = sources.some(
+			(source) =>
+				source.expiresAt === null || new Date(source.expiresAt).getTime() > now,
+		);
+		const actual =
+			sources.length === 0 ? "UNKNOWN" : available ? "AVAILABLE" : "EXPIRED";
+		if (filters.availability !== actual) return false;
+	}
+
 	if (filters.statuses?.length && !filters.statuses.includes(entry.status))
 		return false;
 	if (

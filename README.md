@@ -353,3 +353,5 @@ Objetivo/checklist requerem `20261013233000_add_completion_goals`. A entrada ace
 Campanhas requerem `20261014003000_add_campaigns`. GET/POST `/api/library/:id/campaigns`; sessões aceitam campaignId esperado e consulta histórica por querystring. A migração vincula sessões anteriores a uma campanha inicial e preserva o registro existente. Estatísticas somam todas campanhas sem duplicar a ativa.
 
 CSV: preview em `POST /api/library/import/preview`(100 registros), commit em `POST /api/library/import`(10 por lote). Colunas: igdbId ou name, status, userPlatform, hoursPlayed, rating, notes, completionGoal, completedAt. Células vazias são omitidas. DuplicateAction default SKIP; UPDATE explícito preserva campos ausentes e respeita horas de sessões. Sem nova migration.
+
+Origens de acesso requerem `20261014010000_add_game_sources`. CRUD `/api/library/:id/sources` e `/:sourceId`, incluindo kind, label e expiresAt ISO UTC/null; vínculos por usuário/entrada e dados na exportação.

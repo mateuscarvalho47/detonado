@@ -12,6 +12,8 @@ export const libraryFilterSchema = z.object({
 			]),
 		)
 		.optional(),
+	sourceKind: z.enum(["STORE", "PHYSICAL", "SUBSCRIPTION", "LOAN"]).optional(),
+	availability: z.enum(["AVAILABLE", "EXPIRED", "UNKNOWN"]).optional(),
 	collectionId: z.string().max(100).optional(),
 	tagId: z.string().max(100).optional(),
 	platform: z.string().max(200).optional(),

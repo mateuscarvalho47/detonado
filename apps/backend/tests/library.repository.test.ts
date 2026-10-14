@@ -35,7 +35,13 @@ describe('LibraryRepository writes', () => {
 
     const updated = await repo.update('entry-1', 'user-1', { status: 'PLAYING' });
 
-    expect(updated).toEqual({ id: 'entry-1', userId: 'user-1', collectionIds: [], tagIds: [] });
+    expect(updated).toEqual({
+      id: 'entry-1',
+      userId: 'user-1',
+      collectionIds: [],
+      tagIds: [],
+      sources: [],
+    });
     expect(updateMany).toHaveBeenCalledWith({
       where: { id: 'entry-1', userId: 'user-1' },
       data: { status: 'PLAYING' },
@@ -43,6 +49,17 @@ describe('LibraryRepository writes', () => {
     expect(findFirst).toHaveBeenCalledWith({
       where: { id: 'entry-1', userId: 'user-1' },
       select: {
+        sources: {
+          select: {
+            id: true,
+            kind: true,
+            label: true,
+            expiresAt: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        },
         collections: { select: { collectionId: true } },
         tags: { select: { tagId: true } },
       },

@@ -9,6 +9,7 @@ import {
   updateLibraryEntryInput,
 } from '@detonado/shared';
 import { z } from 'zod';
+import { gameSourceResponseSchema } from '@/modules/game-source/game-source.schema.js';
 
 export type { CreateLibraryEntryInput, UpdateLibraryEntryInput } from '@detonado/shared';
 export { type LibraryStats, type LibraryStatus, LibraryStatusEnum } from '@detonado/shared';
@@ -17,6 +18,7 @@ export { createLibraryEntryInput, libraryStatsSchema, updateLibraryEntryInput };
 // Backend-only: hoursPlayed uses preprocess to coerce Prisma Decimal → number
 export const libraryEntrySchema = z.object({
   activeCampaignId: z.string().nullable(),
+  sources: z.array(gameSourceResponseSchema),
   collectionIds: z.array(z.string()),
   tagIds: z.array(z.string()),
   id: z.string(),

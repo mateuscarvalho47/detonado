@@ -141,6 +141,8 @@ export function LibraryScreen() {
 						!filters.advanced.genre &&
 						!filters.advanced.collectionId &&
 						!filters.advanced.tagId &&
+						!filters.advanced.sourceKind &&
+						!filters.advanced.availability &&
 						filters.advanced.maxHours === undefined
 					}
 				/>

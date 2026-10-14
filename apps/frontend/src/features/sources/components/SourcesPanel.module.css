@@ -1,0 +1,74 @@
+.panel {
+	margin: 1rem var(--space-page);
+	padding: 1.5rem;
+	border: 1px solid var(--color-line);
+	display: grid;
+	gap: 1rem;
+}
+.panel h2,
+.panel p {
+	margin: 0;
+}
+.panel p {
+	color: var(--color-ink-muted);
+}
+.panel p[role="alert"] {
+	color: var(--color-danger);
+}
+.form {
+	display: grid;
+	gap: 1rem;
+}
+.fields {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+}
+.form label {
+	display: grid;
+	gap: 0.4rem;
+}
+.form input,
+.form select {
+	width: 100%;
+	min-height: 40px;
+	padding: 0.5rem;
+	color: var(--color-ink);
+	background: var(--color-surface);
+	border: 1px solid var(--color-line-strong);
+	font: inherit;
+}
+.actions,
+.confirm {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+.list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.list li {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.5rem;
+	border-top: 1px solid var(--color-line);
+	padding-block: 1rem;
+	overflow-wrap: anywhere;
+}
+.panel :focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+}
+@media (max-width: 640px) {
+	.fields {
+		grid-template-columns: 1fr;
+	}
+	.panel {
+		padding: 1rem;
+	}
+}

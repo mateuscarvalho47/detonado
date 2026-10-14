@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useExpiryClock } from "@/shared/hooks/useExpiryClock";
 import { compareQueue } from "@/shared/lib/queueOrder";
 import { useAppStore } from "@/store/useAppStore";
 import type { LibraryEntry } from "@/types/api";
@@ -16,6 +17,19 @@ export function useLibraryFilters(library: LibraryEntry[]) {
 	const setView = useAppStore((s) => s.setLibraryView);
 
 	const [advanced, setAdvanced] = useState<LibraryFilterValues>({});
+	const expirations = useMemo(
+		() =>
+			library.flatMap((entry) =>
+				(entry.sources ?? [])
+					.filter(
+						(source) =>
+							!advanced.sourceKind || source.kind === advanced.sourceKind,
+					)
+					.map((source) => source.expiresAt),
+			),
+		[library, advanced.sourceKind],
+	);
+	const now = useExpiryClock(expirations, !!advanced.availability);
 	const activeStatuses =
 		advanced.statuses ?? (statusFilter ? [statusFilter] : []);
 	const criteria: LibraryFilterValues = {
@@ -34,11 +48,15 @@ export function useLibraryFilters(library: LibraryEntry[]) {
 	}
 	const filtered = useMemo(() => {
 		const result = library.filter((entry) =>
-			matchesFilters(entry, {
-				...advanced,
-				statuses: advanced.statuses ?? (statusFilter ? [statusFilter] : []),
-				search,
-			}),
+			matchesFilters(
+				entry,
+				{
+					...advanced,
+					statuses: advanced.statuses ?? (statusFilter ? [statusFilter] : []),
+					search,
+				},
+				now,
+			),
 		);
 
 		result.sort((a, b) => {
@@ -57,7 +75,7 @@ export function useLibraryFilters(library: LibraryEntry[]) {
 		});
 
 		return result;
-	}, [library, statusFilter, search, sort, advanced]);
+	}, [library, statusFilter, search, sort, advanced, now]);
 
 	return {
 		advanced,

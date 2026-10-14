@@ -14,7 +14,17 @@ export interface HltbInfo {
 
 export type HltbStatus = "FOUND" | "MISS" | "FAILED";
 
+export interface GameSource {
+	id: string;
+	kind: "STORE" | "PHYSICAL" | "SUBSCRIPTION" | "LOAN";
+	label: string;
+	expiresAt: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
 export interface LibraryEntry {
+	sources?: GameSource[];
 	id: string;
 	igdbId: number;
 	name: string;

@@ -1,7 +1,10 @@
 import { z } from "zod";
+import { sourceKindSchema } from "./game-source.js";
 import { HOURS_MAX, LibraryStatusEnum } from "./library.js";
 
 export const libraryFiltersSchema = z.strictObject({
+	sourceKind: sourceKindSchema.optional(),
+	availability: z.enum(["AVAILABLE", "EXPIRED", "UNKNOWN"]).optional(),
 	collectionId: z.string().min(1).max(100).optional(),
 	tagId: z.string().min(1).max(100).optional(),
 	statuses: z
