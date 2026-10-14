@@ -345,3 +345,5 @@ Prioridades, critérios de aceite e andamento das novas funcionalidades estão e
 Filtros salvos requerem `20261013210000_add_saved_filters`. CRUD autenticado em `/api/library/filters` e `/:id`, com isolamento por usuário; filtros são aplicados na biblioteca pelo frontend.
 
 Sessões requerem `20261013220000_add_play_sessions`. CRUD em `/api/library/:id/sessions` e `/:sessionId`; UUID `clientId` garante idempotência por usuário. A migração preserva horas anteriores em `baseHours`, soma sessões ao total e mantém `lastSessionAt`.
+
+Coleções e tags requerem `20261013230000_add_collections_and_tags`. CRUD em `/api/library/collections` e `/tags`; vínculos múltiplos em `PATCH /api/library/:id/organization`. Agrupamentos não substituem status e sua exclusão preserva jogos.

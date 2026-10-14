@@ -2,6 +2,8 @@ import { z } from "zod";
 import { HOURS_MAX, LibraryStatusEnum } from "./library.js";
 
 export const libraryFiltersSchema = z.strictObject({
+	collectionId: z.string().min(1).max(100).optional(),
+	tagId: z.string().min(1).max(100).optional(),
 	statuses: z
 		.array(LibraryStatusEnum)
 		.max(6)

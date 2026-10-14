@@ -11,6 +11,21 @@ interface HltbSnapshotChanges {
   hltbStatus: HltbStatus;
 }
 
+const membershipInclude = {
+  collections: { select: { collectionId: true } },
+  tags: { select: { tagId: true } },
+} as const;
+function withMemberships<
+  T extends { collections: { collectionId: string }[]; tags: { tagId: string }[] },
+>(entry: T) {
+  const { collections, tags, ...fields } = entry;
+  return {
+    ...fields,
+    collectionIds: collections.map((item) => item.collectionId),
+    tagIds: tags.map((item) => item.tagId),
+  };
+}
+
 export class LibraryRepository {
   constructor(
     private readonly database: PrismaClient,
@@ -25,23 +40,28 @@ export class LibraryRepository {
     });
   }
 
-  findAllByUser(userId: string) {
-    return this.db.libraryEntry.findMany({
+  async findAllByUser(userId: string) {
+    const entries = await this.db.libraryEntry.findMany({
+      include: membershipInclude,
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
+    return entries.map(withMemberships);
   }
 
-  findByIdAndUser(id: string, userId: string) {
-    return this.db.libraryEntry.findFirst({ where: { id, userId } });
+  async findByIdAndUser(id: string, userId: string) {
+    const entry = await this.db.libraryEntry.findFirst({
+      where: { id, userId },
+    });
+    return entry ? this.attachMemberships(entry) : null;
   }
 
   findByUserAndIgdbId(userId: string, igdbId: number) {
     return this.db.libraryEntry.findUnique({ where: { userId_igdbId: { userId, igdbId } } });
   }
 
-  create(data: Prisma.LibraryEntryCreateInput) {
-    return this.db.libraryEntry.create({ data });
+  async create(data: Prisma.LibraryEntryCreateInput) {
+    return withMemberships(await this.db.libraryEntry.create({ data, include: membershipInclude }));
   }
 
   async sessionMinutes(entryId: string, userId: string) {
@@ -98,12 +118,26 @@ export class LibraryRepository {
     return this.findByIdAndUser(id, userId);
   }
 
+  private async attachMemberships<T extends { id: string; userId: string }>(entry: T) {
+    // updateManyAndReturn supports only to-one includes. Keep the actual written
+    // scalar row and read its memberships separately without rereading its fields.
+    const links = await this.db.libraryEntry.findFirst({
+      where: { id: entry.id, userId: entry.userId },
+      select: membershipInclude,
+    });
+    return withMemberships({
+      ...entry,
+      collections: links?.collections ?? [],
+      tags: links?.tags ?? [],
+    });
+  }
+
   async update(id: string, userId: string, changes: LibraryEntryChanges) {
     const [entry] = await this.db.libraryEntry.updateManyAndReturn({
       where: { id, userId },
       data: changes,
     });
-    return entry ?? null;
+    return entry ? this.attachMemberships(entry) : null;
   }
 
   async updateHltb(id: string, userId: string, changes: HltbSnapshotChanges) {
@@ -111,7 +145,7 @@ export class LibraryRepository {
       where: { id, userId },
       data: changes,
     });
-    return entry ?? null;
+    return entry ? this.attachMemberships(entry) : null;
   }
 
   async delete(id: string, userId: string) {

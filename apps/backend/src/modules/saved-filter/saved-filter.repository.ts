@@ -1,8 +1,29 @@
+import type { LibraryFilters } from '@detonado/shared';
 import type { PrismaClient } from '@/generated/prisma/client.js';
 import type { CreateSavedFilterInput, UpdateSavedFilterInput } from './saved-filter.schema.js';
 
 export class SavedFilterRepository {
   constructor(private readonly database: PrismaClient) {}
+
+  async ownsFilterReferences(userId: string, filters: LibraryFilters) {
+    if (
+      filters.collectionId &&
+      !(await this.database.collection.findFirst({
+        where: { id: filters.collectionId, userId },
+        select: { id: true },
+      }))
+    )
+      return false;
+    if (
+      filters.tagId &&
+      !(await this.database.tag.findFirst({
+        where: { id: filters.tagId, userId },
+        select: { id: true },
+      }))
+    )
+      return false;
+    return true;
+  }
 
   findAll(userId: string) {
     return this.database.savedFilter.findMany({

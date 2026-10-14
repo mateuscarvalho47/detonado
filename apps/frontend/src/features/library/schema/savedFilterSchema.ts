@@ -12,6 +12,8 @@ export const libraryFilterSchema = z.object({
 			]),
 		)
 		.optional(),
+	collectionId: z.string().max(100).optional(),
+	tagId: z.string().max(100).optional(),
 	platform: z.string().max(200).optional(),
 	genre: z.string().max(200).optional(),
 	maxHours: z.number().positive().max(99999.9).optional(),

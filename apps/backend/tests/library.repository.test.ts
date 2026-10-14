@@ -5,9 +5,9 @@ import { LibraryRepository } from '@/modules/library/library.repository.js';
 const PROGRESS = { in: [...PROGRESS_STATUSES] };
 
 function makeDb() {
-  const updateMany = vi.fn().mockResolvedValue([{ id: 'entry-1' }]);
+  const updateMany = vi.fn().mockResolvedValue([{ id: 'entry-1', userId: 'user-1' }]);
   const deleteMany = vi.fn().mockResolvedValue({ count: 1 });
-  const findFirst = vi.fn().mockResolvedValue({ id: 'entry-1' });
+  const findFirst = vi.fn().mockResolvedValue({ collections: [], tags: [] });
   const aggregate = vi.fn().mockResolvedValue({ _sum: { hoursPlayed: null } });
   const groupBy = vi.fn().mockResolvedValue([]);
   const db = {
@@ -31,12 +31,18 @@ describe('LibraryRepository writes', () => {
 
     const updated = await repo.update('entry-1', 'user-1', { status: 'PLAYING' });
 
-    expect(updated).toEqual({ id: 'entry-1' });
+    expect(updated).toEqual({ id: 'entry-1', userId: 'user-1', collectionIds: [], tagIds: [] });
     expect(updateMany).toHaveBeenCalledWith({
       where: { id: 'entry-1', userId: 'user-1' },
       data: { status: 'PLAYING' },
     });
-    expect(findFirst).not.toHaveBeenCalled();
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { id: 'entry-1', userId: 'user-1' },
+      select: {
+        collections: { select: { collectionId: true } },
+        tags: { select: { tagId: true } },
+      },
+    });
   });
 
   it('does not read the row back when the owner filter matches nothing', async () => {

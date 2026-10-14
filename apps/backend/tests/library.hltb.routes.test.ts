@@ -19,6 +19,8 @@ describe('POST /library/:id/hltb', () => {
       rating: null,
       hoursPlayed: null,
       baseHours: null,
+      collections: [],
+      tags: [],
       lastSessionAt: null,
       notes: null,
       completedAt: null,

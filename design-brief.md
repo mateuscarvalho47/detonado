@@ -91,7 +91,7 @@ Estatísticas (`GET /api/library/stats`): totais, contagem por status, gêneros,
 
 ## Fora do produto
 
-Feed, amigos, perfil público, listas além dos seis status, importação Steam, notificações. O cron do backend é um batimento horário, não um job de HowLongToBeat.
+Feed, amigos, perfil público, importação Steam e notificações. O cron do backend é um batimento horário, não um job de HowLongToBeat.
 
 ## O que uma leitura de dez minutos ainda encontra
 
@@ -114,3 +114,7 @@ A ficha registra sessões com data/hora local, duração em minutos e comentári
 ## Escolha do próximo jogo
 
 A Agora inclui O que jogar agora?, com até três jogos da Fila ou Pausados e motivos para a sugestão. Filtros por plataforma registrada, gênero e duração total Principal. A plataforma preferida prioriza candidatos quando não há plataforma escolhida manualmente. Duração não significa tempo restante ou duração de sessão.
+
+## Coleções e tags
+
+A biblioteca permite criar, renomear e excluir coleções e tags pessoais. Cada jogo pode pertencer a vários agrupamentos, selecionados na ficha. Filtros e buscas salvas aceitam coleção/tag. Excluir agrupamento preserva todos os jogos. Buscas antigas com agrupamento removido indicam indisponibilidade em vez de trocar o critério silenciosamente.

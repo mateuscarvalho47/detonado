@@ -1,11 +1,11 @@
-import { NotFoundError } from '@/lib/errors.js';
+import { NotFoundError, ValidationError } from '@/lib/errors.js';
 import type { SavedFilterRepository } from './saved-filter.repository.js';
 import type { CreateSavedFilterInput, UpdateSavedFilterInput } from './saved-filter.schema.js';
 import { savedFilterResponseSchema } from './saved-filter.schema.js';
 
 type SavedFilterStore = Pick<
   SavedFilterRepository,
-  'findAll' | 'findById' | 'create' | 'update' | 'remove'
+  'findAll' | 'findById' | 'create' | 'update' | 'remove' | 'ownsFilterReferences'
 >;
 
 export class SavedFilterService {
@@ -23,11 +23,15 @@ export class SavedFilterService {
   }
 
   async create(userId: string, input: CreateSavedFilterInput) {
+    if (!(await this.repository.ownsFilterReferences(userId, input.filters)))
+      throw new ValidationError('Coleção ou tag inválida');
     const record = await this.repository.create(userId, input);
     return savedFilterResponseSchema.parse(record);
   }
 
   async update(id: string, userId: string, input: UpdateSavedFilterInput) {
+    if (input.filters && !(await this.repository.ownsFilterReferences(userId, input.filters)))
+      throw new ValidationError('Coleção ou tag inválida');
     const record = await this.repository.update(id, userId, input);
     if (!record) throw new NotFoundError('Filtro salvo');
     return savedFilterResponseSchema.parse(record);

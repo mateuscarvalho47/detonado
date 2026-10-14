@@ -34,6 +34,8 @@ export interface LibraryEntry {
 	hltbCompletionist: number | null;
 	hltbStatus?: HltbStatus | null;
 	queuePosition?: number | null;
+	collectionIds?: string[];
+	tagIds?: string[];
 	createdAt: string;
 	updatedAt: string;
 }

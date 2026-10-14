@@ -9,6 +9,9 @@ import { PrismaClient } from '@/generated/prisma/client.js';
 import { PreferencesService } from '@/modules/auth/preferences.service.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
 import { LibraryService } from '@/modules/library/library.service.js';
+import { OrganizationRepository } from '@/modules/organization/organization.repository.js';
+import { organizationRoutes } from '@/modules/organization/organization.routes.js';
+import { OrganizationService } from '@/modules/organization/organization.service.js';
 import { PasswordResetRepository } from '@/modules/password-reset/password-reset.repository.js';
 import { PlaySessionRepository } from '@/modules/play-session/play-session.repository.js';
 import { playSessionRoutes } from '@/modules/play-session/play-session.routes.js';
@@ -284,6 +287,192 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
         204,
       );
       expect((await app.inject({ url: base, headers })).json()).toEqual({ sessions: [] });
+    } finally {
+      await app.close();
+      await library().remove(entry.id, ownerId);
+    }
+  });
+
+  it('isolates collections and tags, replaces memberships atomically and preserves games on deletion', async () => {
+    const libraries = library();
+    const organization = new OrganizationService(new OrganizationRepository(database));
+    const entry = await libraries.create(ownerId, { igdbId: 99997, status: 'PLAYING' });
+    const collection = await organization.create('collections', ownerId, { name: 'Favoritos' });
+    const tag = await organization.create('tags', ownerId, { name: 'Portátil' });
+    const foreign = await organization.create('collections', anotherUserId, { name: 'Favoritos' });
+    await expect(
+      organization.create('collections', ownerId, { name: 'Favoritos' }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    await organization.replace(entry.id, ownerId, {
+      collectionIds: [collection.id],
+      tagIds: [tag.id],
+    });
+    expect(await libraries.getById(entry.id, ownerId)).toMatchObject({
+      collectionIds: [collection.id],
+      tagIds: [tag.id],
+    });
+    await expect(
+      organization.replace(entry.id, ownerId, { collectionIds: [foreign.id], tagIds: [] }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(await libraries.getById(entry.id, ownerId)).toMatchObject({
+      collectionIds: [collection.id],
+      tagIds: [tag.id],
+    });
+    await expect(
+      database.collectionEntry.create({
+        data: { entryId: entry.id, userId: ownerId, collectionId: foreign.id },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+    await expect(
+      organization.update('collections', collection.id, anotherUserId, { name: 'Other' }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    await expect(organization.remove('tags', tag.id, anotherUserId)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+    const filters = new SavedFilterService(new SavedFilterRepository(database));
+    const saved = await filters.create(ownerId, {
+      name: 'Organizados',
+      filters: { collectionId: collection.id, tagId: tag.id },
+    });
+    await expect(
+      filters.create(ownerId, { name: 'Foreign', filters: { collectionId: foreign.id } }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    const exported = await new UserRepository(database).findByIdWithLibrary(ownerId);
+    expect(exported?.collections).toHaveLength(1);
+    expect(exported?.tags).toHaveLength(1);
+    expect(
+      exported?.libraryEntries.find((row) => row.igdbId === entry.igdbId)?.collections,
+    ).toEqual([{ collectionId: collection.id }]);
+    await organization.remove('collections', collection.id, ownerId);
+    await organization.remove('tags', tag.id, ownerId);
+    expect(await libraries.getById(entry.id, ownerId)).toMatchObject({
+      collectionIds: [],
+      tagIds: [],
+    });
+    await filters.remove(saved.id, ownerId);
+    await libraries.remove(entry.id, ownerId);
+    await organization.remove('collections', foreign.id, anotherUserId);
+  });
+
+  it('protects organization HTTP CRUD and membership validation', async () => {
+    const entry = await library().create(ownerId, { igdbId: 99996, status: 'PLAYING' });
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    await app.register(csrf);
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id;
+      req.session.sessionVersion = 0;
+      req.session.csrfToken = 'test-csrf';
+      return {};
+    });
+    await app.register(organizationRoutes, { prefix: '/api' });
+    try {
+      expect((await app.inject({ url: '/api/library/collections' })).statusCode).toBe(401);
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const cookie = String(login.headers['set-cookie']).split(';')[0];
+      const headers = { cookie, 'x-csrf-token': 'test-csrf' };
+      const otherLogin = await app.inject({ url: `/test-session/${anotherUserId}` });
+      const otherHeaders = {
+        cookie: String(otherLogin.headers['set-cookie']).split(';')[0],
+        'x-csrf-token': 'test-csrf',
+      };
+      for (const kind of ['collections', 'tags']) {
+        const base = `/api/library/${kind}`;
+        expect(
+          (
+            await app.inject({
+              method: 'POST',
+              url: base,
+              headers: { cookie },
+              payload: { name: 'Test' },
+            })
+          ).statusCode,
+        ).toBe(403);
+        for (const payload of [
+          { name: '' },
+          { name: 'x'.repeat(101) },
+          { name: 'Test', unknown: true },
+        ]) {
+          expect(
+            (await app.inject({ method: 'POST', url: base, headers, payload })).statusCode,
+          ).toBe(400);
+        }
+        const created = await app.inject({
+          method: 'POST',
+          url: base,
+          headers,
+          payload: { name: '  Test  ' },
+        });
+        expect(created.statusCode).toBe(201);
+        expect(created.json().name).toBe('Test');
+        expect(created.json()).not.toHaveProperty('userId');
+        expect((await app.inject({ url: base, headers })).json()[kind]).toHaveLength(1);
+        expect((await app.inject({ url: base, headers: otherHeaders })).json()[kind]).toEqual([]);
+        const path = `${base}/${created.json().id}`;
+        expect(
+          (
+            await app.inject({
+              method: 'PATCH',
+              url: path,
+              headers: otherHeaders,
+              payload: { name: 'Other' },
+            })
+          ).statusCode,
+        ).toBe(404);
+        expect(
+          (await app.inject({ method: 'DELETE', url: path, headers: otherHeaders })).statusCode,
+        ).toBe(404);
+        expect(
+          (
+            await app.inject({ method: 'PATCH', url: path, headers, payload: { name: 'Renamed' } })
+          ).json().name,
+        ).toBe('Renamed');
+        expect((await app.inject({ method: 'DELETE', url: path, headers })).statusCode).toBe(204);
+      }
+      const path = `/api/library/${entry.id}/organization`;
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: path,
+            headers,
+            payload: { collectionIds: ['same', 'same'], tagIds: [] },
+          })
+        ).statusCode,
+      ).toBe(400);
+      expect(
+        (await app.inject({ method: 'PATCH', url: path, headers, payload: { collectionIds: [] } }))
+          .statusCode,
+      ).toBe(400);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: path,
+            headers: otherHeaders,
+            payload: { collectionIds: [], tagIds: [] },
+          })
+        ).statusCode,
+      ).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: path,
+            headers,
+            payload: { collectionIds: [], tagIds: [] },
+          })
+        ).statusCode,
+      ).toBe(200);
     } finally {
       await app.close();
       await library().remove(entry.id, ownerId);

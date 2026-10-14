@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/features/auth/hooks/useAuth";
+import { useOrganization } from "@/features/organization/hooks/useOrganization";
 import { STATUSES } from "@/shared/constants/statuses";
 import type { LibraryEntry } from "@/types/api";
 import type { useLibraryFilters } from "../hooks/useLibraryFilters";
@@ -14,6 +15,7 @@ export function LibraryFiltersPanel({
 	filters: ReturnType<typeof useLibraryFilters>;
 }) {
 	const { data: user } = useMe();
+	const organization = useOrganization();
 	const saved = useSavedFilters(filters.criteria, filters.restore);
 	const platforms = [
 		...new Set(
@@ -111,6 +113,55 @@ export function LibraryFiltersPanel({
 						/>
 					</label>
 				</div>
+				<div className={styles.fields}>
+					{(
+						[
+							{ kind: "collections", field: "collectionId", label: "Coleção" },
+							{ kind: "tags", field: "tagId", label: "Tag" },
+						] as const
+					).map(({ kind, field, label }) => (
+						<label key={field}>
+							{label}
+							<select
+								value={advanced[field] ?? ""}
+								disabled={organization.isLoading}
+								onChange={(event) =>
+									setAdvanced((current) => ({
+										...current,
+										[field]: event.target.value || undefined,
+									}))
+								}
+							>
+								<option value="">Todas</option>
+								{advanced[field] &&
+									!organization.data?.[kind].some(
+										(group) => group.id === advanced[field],
+									) && (
+										<option value={advanced[field]}>
+											Agrupamento indisponível
+										</option>
+									)}
+								{organization.data?.[kind].map((group) => (
+									<option key={group.id} value={group.id}>
+										{group.name}
+									</option>
+								))}
+							</select>
+						</label>
+					))}
+				</div>
+				{organization.isLoading && (
+					<p role="status">Carregando coleções e tags…</p>
+				)}
+				{organization.isError && (
+					<p role="alert">
+						{organization.error.message}{" "}
+						<Button variant="ghost" onClick={() => void organization.refetch()}>
+							Tentar novamente
+						</Button>
+					</p>
+				)}
+
 				<label className={styles.check}>
 					<input
 						type="checkbox"

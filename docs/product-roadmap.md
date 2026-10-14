@@ -94,3 +94,9 @@ Seção na Agora sugere até três jogos de Fila/Pausado, com filtros por plataf
 ### Correção de compatibilidade das sessões
 
 O teste de navegador real confirmou preferência e filtros pela API/DB, mas detectou ausência de `crypto.randomUUID` em HTTP de rede local. Gerador UUIDv4 agora usa `getRandomValues` quando randomUUID não existe, preservando os identificadores de retry. Branch `feature/session-id-compatibility`;101 testes frontend, lint e build passaram.
+
+### Entrega 5 — coleções e tags
+
+CRUD autenticado `/api/library/collections` e `/api/library/tags`, corpo `{name}` e listas `{collections:[]}`/`{tags:[]}`. Nome até100, unicidade por usuário com distinção de maiúsculas. `PATCH /api/library/:id/organization` substitui `{collectionIds,tagIds}` sob transação/lock, valida todos os agrupamentos do proprietário e não grava parcialmente. Entradas retornam arrays de IDs; filtros salvos aceitam collectionId/tagId. Exclusão remove só vínculos e agrupamento. Migration `20261013230000_add_collections_and_tags`; export inclui grupos/vínculos. UI integra gerenciamento na biblioteca, vínculos na ficha e filtros combináveis/salvos. Frontend103 testes, lint/build. Smoke real das entregas1–3 passou após correção UUID: preferência, filtro salvo e sessões create/edit/delete preservando total/base, sem overflow horizontal mobile.
+
+Validação backend entrega5:198 testes incluindo12 PostgreSQL, build/runtime, lint, shared lint e TypeScript aprovados. FKs compostas também impedem vínculos entre usuários no banco. Repositório preserva retorno da linha escalar escrita e consulta apenas vínculos para montar resposta, pois updateManyAndReturn não inclui relações to-many.
