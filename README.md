@@ -341,3 +341,5 @@ MIT
 ## Roadmap de produto
 
 Prioridades, critérios de aceite e andamento das novas funcionalidades estão em [docs/product-roadmap.md](docs/product-roadmap.md). A preferência de plataforma requer a migration `20261013200000_add_preferred_platform`; a produção aplica migrations antes de iniciar o backend.
+
+Filtros salvos requerem `20261013210000_add_saved_filters`. CRUD autenticado em `/api/library/filters` e `/:id`, com isolamento por usuário; filtros são aplicados na biblioteca pelo frontend.

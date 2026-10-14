@@ -24,6 +24,7 @@ model User {
   sessionVersion             Int                  @default(0)
   createdAt                  DateTime             @default(now())
   updatedAt                  DateTime             @updatedAt
+  savedFilters               SavedFilter[]
   libraryEntries             LibraryEntry[]
   passwordResetTokens        PasswordResetToken[]
 }
@@ -84,4 +85,16 @@ model LibraryEntry {
   @@unique([userId, igdbId])
   @@index([userId, status])
   @@index([userId, status, queuePosition])
+}
+
+model SavedFilter {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  filters   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
 }

@@ -6,9 +6,11 @@ export function StatusPills({
 	library,
 	active,
 	onChange,
+	selected,
 }: {
 	library: LibraryEntry[];
 	active: GameStatus | null;
+	selected?: GameStatus[];
 	onChange: (status: GameStatus | null) => void;
 }) {
 	const counts = useMemo(() => {
@@ -23,7 +25,7 @@ export function StatusPills({
 				type="button"
 				onClick={() => onChange(null)}
 				className={styles.pill}
-				data-active={active === null}
+				data-active={selected ? selected.length === 0 : active === null}
 			>
 				<span>Todos</span>
 				<span className={styles.pillCount}>{library.length}</span>
@@ -34,8 +36,12 @@ export function StatusPills({
 					key={status.key}
 					onClick={() => onChange(active === status.key ? null : status.key)}
 					className={styles.pill}
-					data-active={active === status.key}
-					aria-pressed={active === status.key}
+					data-active={
+						selected ? selected.includes(status.key) : active === status.key
+					}
+					aria-pressed={
+						selected ? selected.includes(status.key) : active === status.key
+					}
 					style={{ "--pill-color": status.color } as React.CSSProperties}
 				>
 					<span>{status.label}</span>

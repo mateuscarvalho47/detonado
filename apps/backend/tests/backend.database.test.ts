@@ -6,6 +6,8 @@ import { PreferencesService } from '@/modules/auth/preferences.service.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
 import { LibraryService } from '@/modules/library/library.service.js';
 import { PasswordResetRepository } from '@/modules/password-reset/password-reset.repository.js';
+import { SavedFilterRepository } from '@/modules/saved-filter/saved-filter.repository.js';
+import { SavedFilterService } from '@/modules/saved-filter/saved-filter.service.js';
 import { UserRepository } from '@/modules/user/user.repository.js';
 
 // Explicit opt-in; this suite never reads the application's DATABASE_URL.
@@ -80,6 +82,29 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
       0,
     );
     expect(await database.libraryEntry.count({ where: { userId: ownerId } })).toBe(0);
+  });
+
+  it('persists, exports and isolates saved filters', async () => {
+    const service = new SavedFilterService(new SavedFilterRepository(database));
+    const users = new UserRepository(database);
+    const created = await service.create(ownerId, {
+      name: 'Curtos',
+      filters: { statuses: ['BACKLOG'], maxHours: 10, includeUnknownDuration: false },
+    });
+    expect(await service.list(ownerId)).toHaveLength(1);
+    expect(await service.list(anotherUserId)).toEqual([]);
+    await expect(
+      service.update(created.id, anotherUserId, { name: 'Wrong owner' }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.remove(created.id, anotherUserId)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+    const exported = await users.findByIdWithLibrary(ownerId);
+    expect(exported?.savedFilters[0]).toMatchObject({ name: 'Curtos', filters: { maxHours: 10 } });
+    const updated = await service.update(created.id, ownerId, { filters: {} });
+    expect(updated.filters).toEqual({});
+    await service.remove(created.id, ownerId);
+    expect(await service.list(ownerId)).toEqual([]);
   });
 
   it('serializes concurrent inserts and moves without duplicate queue positions', async () => {

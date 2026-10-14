@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibrarySortField, LibraryView } from "@/store/useAppStore";
 import type { GameStatus } from "@/types/api";
@@ -233,5 +233,27 @@ describe("useLibraryFilters — returned setters", () => {
 		expect(result.current.search).toBe("hollow");
 		expect(result.current.sort).toBe("name");
 		expect(result.current.view).toBe("list");
+	});
+});
+
+describe("saved filter restore and clear", () => {
+	it("restores advanced criteria and synchronizes search and status controls", () => {
+		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
+		const saved = {
+			statuses: ["BACKLOG", "PLAYING"] as GameStatus[],
+			platform: "PC",
+			genre: "Adventure",
+			maxHours: 10,
+			includeUnknownDuration: true,
+			search: "zelda",
+		};
+		act(() => result.current.restore(saved));
+		expect(result.current.advanced).toEqual(saved);
+		expect(result.current.activeStatuses).toEqual(["BACKLOG", "PLAYING"]);
+		expect(mockState.setLibraryStatusFilter).toHaveBeenCalledWith(null);
+		expect(mockState.setLibrarySearch).toHaveBeenCalledWith("zelda");
+		act(() => result.current.clear());
+		expect(result.current.advanced).toEqual({});
+		expect(mockState.setLibrarySearch).toHaveBeenLastCalledWith("");
 	});
 });

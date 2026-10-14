@@ -1,11 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { compareQueue } from "@/shared/lib/queueOrder";
 import { useAppStore } from "@/store/useAppStore";
 import type { LibraryEntry } from "@/types/api";
+import { matchesFilters } from "../lib/matchesFilters";
+import type { LibraryFilterValues } from "../schema/savedFilterSchema";
 
 export function useLibraryFilters(library: LibraryEntry[]) {
 	const statusFilter = useAppStore((s) => s.libraryStatusFilter);
-	const setStatusFilter = useAppStore((s) => s.setLibraryStatusFilter);
+	const storeStatusFilter = useAppStore((s) => s.setLibraryStatusFilter);
 	const search = useAppStore((s) => s.librarySearch);
 	const setSearch = useAppStore((s) => s.setLibrarySearch);
 	const sort = useAppStore((s) => s.librarySortField);
@@ -13,20 +15,31 @@ export function useLibraryFilters(library: LibraryEntry[]) {
 	const view = useAppStore((s) => s.libraryView);
 	const setView = useAppStore((s) => s.setLibraryView);
 
+	const [advanced, setAdvanced] = useState<LibraryFilterValues>({});
+	const activeStatuses =
+		advanced.statuses ?? (statusFilter ? [statusFilter] : []);
+	const criteria: LibraryFilterValues = {
+		...advanced,
+		statuses: activeStatuses,
+		search,
+	};
+	function setStatusFilter(status: typeof statusFilter) {
+		storeStatusFilter(status);
+		setAdvanced((current) => ({ ...current, statuses: undefined }));
+	}
+	function restore(next: LibraryFilterValues) {
+		setAdvanced(next);
+		storeStatusFilter(null);
+		setSearch(next.search ?? "");
+	}
 	const filtered = useMemo(() => {
-		let result = [...library];
-
-		if (statusFilter) {
-			result = result.filter((g) => g.status === statusFilter);
-		}
-
-		if (search.trim()) {
-			const q = search.toLowerCase();
-			result = result.filter((g) => {
-				const notes = g.notes?.toLowerCase() ?? "";
-				return g.name.toLowerCase().includes(q) || notes.includes(q);
-			});
-		}
+		const result = library.filter((entry) =>
+			matchesFilters(entry, {
+				...advanced,
+				statuses: advanced.statuses ?? (statusFilter ? [statusFilter] : []),
+				search,
+			}),
+		);
 
 		result.sort((a, b) => {
 			switch (sort) {
@@ -44,9 +57,15 @@ export function useLibraryFilters(library: LibraryEntry[]) {
 		});
 
 		return result;
-	}, [library, statusFilter, search, sort]);
+	}, [library, statusFilter, search, sort, advanced]);
 
 	return {
+		advanced,
+		setAdvanced,
+		criteria,
+		activeStatuses,
+		restore,
+		clear: () => restore({}),
 		statusFilter,
 		setStatusFilter,
 		search,

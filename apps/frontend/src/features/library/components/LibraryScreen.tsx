@@ -9,6 +9,7 @@ import { useSearchModal } from "@/shared/hooks/useSearchModal";
 import { useLibrary } from "../hooks/useLibrary";
 import { useLibraryFilters } from "../hooks/useLibraryFilters";
 import styles from "./Library.module.css";
+import { LibraryFiltersPanel } from "./LibraryFiltersPanel";
 import { LibraryGrid } from "./LibraryGrid";
 import { LibraryList } from "./LibraryList";
 import { StatusPills } from "./StatusPills";
@@ -61,6 +62,7 @@ export function LibraryScreen() {
 					<StatusPills
 						library={library}
 						active={filters.statusFilter}
+						selected={filters.activeStatuses}
 						onChange={filters.setStatusFilter}
 					/>
 				</div>
@@ -70,6 +72,7 @@ export function LibraryScreen() {
 						<Search />
 						<Input
 							id="library-filter"
+							maxLength={100}
 							value={filters.search}
 							onChange={(event) => filters.setSearch(event.target.value)}
 							placeholder="Encontre um jogo na biblioteca"
@@ -111,6 +114,7 @@ export function LibraryScreen() {
 					</fieldset>
 				</div>
 			</div>
+			<LibraryFiltersPanel library={library} filters={filters} />
 			{library.length === 0 ? (
 				<ArchiveEmpty onAdd={() => setOpen(true)} />
 			) : filters.filtered.length === 0 ? (
@@ -125,9 +129,13 @@ export function LibraryScreen() {
 				<LibraryList
 					games={filters.filtered}
 					queueMode={
-						filters.statusFilter === "BACKLOG" &&
+						filters.activeStatuses.length === 1 &&
+						filters.activeStatuses[0] === "BACKLOG" &&
 						filters.sort === "queue" &&
-						filters.search.trim() === ""
+						filters.search.trim() === "" &&
+						!filters.advanced.platform &&
+						!filters.advanced.genre &&
+						filters.advanced.maxHours === undefined
 					}
 				/>
 			)}

@@ -111,6 +111,10 @@ export class UserRepository {
         preferredPlatform: true,
         consentedAt: true,
         createdAt: true,
+        savedFilters: {
+          select: { id: true, name: true, filters: true, createdAt: true, updatedAt: true },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        },
         libraryEntries: {
           select: {
             igdbId: true,
