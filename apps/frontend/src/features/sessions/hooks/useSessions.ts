@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { fetchLibraryEntry } from "@/features/detail/service/detailService";
 import type { LibraryEntry } from "@/types/api";
+import { createSessionId } from "../lib/sessionId";
 import { localDateTime } from "../lib/sessionTime";
 import { type SessionValues, sessionSchema } from "../schema/sessionSchema";
 import {
@@ -80,7 +81,7 @@ export function useSessions(game: LibraryEntry) {
 		}
 		const fingerprint = JSON.stringify(payload);
 		if (attempt.current?.fingerprint !== fingerprint)
-			attempt.current = { fingerprint, clientId: crypto.randomUUID() };
+			attempt.current = { fingerprint, clientId: createSessionId() };
 		mutation.mutate({
 			kind: "create",
 			payload: { ...payload, clientId: attempt.current.clientId },
