@@ -9,6 +9,10 @@ const envSchema = z.object({
   SESSION_SECRET: z.string().min(32),
   COOKIE_SECRET: z.string().min(32),
   CORS_ORIGIN: z.url(),
+  STEAM_WEB_API_KEY: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().trim().min(1).optional(),
+  ),
   IGDB_CLIENT_ID: z.string().min(1),
   IGDB_CLIENT_SECRET: z.string().min(1),
   IGDB_TIMEOUT_MS: z.coerce.number().int().positive().max(120000).default(5000),

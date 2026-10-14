@@ -3,6 +3,7 @@ import { ChevronRight, Database, LogOut } from "lucide-react";
 import { AccountEditSection } from "@/features/auth/components/AccountEditSection";
 import { PreferencesSection } from "@/features/auth/components/PreferencesSection";
 import { useLogout } from "@/features/auth/hooks/useAuth";
+import { AccountSteamSection } from "@/features/steam/components/AccountSteamSection";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import styles from "@/styles/Routes.module.css";
 export const Route = createFileRoute("/account/")({ component: AccountPage });
@@ -20,6 +21,7 @@ function AccountPage() {
 			<div className={styles.divider} />
 			<p className={styles.eyebrow}>Preferências</p>
 			<PreferencesSection />
+			<AccountSteamSection />
 			<div className={styles.menu}>
 				<button
 					type="button"

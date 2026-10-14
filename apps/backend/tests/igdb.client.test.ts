@@ -353,3 +353,45 @@ describe('IgdbClient — platform catalog', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+describe('IgdbClient — Steam matching', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('discovers the current Steam source and matches exact app IDs, leaving ambiguity unresolved', async () => {
+    const redis = makeRedis({
+      get: vi.fn().mockImplementation(async (key: string) => (key === 'igdb:token' ? TOKEN : null)),
+    });
+    const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
+    const fetchMock = setupFetch(
+      mockResponse([{ id: 77, name: 'Steam' }]),
+      mockResponse([
+        { uid: '10', game: RAW_GAME },
+        { uid: '10', game: RAW_GAME },
+        { uid: '20', game: { ...RAW_GAME, id: 99 } },
+        { uid: '20', game: { ...RAW_GAME, id: 100 } },
+      ]),
+    );
+    const matches = await client.matchSteamGames([10, 20, 30]);
+    expect(matches.get(10)?.igdbId).toBe(RAW_GAME.id);
+    expect(matches.get(20)).toBeNull();
+    expect(matches.get(30)).toBeNull();
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.igdb.com/v4/external_game_sources');
+    expect(fetchMock.mock.calls[1][1].body).toContain('external_game_source = 77');
+    expect(fetchMock.mock.calls[1][1].body).not.toContain('category');
+    expect(redis.set).toHaveBeenCalledWith('igdb:v1:steam-source', '77', { EX: 86400 });
+  });
+  it('reuses a validated source cache and makes no request for an empty page', async () => {
+    const redis = makeRedis({
+      get: vi
+        .fn()
+        .mockImplementation(async (key: string) =>
+          key === 'igdb:token' ? TOKEN : key === 'igdb:v1:steam-source' ? '77' : null,
+        ),
+    });
+    const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
+    const fetchMock = setupFetch(mockResponse([]));
+    expect((await client.matchSteamGames([])).size).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect((await client.matchSteamGames([10])).get(10)).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});

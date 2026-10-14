@@ -91,7 +91,7 @@ Estatísticas (`GET /api/library/stats`): totais, contagem por status, gêneros,
 
 ## Fora do produto
 
-Feed, amigos, perfil público, importação Steam e notificações. O cron do backend é um batimento horário, não um job de HowLongToBeat.
+Feed, amigos, perfil público e notificações. O cron do backend é um batimento horário, não um job de HowLongToBeat.
 
 ## O que uma leitura de dez minutos ainda encontra
 
@@ -146,3 +146,7 @@ Estatísticas incluem seleção de ano e mês opcional, sessões, horas registra
 ### Edição em lote
 
 Modo de seleção explícito, até100 jogos visíveis. Painel escolhe quais campos mudar, revisa jogos/alterações e exige confirmação. Resultado individual identifica falhas e preserva alterações atômicas por jogo; filtros removem seleção oculta. Tags substituem vínculos sem alterar coleções.
+
+### Importação Steam
+
+Configurações oferece conexão pelo login oficial Steam; apenas a conta verificada pode ter sua biblioteca consultada. Importação na biblioteca tem prévia paginada, resolução manual IGDB e confirmação. Duplicatas sempre preservadas; horas acumuladas só entram como horas anteriores de jogos novos. Sem chave configurada no servidor, mostrar indisponibilidade sem bloquear outras funcionalidades.

@@ -22,6 +22,7 @@ const tokenSchema = z.object({
 });
 
 export class IgdbClient {
+  private pendingSteamSource: Promise<number> | null = null;
   private pendingPlatforms: Promise<string[]> | null = null;
   private pendingToken: Promise<string> | null = null;
   constructor(
@@ -41,6 +42,77 @@ export class IgdbClient {
     const raw = await this.query(`${GAME_FIELDS}; where id = ${id};`);
     if (raw.length === 0) return null;
     return transformGame(raw[0]);
+  }
+
+  async matchSteamGames(appIds: number[]) {
+    const ids = z.array(z.number().int().positive()).max(100).parse(appIds);
+    if (!ids.length) return new Map<number, IgdbGame | null>();
+    const sourceId = await this.steamSource();
+    const fields =
+      'uid,game.id,game.name,game.cover.url,game.first_release_date,game.platforms.name,game.genres.id,game.genres.name';
+    const schema = z.array(z.object({ uid: z.string().regex(/^\d+$/), game: igdbGameRawSchema }));
+    const matches = new Map<number, Map<number, IgdbGame>>();
+    for (let offset = 0; offset < 2000; offset += 500) {
+      const rows = await this.request(
+        'external_games',
+        `fields ${fields}; where external_game_source = ${sourceId} & uid = (${ids.map((id) => `"${id}"`).join(',')}); sort id asc; limit 500; offset ${offset};`,
+        schema,
+      );
+      for (const row of rows) {
+        const appId = Number(row.uid);
+        if (!ids.includes(appId)) continue;
+        const candidates = matches.get(appId) ?? new Map<number, IgdbGame>();
+        candidates.set(row.game.id, transformGame(row.game));
+        matches.set(appId, candidates);
+      }
+      if (rows.length < 500)
+        return new Map(
+          ids.map((id) => {
+            const candidates = matches.get(id);
+            return [id, candidates?.size === 1 ? [...candidates.values()][0] : null];
+          }),
+        );
+    }
+    throw new IgdbError('IGDB Steam mapping exceeded pagination limit', 502);
+  }
+  private async steamSource() {
+    if (this.pendingSteamSource) return this.pendingSteamSource;
+    this.pendingSteamSource = this.loadSteamSource();
+    try {
+      return await this.pendingSteamSource;
+    } finally {
+      this.pendingSteamSource = null;
+    }
+  }
+  private async loadSteamSource() {
+    const key = 'igdb:v1:steam-source';
+    const cached = await this.redis.get(key);
+    if (cached) {
+      try {
+        const id = z.number().int().positive().safeParse(JSON.parse(cached));
+        if (id.success) return id.data;
+      } catch {
+        /* Replace invalid cache. */
+      }
+    }
+    const schema = z.array(z.object({ id: z.number().int().positive(), name: z.string() }));
+    const matches = new Set<number>();
+    for (let offset = 0; offset < 10000; offset += 500) {
+      const sources = await this.request(
+        'external_game_sources',
+        `fields id,name; sort id asc; limit 500; offset ${offset};`,
+        schema,
+      );
+      for (const source of sources)
+        if (source.name.toLowerCase() === 'steam') matches.add(source.id);
+      if (sources.length < 500) {
+        if (matches.size !== 1) throw new IgdbError('IGDB Steam source could not be resolved', 502);
+        const id = [...matches][0];
+        await this.redis.set(key, JSON.stringify(id), { EX: 86400 });
+        return id;
+      }
+    }
+    throw new IgdbError('IGDB external sources exceeded pagination limit', 502);
   }
 
   async getPlatforms(): Promise<string[]> {

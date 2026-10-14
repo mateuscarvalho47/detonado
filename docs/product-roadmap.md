@@ -138,3 +138,13 @@ GET `/api/library/retrospective?year=YYYY&month=M` (mês opcional, year1970..210
 ### Entrega 12 — edição em lote
 
 Seleção explícita de até100 jogos visíveis, revisão dos nomes/campos e confirmação antes de enviar. POST `/api/library/bulk` altera status, plataforma registrada e/ou substitui tags, preservando coleções e progresso. Alterações atômicas por jogo; falhas individuais não impedem os demais e aparecem por nome. Plataforma não suportada e tags de outro usuário rejeitadas antes da escrita. Tags isoladas preservam inclusive completedAt=null. Sem migration. Checks216 testes backend(20PostgreSQL/HTTP),150frontend, lint/build/TypeScript. Branch `feature/bulk-library-edit`.
+
+### Entrega 13 — importação Steam
+
+Conexão pelo login oficial Steam em Configurações. OpenID verifica assinatura diretamente no provedor, descoberta HTTPS restrita ao Steam, campos assinados, retorno em APP_URL/account, estado vinculado à sessão/usuário por dez minutos e nonce de uso único. A prévia aceita somente o SteamID verificado da sessão: a chave pessoal não permite consultar IDs arbitrários de outros usuários. Desconectar preserva os jogos importados.
+
+Prévia paginada de até50 jogos na interface, correspondência IGDB pela origem Steam descoberta dinamicamente e resolução manual de correspondências ausentes/ambíguas. Reutiliza importação CSV em lotes de10, sempre SKIP para duplicatas. Horas Steam viram horas anteriores apenas de jogos novos; não sobrescrevem campanhas ou criam sessões datadas. Sem sincronização automática e sem migration.
+
+`STEAM_WEB_API_KEY` é opcional e exclusiva do backend. Sem chave, startup e demais funções continuam funcionando; status informa configured=false e consultas respondem503. O usuário confirmou que ainda não tem a chave: integração implementada, mas a ativação real depende dessa configuração no Railway. Respostas privadas, vazias, incompletas e falhas do provedor são distintas, com deadline total e sem segredo em URLs/logs.
+
+Validação:228 testes backend, incluindo20 PostgreSQL/HTTP;161 frontend; lint, build/runtime e TypeScript aprovados. Discovery público real do OpenID confirmado. Consulta OwnedGames autenticada e login Steam real não exercitados sem chave; contratos e rejeições cobertos por testes. Branch `feature/steam-library-import`. Entrega12: main83af4ef, CI e deploys success, frontend/API health200.

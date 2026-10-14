@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { COMPLETION_GOALS } from "@/features/completion/lib/completionEstimate";
-import { useGameSearch } from "@/features/search/hooks/useGameSearch";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
-import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useCsvImport } from "../hooks/useCsvImport";
 import type { ImportPreviewRow, ImportRow } from "../service/importService";
 import styles from "./CsvImportPanel.module.css";
+import { ImportMatchResolver } from "./ImportMatchResolver";
 
 const STATE_LABELS = {
 	READY: "Pronto para adicionar",
@@ -20,61 +19,7 @@ const RESULT_LABELS = {
 	SKIPPED: "Ignorado",
 	FAILED: "Falhou",
 };
-function MatchResolver({
-	name,
-	disabled,
-	onSelect,
-}: {
-	name: string;
-	disabled: boolean;
-	onSelect: (igdbId: number) => void;
-}) {
-	const [search, setSearch] = useState(name);
-	const query = useGameSearch(useDebounce(search, 300));
-	return (
-		<div className={styles.resolver}>
-			<label>
-				Buscar correspondência no IGDB
-				<input
-					value={search}
-					onChange={(event) => setSearch(event.target.value)}
-					minLength={2}
-					maxLength={200}
-					disabled={disabled}
-				/>
-			</label>
-			{search.trim().length < 2 ? (
-				<p>Digite pelo menos dois caracteres.</p>
-			) : query.isFetching ? (
-				<p role="status">Buscando jogos…</p>
-			) : query.isError ? (
-				<p role="alert">
-					{query.error.message}{" "}
-					<Button variant="ghost" onClick={() => void query.refetch()}>
-						Tentar novamente
-					</Button>
-				</p>
-			) : !query.data?.length ? (
-				<p>Nenhum jogo encontrado. Ajuste o nome.</p>
-			) : (
-				<ul>
-					{query.data.map((game) => (
-						<li key={game.igdbId}>
-							<Button
-								variant="outline"
-								disabled={disabled}
-								onClick={() => onSelect(game.igdbId)}
-							>
-								{game.name} · {game.releaseYear ?? "Ano não informado"} ·{" "}
-								{game.platforms.slice(0, 2).join(", ")} · IGDB {game.igdbId}
-							</Button>
-						</li>
-					))}
-				</ul>
-			)}
-		</div>
-	);
-}
+
 function inputSummary(input: ImportRow) {
 	const fields: string[] = [];
 	if (input.status) fields.push(`Status: ${STATUS_BY_KEY[input.status].label}`);
@@ -169,11 +114,11 @@ function PreviewRow({
 				</div>
 			)}
 			{resolving && (
-				<MatchResolver
+				<ImportMatchResolver
 					name={input?.name ?? rawName ?? ""}
 					disabled={disabled}
-					onSelect={(igdbId) => {
-						onChange({ igdbId });
+					onSelect={(game) => {
+						onChange({ igdbId: game.igdbId });
 						setResolving(false);
 					}}
 				/>

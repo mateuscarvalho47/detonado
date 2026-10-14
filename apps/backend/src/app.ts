@@ -18,6 +18,7 @@ import { organizationRoutes } from '@/modules/organization/organization.routes.j
 import { passwordResetRoutes } from '@/modules/password-reset/password-reset.routes.js';
 import { playSessionRoutes } from '@/modules/play-session/play-session.routes.js';
 import { savedFilterRoutes } from '@/modules/saved-filter/saved-filter.routes.js';
+import { steamRoutes } from '@/modules/steam/steam.routes.js';
 import corsPlugin from '@/plugins/cors.js';
 import csrfPlugin from '@/plugins/csrf.js';
 import errorHandlerPlugin from '@/plugins/errorHandler.js';
@@ -65,6 +66,11 @@ export async function buildApp() {
     await app.register(libraryImportRoutes, { prefix: '/api' });
     await app.register(gameSourceRoutes, { prefix: '/api' });
     await app.register(journalEntryRoutes, { prefix: '/api' });
+    await app.register(steamRoutes, {
+      prefix: '/api',
+      appUrl: env.APP_URL,
+      steamApiKey: env.STEAM_WEB_API_KEY,
+    });
 
     app.get('/health', async (_req, reply) => {
       try {

@@ -361,3 +361,11 @@ Diário requer `20261014013000_add_progress_journal`. CRUD `/api/library/:id/jou
 Retrospecto: `GET /api/library/retrospective?year=YYYY&month=M` (mês opcional). Usa America/Sao_Paulo para sessões e preserva datas-calendário de conclusão. Compara período anterior e não atribui horas manuais sem data a um período. Sem migration.
 
 Edição em lote: `POST /api/library/bulk` recebe até100 IDs únicos e changes com status/userPlatform/tagIds. Cada jogo é atualizado atomicamente; resposta contém results e summary de sucessos/falhas. Plataforma não nula deve ser suportada pelo jogo. Tags são substituídas; coleções e progresso preservados. UI exige revisão e confirmação.
+
+### Importação Steam
+
+Configure `STEAM_WEB_API_KEY` no backend para ativar a integração; obtenha a chave em [Steam Web API](https://steamcommunity.com/dev/apikey). Nunca inclua a chave no frontend ou no Git. Sem essa variável, o app continua funcionando e informa que a integração ainda não está configurada. `APP_URL` deve apontar para a origem pública do frontend para o retorno do login Steam.
+
+Em Configurações, conecte a conta pelo login oficial Steam. O servidor verifica a identidade com OpenID antes de consultar a biblioteca; a conexão dura a sessão atual e pode ser removida. Não há campo para consultar IDs de terceiros. Detalhes privados ou indisponíveis recebem uma mensagem específica; biblioteca vazia é tratada separadamente.
+
+Na biblioteca, abra a importação Steam, revise páginas de até50 jogos e resolva correspondências ausentes ou ambíguas pela busca IGDB. O commit reutiliza a importação em lotes de10 e sempre ignora duplicatas. Horas Steam entram como horas anteriores apenas em jogos novos, sem criar sessões datadas ou sobrescrever campanhas existentes. Não há sincronização automática.

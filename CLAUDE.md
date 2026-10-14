@@ -58,4 +58,4 @@ Read it before continuing this work and update its execution record afterwards.
 - **Session-based auth** (not JWT) — `req.session.userId` and `sessionVersion` after login, stored in Redis. `requireAuth` drops the session when the version no longer matches.
 - **ESM + NodeNext** in the backend — always use `.js` extensions in imports even for `.ts` source files.
 - **Path alias `@`** maps to `src/` in both apps.
-- Product is a private game library (IGDB search, six statuses, HLTB times stored on add). There is no social graph and no Steam import.
+- Product is a private game library (IGDB search, six statuses, HLTB times stored on add). There is no social graph. Steam import uses verified OpenID identity, an optional server-only STEAM_WEB_API_KEY, preview and the CSV import pipeline; duplicates are always skipped.

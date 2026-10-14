@@ -82,3 +82,14 @@
 	outline: 2px solid var(--color-accent);
 	outline-offset: 2px;
 }
+.panel input[type="checkbox"] {
+	width: 20px;
+	min-height: 20px;
+	height: 20px;
+	accent-color: var(--color-accent);
+}
+.panel .selection {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
