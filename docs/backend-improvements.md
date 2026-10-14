@@ -182,3 +182,24 @@ PostgreSQL 17 em container temporário, sem volumes e com porta local dinâmica.
   gerar um módulo, conforme as instruções do template.
 - Build agora limpa dist antes de compilar, evitando sobras de arquivos removidos;
   Biome exclui dist e o client Prisma gerado dos checks.
+
+## Hotfix — inicialização de produção e pacote shared
+
+O refactor separou os schemas, mas o package.json de shared ainda apontava para
+src/index.ts. Esse arquivo reexportava auth.js/game.js/library.js, inexistentes
+em src. Vitest/tsx resolveram .js para .ts durante os testes; Node puro em
+produção encerrou com ERR_MODULE_NOT_FOUND. O Railway respondeu 502 sem header
+CORS, causando a mensagem de CORS no navegador. Os logs de produção confirmaram
+essa causa; a migration já havia sido aplicada com sucesso.
+
+Correção: shared compila src em dist e exporta dist/index.js para runtime, mantendo
+src/index.ts como entrada de tipos. Build, dev e testes do backend compilam shared
+explicitamente. O build inclui check:runtime com Node puro, e o CI agora executa
+o build completo. Não alterar CORS nem ampliar origens para resolver esse caso.
+
+Validação do hotfix: importação com Node 22.23.3; servidor compilado iniciado
+com Redis descartável, sessão 200, preflight 204 e library sem sessão 401, ambos
+com CORS correto. Build, TypeScript, lint e 182 testes passaram (seis testes de
+PostgreSQL não foram executados nesta checagem). Nenhuma migration adicional.
+Em desenvolvimento, alterações em packages/shared/src precisam de um novo build
+shared ou reinício do comando dev do backend.

@@ -3,23 +3,24 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file=.env src/server.ts",
+    "dev": "pnpm --filter @detonado/shared build && tsx watch --env-file=.env src/server.ts",
     "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })\"",
-    "build": "pnpm clean && prisma generate && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "pnpm --filter @detonado/shared build && pnpm clean && prisma generate && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && pnpm check:runtime",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:clean": "tsx --env-file=.env prisma/clean.ts",
     "db:reset": "prisma migrate reset",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:cov": "vitest run --coverage",
+    "test": "pnpm --filter @detonado/shared build && vitest run",
+    "test:watch": "pnpm --filter @detonado/shared build && vitest",
+    "test:cov": "pnpm --filter @detonado/shared build && vitest run --coverage",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "gen:module": "tsx scripts/create-module.ts",
-    "gen:bruno": "tsx --env-file=.env scripts/gen-bruno.ts"
+    "gen:bruno": "tsx --env-file=.env scripts/gen-bruno.ts",
+    "check:runtime": "node --input-type=module -e \"await import('@detonado/shared'); await import('./dist/modules/library/library.service.js'); console.log('Production imports OK')\""
   },
   "prisma": {
     "seed": "tsx --env-file=.env prisma/seed.ts"

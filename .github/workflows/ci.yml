@@ -33,6 +33,11 @@ jobs:
         env:
           DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci?schema=public
 
+      - name: Build backend and verify production imports
+        run: pnpm --filter backend build
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci?schema=public
+
       - name: Type-check backend
         working-directory: apps/backend
         run: pnpm exec tsc --noEmit
