@@ -116,10 +116,28 @@ export class LibraryService {
     });
   }
 
-  async update(id: string, userId: string, input: UpdateLibraryEntryInput) {
+  async update(
+    id: string,
+    userId: string,
+    input: UpdateLibraryEntryInput,
+    options?: { tagIds?: string[]; requireSupportedPlatform: boolean },
+  ) {
     return this.repository.withUserLock(userId, async (repository) => {
       const entry = await repository.findByIdAndUser(id, userId);
       if (!entry) throw new LibraryEntryNotFoundError();
+
+      // Bulk validation happens before any membership, status or queue writes.
+      if (
+        options?.requireSupportedPlatform &&
+        input.userPlatform != null &&
+        !entry.platforms.includes(input.userPlatform)
+      )
+        throw new ValidationError('Plataforma não disponível para este jogo');
+      if (
+        options?.tagIds !== undefined &&
+        (await repository.countOwnedTags(userId, options.tagIds)) !== options.tagIds.length
+      )
+        throw new ValidationError('Tag inválida');
 
       const { completedAt: requestedDate, userPlatform, ...editableFields } = input;
       const changes: LibraryEntryChanges = { ...editableFields };
@@ -135,7 +153,9 @@ export class LibraryService {
             : Math.round((input.hoursPlayed - sessionHours) * 10) / 10;
       }
       const nextStatus = input.status ?? entry.status;
-      const completedAt = resolveCompletedAt(nextStatus, requestedDate, entry.completedAt);
+      let completedAt: Date | null | undefined;
+      if (!options || input.status !== undefined || requestedDate !== undefined)
+        completedAt = resolveCompletedAt(nextStatus, requestedDate, entry.completedAt);
 
       if (userPlatform !== undefined) changes.userPlatform = blankToNull(userPlatform);
       if (completedAt !== undefined) changes.completedAt = completedAt;
@@ -147,7 +167,11 @@ export class LibraryService {
         changes.queuePosition = null;
       }
 
-      const updated = await repository.update(id, userId, changes);
+      if (options?.tagIds !== undefined) await repository.replaceTags(id, userId, options.tagIds);
+      const updated =
+        Object.keys(changes).length === 0
+          ? await repository.findByIdAndUser(id, userId)
+          : await repository.update(id, userId, changes);
       if (!updated) throw new LibraryEntryNotFoundError();
       return updated;
     });

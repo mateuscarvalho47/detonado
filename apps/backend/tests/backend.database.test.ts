@@ -1503,6 +1503,188 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
     }
   });
 
+  it('bulk-edits each owned game atomically while preserving campaigns, sessions and collections', async () => {
+    const libraries = library();
+    const first = await libraries.create(ownerId, { igdbId: 99501, status: 'BACKLOG' });
+    const second = await libraries.create(ownerId, { igdbId: 99502, status: 'BACKLOG' });
+    const foreign = await libraries.create(anotherUserId, { igdbId: 99503, status: 'PLAYING' });
+    await database.libraryEntry.update({
+      where: { id: second.id },
+      data: { platforms: ['Nintendo Switch'] },
+    });
+    await libraries.update(first.id, ownerId, {
+      hoursPlayed: 2,
+      rating: 8,
+      notes: 'Preservar',
+      completionGoal: 'EXTRAS',
+    });
+    const sessions = new PlaySessionService(new PlaySessionRepository(database));
+    await sessions.create(first.id, ownerId, {
+      clientId: randomUUID(),
+      campaignId: first.activeCampaignId,
+      playedAt: new Date().toISOString(),
+      durationMinutes: 60,
+    });
+    const organization = new OrganizationService(new OrganizationRepository(database));
+    const collection = await organization.create('collections', ownerId, {
+      name: 'Bulk collection',
+    });
+    const oldTag = await organization.create('tags', ownerId, { name: 'Bulk old' });
+    const newTag = await organization.create('tags', ownerId, { name: 'Bulk new' });
+    const foreignTag = await organization.create('tags', anotherUserId, { name: 'Bulk foreign' });
+    await organization.replace(first.id, ownerId, {
+      collectionIds: [collection.id],
+      tagIds: [oldTag.id],
+    });
+    await organization.replace(second.id, ownerId, { collectionIds: [], tagIds: [oldTag.id] });
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    app.decorate('igdb', {} as never);
+    app.decorate('redis', {} as never);
+    app.decorate('hltb', {} as never);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    await app.register(csrf);
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id === 'anonymous' ? undefined : req.params.id;
+      req.session.sessionVersion = 0;
+      req.session.csrfToken = 'test-csrf';
+      return {};
+    });
+    await app.register(libraryRoutes, { prefix: '/api' });
+    try {
+      const url = '/api/library/bulk';
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const cookie = String(login.headers['set-cookie']).split(';')[0];
+      const headers = { cookie, 'x-csrf-token': 'test-csrf' };
+      const payload = {
+        ids: [first.id, second.id],
+        changes: { status: 'COMPLETED', userPlatform: 'PC', tagIds: [newTag.id] },
+      };
+      expect(
+        (await app.inject({ method: 'POST', url, headers: { cookie }, payload })).statusCode,
+      ).toBe(403);
+      const anon = await app.inject({ url: '/test-session/anonymous' });
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url,
+            headers: {
+              cookie: String(anon.headers['set-cookie']).split(';')[0],
+              'x-csrf-token': 'test-csrf',
+            },
+            payload,
+          })
+        ).statusCode,
+      ).toBe(401);
+      for (const invalid of [
+        { ids: [first.id, first.id], changes: { status: 'PLAYING' } },
+        { ids: [first.id], changes: {} },
+        { ids: [first.id], changes: { rating: 0 } },
+      ])
+        expect(
+          (await app.inject({ method: 'POST', url, headers, payload: invalid })).statusCode,
+        ).toBe(400);
+      const result = await app.inject({ method: 'POST', url, headers, payload });
+      expect(result.statusCode).toBe(200);
+      expect(result.json().summary).toEqual({ updated: 1, failed: 1 });
+      const updated = await libraries.getById(first.id, ownerId);
+      expect(updated).toMatchObject({
+        status: 'COMPLETED',
+        userPlatform: 'PC',
+        tagIds: [newTag.id],
+        collectionIds: [collection.id],
+        activeCampaignId: first.activeCampaignId,
+        rating: 8,
+        notes: 'Preservar',
+        completionGoal: 'EXTRAS',
+        queuePosition: null,
+      });
+      expect(updated.completedAt).not.toBeNull();
+      expect(updated.hoursPlayed?.toNumber()).toBe(3);
+      const unchanged = await libraries.getById(second.id, ownerId);
+      expect(unchanged).toMatchObject({
+        status: 'BACKLOG',
+        userPlatform: null,
+        tagIds: [oldTag.id],
+        queuePosition: second.queuePosition,
+      });
+      const badTag = await app.inject({
+        method: 'POST',
+        url,
+        headers,
+        payload: { ids: [first.id], changes: { status: 'PLAYING', tagIds: [foreignTag.id] } },
+      });
+      expect(badTag.json().summary).toEqual({ updated: 0, failed: 1 });
+      expect((await libraries.getById(first.id, ownerId)).status).toBe('COMPLETED');
+      expect((await libraries.getById(first.id, ownerId)).tagIds).toEqual([newTag.id]);
+      await libraries.update(first.id, ownerId, { completedAt: null });
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url,
+            headers,
+            payload: { ids: [first.id], changes: { tagIds: [newTag.id] } },
+          })
+        ).json().summary.updated,
+      ).toBe(1);
+      expect((await libraries.getById(first.id, ownerId)).completedAt).toBeNull();
+      const mixed = await app.inject({
+        method: 'POST',
+        url,
+        headers,
+        payload: {
+          ids: [first.id, foreign.id],
+          changes: { status: 'BACKLOG', userPlatform: null },
+        },
+      });
+      expect(mixed.json().summary).toEqual({ updated: 1, failed: 1 });
+      expect(await libraries.getById(first.id, ownerId)).toMatchObject({
+        status: 'BACKLOG',
+        completedAt: null,
+        userPlatform: null,
+        tagIds: [newTag.id],
+        collectionIds: [collection.id],
+      });
+      expect((await libraries.getById(foreign.id, anotherUserId)).status).toBe('PLAYING');
+      expect(await sessions.list(first.id, ownerId)).toHaveLength(1);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url,
+            headers,
+            payload: { ids: [first.id], changes: { tagIds: [] } },
+          })
+        ).json().summary.updated,
+      ).toBe(1);
+      expect((await libraries.getById(first.id, ownerId)).tagIds).toEqual([]);
+      expect((await libraries.getById(first.id, ownerId)).collectionIds).toEqual([collection.id]);
+      const queue = await database.libraryEntry.findMany({
+        where: { userId: ownerId, status: 'BACKLOG' },
+      });
+      expect(new Set(queue.map((row) => row.queuePosition)).size).toBe(2);
+    } finally {
+      await app.close();
+      await libraries.remove(first.id, ownerId);
+      await libraries.remove(second.id, ownerId);
+      await libraries.remove(foreign.id, anotherUserId);
+      await organization.remove('collections', collection.id, ownerId);
+      await organization.remove('tags', oldTag.id, ownerId);
+      await organization.remove('tags', newTag.id, ownerId);
+      await organization.remove('tags', foreignTag.id, anotherUserId);
+    }
+  });
+
   it('serializes concurrent inserts and moves without duplicate queue positions', async () => {
     const service = library();
     const entries = await Promise.all(

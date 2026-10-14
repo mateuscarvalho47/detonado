@@ -2,6 +2,8 @@ import { LayoutGrid, List, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BulkEditPanel } from "@/features/bulk/components/BulkEditPanel";
+import { useBulkSelection } from "@/features/bulk/hooks/useBulkSelection";
 import { CsvImportPanel } from "@/features/import/components/CsvImportPanel";
 import { GroupManager } from "@/features/organization/components/GroupManager";
 import { ArchiveEmpty } from "@/shared/components/ArchiveEmpty";
@@ -28,6 +30,7 @@ export function LibraryScreen() {
 	const { data, isLoading, isError, refetch } = useLibrary();
 	const library = data ?? [];
 	const filters = useLibraryFilters(library);
+	const selection = useBulkSelection(filters.filtered);
 	const { setOpen } = useSearchModal();
 	if (isLoading)
 		return (
@@ -119,6 +122,22 @@ export function LibraryScreen() {
 			<LibraryFiltersPanel library={library} filters={filters} />
 			<GroupManager />
 			<CsvImportPanel />
+			{selection.active ? (
+				<BulkEditPanel
+					selection={selection}
+					visibleCount={filters.filtered.length}
+				/>
+			) : (
+				<div className={styles.bulkStart}>
+					<Button
+						variant="outline"
+						disabled={!filters.filtered.length}
+						onClick={selection.begin}
+					>
+						Selecionar jogos para editar em lote
+					</Button>
+				</div>
+			)}
 			{library.length === 0 ? (
 				<ArchiveEmpty onAdd={() => setOpen(true)} />
 			) : filters.filtered.length === 0 ? (
@@ -128,11 +147,16 @@ export function LibraryScreen() {
 					body="Mude os filtros para reencontrar o que procura."
 				/>
 			) : filters.view === "grid" ? (
-				<LibraryGrid games={filters.filtered} />
+				<LibraryGrid
+					games={filters.filtered}
+					selection={selection.active ? selection : undefined}
+				/>
 			) : (
 				<LibraryList
 					games={filters.filtered}
+					selection={selection.active ? selection : undefined}
 					queueMode={
+						!selection.active &&
 						filters.activeStatuses.length === 1 &&
 						filters.activeStatuses[0] === "BACKLOG" &&
 						filters.sort === "queue" &&

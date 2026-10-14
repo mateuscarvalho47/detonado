@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import type { SelectionControls } from "@/features/bulk/hooks/useBulkSelection";
 import { Cover } from "@/shared/components/Cover";
 import { StatusBadge } from "@/shared/components/StatusBadge";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
@@ -25,13 +26,15 @@ const COLUMNS = [
 export function LibraryList({
 	games,
 	queueMode = false,
+	selection,
 }: {
 	games: LibraryEntry[];
 	queueMode?: boolean;
+	selection?: SelectionControls;
 }) {
 	const navigate = useNavigate();
 	return (
-		<div className={styles.list}>
+		<div className={styles.list} data-selection={!!selection}>
 			<div className={styles.listHeader}>
 				<div />
 				{COLUMNS.map((column) => (
@@ -111,6 +114,22 @@ export function LibraryList({
 				);
 				return (
 					<div key={game.igdbId} className={styles.rowWrap}>
+						{selection && (
+							<label className={styles.rowSelection}>
+								<input
+									type="checkbox"
+									aria-label={`Selecionar ${game.name}`}
+									checked={selection.selectedIds.has(game.id)}
+									disabled={
+										selection.locked ||
+										(selection.selectedIds.size >= 100 &&
+											!selection.selectedIds.has(game.id))
+									}
+									onChange={() => selection.toggle(game.id)}
+								/>
+								<span className="sr-only">Selecionar {game.name}</span>
+							</label>
+						)}
 						<button
 							type="button"
 							onClick={() =>

@@ -1,9 +1,15 @@
-import { retrospectiveQuerySchema, retrospectiveResponseSchema } from '@detonado/shared';
+import {
+  bulkLibraryInputSchema,
+  bulkLibraryResponseSchema,
+  retrospectiveQuerySchema,
+  retrospectiveResponseSchema,
+} from '@detonado/shared';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/requireAuth.js';
 import { GameService } from '@/modules/game/game.service.js';
+import { LibraryBulkService } from './library.bulk.service.js';
 import { LibraryRepository } from './library.repository.js';
 import { RetrospectiveService } from './library.retrospective.service.js';
 import {
@@ -21,6 +27,7 @@ export async function libraryRoutes(app: FastifyInstance) {
   const games = new GameService(app.igdb, app.redis, app.hltb);
   const service = new LibraryService(repo, games);
   const retrospective = new RetrospectiveService(repo);
+  const bulk = new LibraryBulkService(service);
   const routes = app.withTypeProvider<ZodTypeProvider>();
 
   const opts = {
@@ -50,6 +57,25 @@ export async function libraryRoutes(app: FastifyInstance) {
       response: { 200: z.array(libraryEntrySchema) },
     },
     handler: async (req) => service.list(req.userId),
+  });
+
+  routes.post('/library/bulk', {
+    ...opts,
+    config: {
+      rateLimit: {
+        hook: 'preHandler',
+        max: 20,
+        timeWindow: '1 minute',
+        keyGenerator: (req: FastifyRequest) => req.session.userId ?? req.ip,
+      },
+    },
+    schema: {
+      ...opts.schema,
+      summary: 'Editar jogos em lote',
+      body: bulkLibraryInputSchema,
+      response: { 200: bulkLibraryResponseSchema },
+    },
+    handler: async (req) => bulk.update(req.userId, req.body),
   });
 
   routes.get('/library/retrospective', {
