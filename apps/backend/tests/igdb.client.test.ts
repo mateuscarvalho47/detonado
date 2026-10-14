@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ForbiddenError, IgdbError, ValidationError } from '@/lib/errors.js';
+import { IgdbError, ValidationError } from '@/lib/errors.js';
 import { escapeIgdbSearch, IgdbClient } from '@/lib/igdb/client.js';
 
 const CLIENT_ID = 'test-client-id';
@@ -73,6 +73,24 @@ describe('IgdbClient — token management', () => {
     setupFetch(mockResponse(null, 500));
 
     await expect(client.searchGames('witcher')).rejects.toThrow(IgdbError);
+  });
+
+  it('shares simultaneous token requests and keeps credentials out of the URL', async () => {
+    const client = new IgdbClient(makeRedis(), CLIENT_ID, CLIENT_SECRET);
+    const fetchMock = setupFetch(mockResponse(TOKEN_RESPONSE), mockResponse([]), mockResponse([]));
+    await Promise.all([client.searchGames('witcher'), client.searchGames('hollow knight')]);
+    const tokenCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes('oauth2/token'));
+    expect(tokenCalls).toHaveLength(1);
+    expect(tokenCalls[0][0]).toBe('https://id.twitch.tv/oauth2/token');
+    expect(tokenCalls[0][1].body.get('client_secret')).toBe(CLIENT_SECRET);
+  });
+
+  it('rejects malformed token responses before caching them', async () => {
+    const redis = makeRedis();
+    const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
+    setupFetch(mockResponse({ access_token: '' }));
+    await expect(client.searchGames('witcher')).rejects.toMatchObject({ statusCode: 502 });
+    expect(redis.set).not.toHaveBeenCalled();
   });
 });
 
@@ -174,12 +192,50 @@ describe('IgdbClient — getGameById', () => {
 describe('IgdbClient — error mapping', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('throws ValidationError on IGDB 400', async () => {
+  it('rejects malformed game payloads as an upstream failure', async () => {
+    const client = new IgdbClient(
+      makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) }),
+      CLIENT_ID,
+      CLIENT_SECRET,
+    );
+    setupFetch(mockResponse([{ id: 1 }]));
+    await expect(client.searchGames('test')).rejects.toMatchObject({ statusCode: 502 });
+  });
+
+  it('keeps the deadline active while reading the response body', async () => {
+    const client = new IgdbClient(
+      makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) }),
+      CLIENT_ID,
+      CLIENT_SECRET,
+      20,
+    );
+    let aborted = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url, init: RequestInit) => ({
+        ok: true,
+        status: 200,
+        json: () =>
+          new Promise((_resolve, reject) => {
+            const abort = () => {
+              aborted = true;
+              reject(init.signal?.reason);
+            };
+            if (init.signal?.aborted) abort();
+            else init.signal?.addEventListener('abort', abort, { once: true });
+          }),
+      })),
+    );
+    await expect(client.searchGames('test')).rejects.toMatchObject({ statusCode: 504 });
+    expect(aborted).toBe(true);
+  });
+
+  it('maps an upstream query rejection to 502', async () => {
     const redis = makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) });
     const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
     setupFetch(mockResponse(null, 400));
 
-    await expect(client.searchGames('test')).rejects.toThrow(ValidationError);
+    await expect(client.searchGames('test')).rejects.toMatchObject({ statusCode: 502 });
   });
 
   it('deletes igdb:token and throws IgdbError 502 when IGDB returns 401 twice', async () => {
@@ -216,12 +272,12 @@ describe('IgdbClient — error mapping', () => {
     });
   });
 
-  it('throws ForbiddenError on IGDB 403', async () => {
+  it('maps upstream access denial to 502', async () => {
     const redis = makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) });
     const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
     setupFetch(mockResponse(null, 403));
 
-    await expect(client.searchGames('test')).rejects.toThrow(ForbiddenError);
+    await expect(client.searchGames('test')).rejects.toMatchObject({ statusCode: 502 });
   });
 
   it('throws IgdbError on IGDB 5xx', async () => {

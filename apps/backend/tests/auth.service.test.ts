@@ -15,11 +15,10 @@ vi.mock('@/lib/hash.js', () => ({
   verifyPassword: vi.fn(),
 }));
 
-vi.mock('@/lib/email.js', () => ({
-  sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
-}));
+const sendVerificationEmail = vi
+  .fn<(to: string, token: string) => Promise<void>>()
+  .mockResolvedValue(undefined);
 
-import { sendVerificationEmail } from '@/lib/email.js';
 import { verifyPassword } from '@/lib/hash.js';
 
 beforeEach(() => {
@@ -37,13 +36,14 @@ function makeRepo(overrides: Record<string, unknown> = {}) {
     findByEmailWithHash: vi.fn(),
     findById: vi.fn(),
     findByIdWithHash: vi.fn(),
+    findByIdWithLibrary: vi.fn(),
     create: vi.fn(),
     deleteById: vi.fn(),
     updateAccount: vi.fn(),
-    findByVerificationToken: vi.fn(),
-    verifyEmail: vi.fn(),
+    consumeVerificationToken: vi.fn(),
     findByEmailForResend: vi.fn(),
     updateVerificationToken: vi.fn(),
+    restoreVerificationToken: vi.fn().mockResolvedValue({ count: 1 }),
     ...overrides,
   };
 }
@@ -54,7 +54,7 @@ describe('AuthService.register', () => {
       findByEmail: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: '1', email: 'a@b.com', createdAt: new Date() }),
     });
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     const result = await service.register({
       email: 'a@b.com',
@@ -86,7 +86,7 @@ describe('AuthService.register', () => {
       deleteById: vi.fn().mockResolvedValue(undefined),
     });
     vi.mocked(sendVerificationEmail).mockRejectedValueOnce(new Error('down'));
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await expect(
       service.register({ email: 'a@b.com', password: '12345678', consent: true }),
@@ -98,7 +98,7 @@ describe('AuthService.register', () => {
     const repo = makeRepo({
       findByEmail: vi.fn().mockResolvedValue({ id: '1', email: 'a@b.com' }),
     });
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await expect(
       service.register({ email: 'a@b.com', password: '12345678', consent: true }),
@@ -120,7 +120,7 @@ describe('AuthService.login', () => {
     };
     const repo = makeRepo({ findByEmailWithHash: vi.fn().mockResolvedValue(user) });
     vi.mocked(verifyPassword).mockResolvedValue(true);
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     const result = await service.login({ email: 'a@b.com', password: '12345678' });
 
@@ -129,7 +129,7 @@ describe('AuthService.login', () => {
 
   it('throws InvalidCredentialsError when user does not exist', async () => {
     const repo = makeRepo({ findByEmailWithHash: vi.fn().mockResolvedValue(null) });
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await expect(service.login({ email: 'a@b.com', password: '12345678' })).rejects.toThrow(
       InvalidCredentialsError,
@@ -145,7 +145,7 @@ describe('AuthService.login', () => {
     };
     const repo = makeRepo({ findByEmailWithHash: vi.fn().mockResolvedValue(user) });
     vi.mocked(verifyPassword).mockResolvedValue(false);
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await expect(service.login({ email: 'a@b.com', password: 'wrong' })).rejects.toThrow(
       InvalidCredentialsError,
@@ -161,7 +161,7 @@ describe('AuthService.login', () => {
     };
     const repo = makeRepo({ findByEmailWithHash: vi.fn().mockResolvedValue(user) });
     vi.mocked(verifyPassword).mockResolvedValue(true);
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await expect(service.login({ email: 'a@b.com', password: '12345678' })).rejects.toMatchObject({
       name: EmailNotVerifiedError.name,
@@ -172,65 +172,17 @@ describe('AuthService.login', () => {
 });
 
 describe('AuthService.verifyEmail', () => {
-  it('verifies the user when token is valid', async () => {
-    const user = {
-      id: '1',
-      email: 'a@b.com',
-      emailVerificationExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
-    };
-    const verified = { id: '1', email: 'a@b.com', emailVerified: true };
-    const repo = makeRepo({
-      findByVerificationToken: vi.fn().mockResolvedValue(user),
-      verifyEmail: vi.fn().mockResolvedValue(verified),
-    });
-    const service = new AuthService(repo as never);
-
-    const result = await service.verifyEmail('valid-token');
-
-    expect(repo.findByVerificationToken).toHaveBeenCalledWith(sha256('valid-token'));
-    expect(repo.verifyEmail).toHaveBeenCalledWith('1');
-    expect(result).toEqual(verified);
+  it('consumes the hashed token atomically', async () => {
+    const repo = makeRepo({ consumeVerificationToken: vi.fn().mockResolvedValue(true) });
+    const service = new AuthService(repo, sendVerificationEmail);
+    await service.verifyEmail('valid-token');
+    expect(repo.consumeVerificationToken).toHaveBeenCalledWith(sha256('valid-token'));
   });
 
-  it('throws InvalidVerificationTokenError when token is not found', async () => {
-    const repo = makeRepo({
-      findByVerificationToken: vi.fn().mockResolvedValue(null),
-    });
-    const service = new AuthService(repo as never);
-
-    await expect(service.verifyEmail('bad-token')).rejects.toThrow(InvalidVerificationTokenError);
-  });
-
-  it('throws InvalidVerificationTokenError when the token is expired', async () => {
-    const repo = makeRepo({
-      findByVerificationToken: vi.fn().mockResolvedValue({
-        id: '1',
-        email: 'a@b.com',
-        emailVerificationExpiresAt: new Date(Date.now() - 1000),
-      }),
-      verifyEmail: vi.fn(),
-    });
-    const service = new AuthService(repo as never);
-
+  it('rejects an expired, replaced or already consumed token', async () => {
+    const repo = makeRepo({ consumeVerificationToken: vi.fn().mockResolvedValue(false) });
+    const service = new AuthService(repo, sendVerificationEmail);
     await expect(service.verifyEmail('old-token')).rejects.toThrow(InvalidVerificationTokenError);
-    expect(repo.verifyEmail).not.toHaveBeenCalled();
-  });
-
-  it('throws InvalidVerificationTokenError when the token has no expiry', async () => {
-    const repo = makeRepo({
-      findByVerificationToken: vi.fn().mockResolvedValue({
-        id: '1',
-        email: 'a@b.com',
-        emailVerificationExpiresAt: null,
-      }),
-      verifyEmail: vi.fn(),
-    });
-    const service = new AuthService(repo as never);
-
-    await expect(service.verifyEmail('legacy-token')).rejects.toThrow(
-      InvalidVerificationTokenError,
-    );
-    expect(repo.verifyEmail).not.toHaveBeenCalled();
   });
 });
 
@@ -243,7 +195,7 @@ describe('AuthService.resendVerification', () => {
     const repo = makeRepo({
       findByEmailForResend: vi.fn().mockResolvedValue(null),
     });
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     const result = await service.resendVerification({ email: 'unknown@b.com' });
 
@@ -257,7 +209,7 @@ describe('AuthService.resendVerification', () => {
         .fn()
         .mockResolvedValue({ id: '1', email: 'a@b.com', emailVerified: true }),
     });
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await expect(service.resendVerification({ email: 'a@b.com' })).rejects.toThrow(
       EmailAlreadyVerifiedError,
@@ -271,12 +223,17 @@ describe('AuthService.resendVerification', () => {
         .mockResolvedValue({ id: '1', email: 'a@b.com', emailVerified: false }),
       updateVerificationToken: vi.fn().mockResolvedValue(undefined),
     });
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await service.resendVerification({ email: 'a@b.com' });
 
     const raw = vi.mocked(sendVerificationEmail).mock.calls[0][1];
-    expect(repo.updateVerificationToken).toHaveBeenCalledWith('1', sha256(raw), expect.any(Date));
+    expect(repo.updateVerificationToken).toHaveBeenCalledWith(
+      '1',
+      sha256(raw),
+      expect.any(Date),
+      'a@b.com',
+    );
     expect(sendVerificationEmail).toHaveBeenCalledWith('a@b.com', raw);
   });
 
@@ -288,12 +245,17 @@ describe('AuthService.resendVerification', () => {
       updateVerificationToken: vi.fn().mockResolvedValue(undefined),
     });
     vi.mocked(sendVerificationEmail).mockRejectedValueOnce(new Error('down'));
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await expect(service.resendVerification({ email: 'a@b.com' })).rejects.toBeInstanceOf(
       EmailDeliveryError,
     );
     expect(repo.updateVerificationToken).toHaveBeenCalledOnce();
+    expect(repo.restoreVerificationToken).toHaveBeenCalledWith('1', expect.any(String), {
+      email: 'a@b.com',
+      tokenHash: null,
+      expiresAt: null,
+    });
   });
 });
 
@@ -319,7 +281,7 @@ describe('AuthService.updateAccount', () => {
         sessionVersion: 1,
       }),
     });
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await service.updateAccount('1', {
       currentPassword: '12345678',
@@ -334,6 +296,7 @@ describe('AuthService.updateAccount', () => {
       emailVerificationToken: sha256(raw),
       emailVerificationExpiresAt: expect.any(Date),
       passwordHash: 'hashed-password',
+      sessionVersion: { increment: 1 },
     });
   });
 
@@ -348,7 +311,7 @@ describe('AuthService.updateAccount', () => {
       updateAccount: vi.fn(),
     });
     vi.mocked(sendVerificationEmail).mockRejectedValueOnce(new Error('down'));
-    const service = new AuthService(repo as never);
+    const service = new AuthService(repo, sendVerificationEmail);
 
     await expect(
       service.updateAccount('1', {

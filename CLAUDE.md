@@ -49,7 +49,11 @@ API routes are mounted under `/api` (`/health` and `/docs` are not). Swagger UI 
 
 ## Tech decisions that span both apps
 
-- **Zod 4** for validation. Cross-app schemas live in `@detonado/shared` and are consumed by the backend. The frontend defines its own types in `src/types/api.ts`.
+Backend improvement work is tracked in `docs/backend-improvements.md`, including
+readability criteria, confirmed HLTB diagnosis, pending stages, and validation.
+Read it before continuing this work and update its execution record afterwards.
+
+- **Zod 4** for validation. Domain schemas (`auth.ts`, `library.ts`, `game.ts`) live in `@detonado/shared` and are consumed by the backend. The frontend defines its own types in `src/types/api.ts`.
 - **Biome** (not ESLint/Prettier) for linting and formatting. Backend: 100-char line width, single quotes. Frontend: tabs and double quotes.
 - **Session-based auth** (not JWT) — `req.session.userId` and `sessionVersion` after login, stored in Redis. `requireAuth` drops the session when the version no longer matches.
 - **ESM + NodeNext** in the backend — always use `.js` extensions in imports even for `.ts` source files.

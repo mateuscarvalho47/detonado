@@ -2,17 +2,8 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const name = process.argv[2];
-
-if (!name) {
-  console.error('Usage: pnpm gen:module <module-name>');
-  console.error('Example: pnpm gen:module product');
-  process.exit(1);
-}
-
-if (!/^[a-z][a-z0-9-]*$/.test(name)) {
-  console.error(
-    'Module name must be lowercase, start with a letter, and use only letters, numbers, or hyphens.',
-  );
+if (!name || !/^[a-z][a-z0-9-]*$/.test(name)) {
+  console.error('Usage: pnpm gen:module <lowercase-module-name>');
   process.exit(1);
 }
 
@@ -24,215 +15,159 @@ function pluralize(word: string): string {
 
 const pascal = name
   .split('-')
-  .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+  .map((part) => part[0].toUpperCase() + part.slice(1))
   .join('');
-
-const camel = pascal.charAt(0).toLowerCase() + pascal.slice(1);
-const plural = pluralize(name.split('-').at(-1) ?? name);
-const pluralCamel = pluralize(camel);
-const dir = join(process.cwd(), 'src', 'modules', name);
-
-if (existsSync(dir)) {
-  console.error(`Module "${name}" already exists at ${dir}`);
+const camel = pascal[0].toLowerCase() + pascal.slice(1);
+const plural = pluralize(name);
+const directory = join(process.cwd(), 'src', 'modules', name);
+if (existsSync(directory)) {
+  console.error(`Module already exists: ${directory}`);
   process.exit(1);
 }
 
-mkdirSync(dir, { recursive: true });
-
+// The default template is a private, user-owned resource. Add its model and
+// domain fields before registering the generated routes.
 const files: Record<string, string> = {
-  [`${name}.schema.ts`]: `\
-import { z } from 'zod';
+  [`${name}.schema.ts`]: `import { z } from 'zod';
 
 export const create${pascal}Schema = z.object({
-  // TODO: define fields
+  // TODO: declare domain fields.
 });
-
+export const update${pascal}Schema = create${pascal}Schema.partial()
+  .refine((input) => Object.keys(input).length > 0, { message: 'Informe pelo menos um campo' });
+export const ${camel}ResponseSchema = z.object({
+  id: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  // TODO: declare public response fields. Undeclared fields are omitted.
+});
 export type Create${pascal}Input = z.infer<typeof create${pascal}Schema>;
+export type Update${pascal}Input = z.infer<typeof update${pascal}Schema>;
 `,
-
-  [`${name}.errors.ts`]: `\
-import { NotFoundError } from '@/lib/errors.js';
-
-export class ${pascal}NotFoundError extends NotFoundError {
-  constructor() {
-    super('${pascal}');
-  }
-}
-`,
-
-  [`${name}.repository.ts`]: `\
-import type { PrismaClient } from '@/generated/prisma/client.js';
-import type { Create${pascal}Input } from './${name}.schema.js';
+  [`${name}.repository.ts`]: `import type { PrismaClient } from '@/generated/prisma/client.js';
+import type { Create${pascal}Input, Update${pascal}Input } from './${name}.schema.js';
 
 export class ${pascal}Repository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private readonly database: PrismaClient) {}
 
-  findById(id: string) {
-    return this.prisma.${camel}.findUnique({ where: { id } });
+  findAll(userId: string) {
+    return this.database.${camel}.findMany({ where: { userId } });
   }
 
-  findAll() {
-    return this.prisma.${camel}.findMany();
+  findById(id: string, userId: string) {
+    return this.database.${camel}.findFirst({ where: { id, userId } });
   }
 
-  create(data: Create${pascal}Input) {
-    return this.prisma.${camel}.create({ data });
+  create(userId: string, input: Create${pascal}Input) {
+    return this.database.${camel}.create({ data: { ...input, userId } });
   }
 
-  update(id: string, data: Partial<Create${pascal}Input>) {
-    return this.prisma.${camel}.update({ where: { id }, data });
+  async update(id: string, userId: string, input: Update${pascal}Input) {
+    const [record] = await this.database.${camel}.updateManyAndReturn({
+      where: { id, userId }, data: input,
+    });
+    return record ?? null;
   }
 
-  delete(id: string) {
-    return this.prisma.${camel}.delete({ where: { id } });
+  async remove(id: string, userId: string) {
+    const result = await this.database.${camel}.deleteMany({ where: { id, userId } });
+    return result.count;
   }
 }
 `,
-
-  [`${name}.service.ts`]: `\
-import type { Create${pascal}Input } from './${name}.schema.js';
+  [`${name}.service.ts`]: `import { NotFoundError } from '@/lib/errors.js';
 import type { ${pascal}Repository } from './${name}.repository.js';
-import { ${pascal}NotFoundError } from './${name}.errors.js';
+import type { Create${pascal}Input, Update${pascal}Input } from './${name}.schema.js';
+
+type ${pascal}Store = Pick<${pascal}Repository, 'findAll' | 'findById' | 'create' | 'update' | 'remove'>;
 
 export class ${pascal}Service {
-  constructor(private ${pluralCamel}: ${pascal}Repository) {}
+  constructor(private readonly repository: ${pascal}Store) {}
 
-  async getById(id: string) {
-    const item = await this.${pluralCamel}.findById(id);
-    if (!item) throw new ${pascal}NotFoundError();
-    return item;
+  list(userId: string) {
+    return this.repository.findAll(userId);
   }
 
-  getAll() {
-    return this.${pluralCamel}.findAll();
+  async getById(id: string, userId: string) {
+    const record = await this.repository.findById(id, userId);
+    if (!record) throw new NotFoundError('${pascal}');
+    return record;
   }
 
-  create(input: Create${pascal}Input) {
-    return this.${pluralCamel}.create(input);
+  create(userId: string, input: Create${pascal}Input) {
+    return this.repository.create(userId, input);
   }
 
-  async update(id: string, input: Partial<Create${pascal}Input>) {
-    await this.getById(id);
-    return this.${pluralCamel}.update(id, input);
+  async update(id: string, userId: string, input: Update${pascal}Input) {
+    const record = await this.repository.update(id, userId, input);
+    if (!record) throw new NotFoundError('${pascal}');
+    return record;
   }
 
-  async delete(id: string) {
-    await this.getById(id);
-    return this.${pluralCamel}.delete(id);
+  async remove(id: string, userId: string) {
+    const removed = await this.repository.remove(id, userId);
+    if (removed === 0) throw new NotFoundError('${pascal}');
   }
 }
 `,
-
-  [`${name}.controller.ts`]: `\
-import type { FastifyReply, FastifyRequest } from 'fastify';
-import { parse } from '@/lib/validate.js';
-import { create${pascal}Schema } from './${name}.schema.js';
-import type { ${pascal}Service } from './${name}.service.js';
-
-export class ${pascal}Controller {
-  constructor(private ${pluralCamel}: ${pascal}Service) {}
-
-  getAll = async (_req: FastifyRequest, reply: FastifyReply) => {
-    const items = await this.${pluralCamel}.getAll();
-    return reply.send(items);
-  };
-
-  getById = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const item = await this.${pluralCamel}.getById(req.params.id);
-    return reply.send(item);
-  };
-
-  create = async (req: FastifyRequest, reply: FastifyReply) => {
-    const input = parse(create${pascal}Schema, req.body);
-    const item = await this.${pluralCamel}.create(input);
-    return reply.code(201).send(item);
-  };
-
-  update = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const input = parse(create${pascal}Schema.partial(), req.body);
-    const item = await this.${pluralCamel}.update(req.params.id, input);
-    return reply.send(item);
-  };
-
-  delete = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    await this.${pluralCamel}.delete(req.params.id);
-    return reply.code(204).send();
-  };
-}
-`,
-
-  [`${name}.routes.ts`]: `\
-import type { FastifyInstance } from 'fastify';
+  [`${name}.routes.ts`]: `import type { FastifyInstance } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { requireAuth } from '@/lib/requireAuth.js';
 import { ${pascal}Repository } from './${name}.repository.js';
 import { ${pascal}Service } from './${name}.service.js';
-import { ${pascal}Controller } from './${name}.controller.js';
-import { create${pascal}Schema } from './${name}.schema.js';
+import { create${pascal}Schema, update${pascal}Schema, ${camel}ResponseSchema } from './${name}.schema.js';
 
-const idParam = z.object({ id: z.string() });
+const idParam = z.object({ id: z.string().min(1) });
 
 export async function ${camel}Routes(app: FastifyInstance) {
-  const repo = new ${pascal}Repository(app.prisma);
-  const service = new ${pascal}Service(repo);
-  const controller = new ${pascal}Controller(service);
+  const routes = app.withTypeProvider<ZodTypeProvider>();
+  const service = new ${pascal}Service(new ${pascal}Repository(app.prisma));
+  const protectedRoute = {
+    preHandler: requireAuth,
+    schema: { tags: ['${name}'], security: [{ sessionCookie: [] }] },
+  };
 
-  app.get('/${plural}', {
-    schema: { tags: ['${name}'], summary: 'Listar ${plural}' },
-    handler: controller.getAll,
+  routes.get('/${plural}', {
+    ...protectedRoute,
+    schema: { ...protectedRoute.schema, response: { 200: z.array(${camel}ResponseSchema) } },
+    handler: async (request) => service.list(request.userId),
   });
-
-  app.get('/${plural}/:id', {
-    schema: { tags: ['${name}'], summary: 'Buscar ${name} por id', params: idParam },
-    handler: controller.getById,
+  routes.get('/${plural}/:id', {
+    ...protectedRoute,
+    schema: { ...protectedRoute.schema, params: idParam, response: { 200: ${camel}ResponseSchema } },
+    handler: async (request) => service.getById(request.params.id, request.userId),
   });
-
-  app.post('/${plural}', {
-    schema: {
-      tags: ['${name}'],
-      summary: 'Criar ${name}',
-      body: create${pascal}Schema,
-      response: { 201: z.any() },
+  routes.post('/${plural}', {
+    ...protectedRoute,
+    schema: { ...protectedRoute.schema, body: create${pascal}Schema, response: { 201: ${camel}ResponseSchema } },
+    handler: async (request, reply) => {
+      const record = await service.create(request.userId, request.body);
+      return reply.code(201).send(record);
     },
-    handler: controller.create,
   });
-
-  app.patch('/${plural}/:id', {
-    schema: {
-      tags: ['${name}'],
-      summary: 'Atualizar ${name}',
-      params: idParam,
-      body: create${pascal}Schema.partial(),
-    },
-    handler: controller.update,
+  routes.patch('/${plural}/:id', {
+    ...protectedRoute,
+    schema: { ...protectedRoute.schema, params: idParam, body: update${pascal}Schema,
+      response: { 200: ${camel}ResponseSchema } },
+    handler: async (request) => service.update(request.params.id, request.userId, request.body),
   });
-
-  app.delete('/${plural}/:id', {
-    schema: {
-      tags: ['${name}'],
-      summary: 'Deletar ${name}',
-      params: idParam,
-      response: { 204: z.null() },
+  routes.delete('/${plural}/:id', {
+    ...protectedRoute,
+    schema: { ...protectedRoute.schema, params: idParam, response: { 204: z.null() } },
+    handler: async (request, reply) => {
+      await service.remove(request.params.id, request.userId);
+      return reply.code(204).send(null);
     },
-    handler: controller.delete,
   });
 }
 `,
 };
 
+mkdirSync(directory, { recursive: true });
 for (const [filename, content] of Object.entries(files)) {
-  writeFileSync(join(dir, filename), content, 'utf-8');
+  writeFileSync(join(directory, filename), content, 'utf-8');
 }
-
-console.log(`\nModule "${name}" created at src/modules/${name}/\n`);
-console.log('Files generated:');
-for (const filename of Object.keys(files)) {
-  console.log(`  src/modules/${name}/${filename}`);
-}
-console.log(`
-Next steps:
-  1. Add the Prisma model for "${camel}" in prisma/schema.prisma
-  2. Run: pnpm prisma:migrate && pnpm prisma:generate
-  3. Register the routes in src/app.ts:
-       import { ${camel}Routes } from '@/modules/${name}/${name}.routes.js';
-       await app.register(${camel}Routes);
-`);
+console.log(`Created ${Object.keys(files).length} files in ${directory}`);
+console.log('Add a model with userId, id, createdAt and updatedAt; define domain schemas.');
+console.log('Generate Prisma, format the module, and register its routes under /api.');

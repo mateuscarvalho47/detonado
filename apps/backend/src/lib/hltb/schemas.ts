@@ -1,16 +1,9 @@
+import { hltbInfoSchema } from '@detonado/shared';
 import { z } from 'zod';
+import { parseJsonCache } from '@/lib/cache.js';
 
-export const hltbTimesSchema = z.object({
-  mainHours: z.number().nullable(),
-  mainExtraHours: z.number().nullable(),
-  completionistHours: z.number().nullable(),
-});
-
+export const hltbTimesSchema = hltbInfoSchema.unwrap();
 export type HltbTimes = z.infer<typeof hltbTimesSchema>;
-
-export const hltbStatusSchema = z.enum(['FOUND', 'MISS', 'FAILED']);
-
-export type HltbStatus = z.infer<typeof hltbStatusSchema>;
 
 export type HltbLookup =
   | { status: 'FOUND'; times: HltbTimes }
@@ -21,16 +14,13 @@ const FOUND_TTL_SECONDS = 60 * 60 * 24;
 const MISS_TTL_SECONDS = 60 * 60;
 
 export function parseHltbCache(raw: string): HltbLookup | null {
-  const parsed = JSON.parse(raw) as unknown;
-  if (!parsed || typeof parsed !== 'object') return null;
-
-  const record = parsed as { status?: string; times?: HltbTimes; mainHours?: unknown };
-  if (record.status === 'FOUND' && record.times) return { status: 'FOUND', times: record.times };
-  if (record.status === 'MISS') return { status: 'MISS' };
-  if (record.status === 'FAILED') return null;
-  if ('mainHours' in record) return { status: 'FOUND', times: record as HltbTimes };
-  return null;
+  return parseJsonCache(raw, cachedLookupSchema);
 }
+
+const cachedLookupSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('FOUND'), times: hltbTimesSchema }),
+  z.object({ status: z.literal('MISS') }),
+]);
 
 export function hltbCacheTtl(lookup: HltbLookup): number | null {
   if (lookup.status === 'FOUND') return FOUND_TTL_SECONDS;

@@ -47,9 +47,6 @@ importers:
       connect-redis:
         specifier: ^9.0.0
         version: 9.0.0(express-session@1.19.0)(redis@5.12.1)
-      croner:
-        specifier: ^10.0.1
-        version: 10.0.1
       fastify:
         specifier: ^5.8.5
         version: 5.8.5
@@ -60,8 +57,8 @@ importers:
         specifier: ^6.1.0
         version: 6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3)
       howlongtobeat-ts:
-        specifier: ^1.1.1
-        version: 1.1.1
+        specifier: ^1.3.1
+        version: 1.3.1
       pg:
         specifier: ^8.20.0
         version: 8.20.0
@@ -407,6 +404,10 @@ packages:
   '@csstools/css-tokenizer@4.0.0':
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
     engines: {node: '>=20.19.0'}
+
+  '@deadlock-too/scrape-kit@1.1.0':
+    resolution: {integrity: sha512-YHOVe+cVDhwZkLi30X1ZU9NKpmeP26L9BV8AMbFratbSIFxtnCFpDBiY5PjbbIyTXO0XPhy/8G22G9owevUbhQ==}
+    engines: {node: '>=18'}
 
   '@electric-sql/pglite-socket@0.1.1':
     resolution: {integrity: sha512-p2hoXw3Z3LQHwTeikdZNsFBOvXGqKY2hk51BBw+8NKND8eoH+8LFOtW9Z8CQKmTJ2qqGYu82ipqiyFZOTTXNfw==}
@@ -2015,10 +2016,6 @@ packages:
     resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
     engines: {node: '>=18'}
 
-  croner@10.0.1:
-    resolution: {integrity: sha512-ixNtAJndqh173VQ4KodSdJEI6nuioBWI0V1ITNKhZZsO0pEMoDxz539T4FTTbSZ/xIOSuDnzxLVRqBVSvPNE2g==}
-    engines: {node: '>=18.0'}
-
   cross-env@10.1.0:
     resolution: {integrity: sha512-GsYosgnACZTADcmEyJctkJIoqAhHjttw7RsFrVoJNXbsWWqaq6Ym+7kZjq6mS45O0jij6vtiReppKQEtqWy6Dw==}
     engines: {node: '>=20'}
@@ -2297,8 +2294,9 @@ packages:
     resolution: {integrity: sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ==}
     engines: {node: '>=16.9.0'}
 
-  howlongtobeat-ts@1.1.1:
-    resolution: {integrity: sha512-LKnGt+QoGh5RMx/sIHkJs1OfrGzs0MTRy2kdysu69dtGy+4q2DGRLx5bsbmuiOudKnXctfFfbCOtoyxkSZxnFA==}
+  howlongtobeat-ts@1.3.1:
+    resolution: {integrity: sha512-pNon3Z5FTsWKWoeXES/pTXE/CxdxR6a3uI/Jii2Ke+Hoj8a1Nj6PjzHloCnxL1gx6rPt4pLCcYbvphFqHHnMJg==}
+    engines: {node: '>=18'}
 
   html-encoding-sniffer@6.0.0:
     resolution: {integrity: sha512-CV9TW3Y3f8/wT0BRFc1/KAVQ3TUHiXmaAb6VW9vtiMFf7SLoMd1PdAc4W3KFOFETBJUb90KatHqlsZMWV+R9Gg==}
@@ -3180,10 +3178,6 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  user-agents@1.1.675:
-    resolution: {integrity: sha512-ZQnegGfKf083joYjEZuLgjJtpDHW5IhOXWCw/25yx82ZvctDcYp/PQsWNShH4Dq00SuDYaPm0qndVBn6axBpvA==}
-    engines: {node: '>=18'}
-
   valibot@1.2.0:
     resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
     peerDependencies:
@@ -3572,6 +3566,8 @@ snapshots:
       css-tree: 3.2.1
 
   '@csstools/css-tokenizer@4.0.0': {}
+
+  '@deadlock-too/scrape-kit@1.1.0': {}
 
   '@electric-sql/pglite-socket@0.1.1(@electric-sql/pglite@0.4.1)':
     dependencies:
@@ -4984,7 +4980,7 @@ snapshots:
       obug: 2.1.1
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.6(@types/node@24.12.4)(@vitest/coverage-v8@4.1.6)(jsdom@29.1.1)(vite@8.0.12(@types/node@24.12.4)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.0))
+      vitest: 4.1.6(@types/node@25.6.2)(@vitest/coverage-v8@4.1.6)(jsdom@29.1.1)(vite@8.0.12(@types/node@25.6.2)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.0))
 
   '@vitest/expect@4.1.6':
     dependencies:
@@ -5213,8 +5209,6 @@ snapshots:
   cookie@0.7.2: {}
 
   cookie@1.1.1: {}
-
-  croner@10.0.1: {}
 
   cross-env@10.1.0:
     dependencies:
@@ -5498,9 +5492,9 @@ snapshots:
 
   hono@4.12.18: {}
 
-  howlongtobeat-ts@1.1.1:
+  howlongtobeat-ts@1.3.1:
     dependencies:
-      user-agents: 1.1.675
+      '@deadlock-too/scrape-kit': 1.1.0
 
   html-encoding-sniffer@6.0.0:
     dependencies:
@@ -6331,8 +6325,6 @@ snapshots:
   use-sync-external-store@1.6.0(react@19.2.6):
     dependencies:
       react: 19.2.6
-
-  user-agents@1.1.675: {}
 
   valibot@1.2.0(typescript@6.0.3):
     optionalDependencies:

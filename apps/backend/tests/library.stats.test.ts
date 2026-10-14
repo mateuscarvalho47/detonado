@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { LibraryService } from '@/modules/library/library.service.js';
+import { readLibraryStats } from '@/modules/library/library.stats.js';
 
 const EMPTY_STATS = {
   totalGames: 0,
@@ -36,29 +36,28 @@ const FULL_STATS = {
   ],
 };
 
-function makeRepo(overrides: Record<string, unknown> = {}) {
-  return {
-    findAllByUser: vi.fn(),
-    findByIdAndUser: vi.fn(),
-    findByUserAndIgdbId: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    getStats: vi.fn(),
-    ...overrides,
+function readStats(raw: typeof EMPTY_STATS | typeof FULL_STATS) {
+  const db = {
+    libraryEntry: {
+      count: vi.fn().mockResolvedValue(raw.totalGames),
+      aggregate: vi.fn().mockResolvedValue(raw.totalHoursAgg),
+      groupBy: vi
+        .fn()
+        .mockResolvedValueOnce(raw.statusGroups)
+        .mockResolvedValueOnce(raw.ratingGroups),
+    },
+    $queryRaw: vi
+      .fn()
+      .mockResolvedValueOnce(raw.topGenres)
+      .mockResolvedValueOnce(raw.topPlatforms)
+      .mockResolvedValueOnce(raw.completedTimeline),
   };
+  return readLibraryStats(db as never, 'user-1');
 }
 
-function makeGames() {
-  return { getById: vi.fn(), search: vi.fn() };
-}
-
-describe('LibraryService.getStats', () => {
+describe('readLibraryStats', () => {
   it('returns zeros and empty arrays for an empty library', async () => {
-    const repo = makeRepo({ getStats: vi.fn().mockResolvedValue(EMPTY_STATS) });
-    const service = new LibraryService(repo as never, makeGames() as never);
-
-    const stats = await service.getStats('user-1');
+    const stats = await readStats(EMPTY_STATS);
 
     expect(stats.totalGames).toBe(0);
     expect(stats.totalHours).toBe(0);
@@ -69,10 +68,7 @@ describe('LibraryService.getStats', () => {
   });
 
   it('fills countByStatus with 0 for statuses absent from the library', async () => {
-    const repo = makeRepo({ getStats: vi.fn().mockResolvedValue(EMPTY_STATS) });
-    const service = new LibraryService(repo as never, makeGames() as never);
-
-    const stats = await service.getStats('user-1');
+    const stats = await readStats(EMPTY_STATS);
 
     expect(stats.countByStatus).toEqual({
       WISHLIST: 0,
@@ -85,10 +81,7 @@ describe('LibraryService.getStats', () => {
   });
 
   it('maps statusGroups correctly and keeps absent statuses at 0', async () => {
-    const repo = makeRepo({ getStats: vi.fn().mockResolvedValue(FULL_STATS) });
-    const service = new LibraryService(repo as never, makeGames() as never);
-
-    const stats = await service.getStats('user-1');
+    const stats = await readStats(FULL_STATS);
 
     expect(stats.countByStatus.COMPLETED).toBe(2);
     expect(stats.countByStatus.PLAYING).toBe(1);
@@ -97,19 +90,13 @@ describe('LibraryService.getStats', () => {
   });
 
   it('converts totalHours from Decimal string to number', async () => {
-    const repo = makeRepo({ getStats: vi.fn().mockResolvedValue(FULL_STATS) });
-    const service = new LibraryService(repo as never, makeGames() as never);
-
-    const stats = await service.getStats('user-1');
+    const stats = await readStats(FULL_STATS);
 
     expect(stats.totalHours).toBe(42.5);
   });
 
   it('converts BigInt counts to number in topGenres and topPlatforms', async () => {
-    const repo = makeRepo({ getStats: vi.fn().mockResolvedValue(FULL_STATS) });
-    const service = new LibraryService(repo as never, makeGames() as never);
-
-    const stats = await service.getStats('user-1');
+    const stats = await readStats(FULL_STATS);
 
     expect(stats.topGenres).toEqual([
       { genre: 'RPG', count: 2 },
@@ -122,10 +109,7 @@ describe('LibraryService.getStats', () => {
   });
 
   it('converts BigInt counts in completedTimeline', async () => {
-    const repo = makeRepo({ getStats: vi.fn().mockResolvedValue(FULL_STATS) });
-    const service = new LibraryService(repo as never, makeGames() as never);
-
-    const stats = await service.getStats('user-1');
+    const stats = await readStats(FULL_STATS);
 
     expect(stats.completedTimeline).toEqual([
       { month: '2025-04', count: 1 },
@@ -134,10 +118,7 @@ describe('LibraryService.getStats', () => {
   });
 
   it('maps ratingDistribution from groupBy result', async () => {
-    const repo = makeRepo({ getStats: vi.fn().mockResolvedValue(FULL_STATS) });
-    const service = new LibraryService(repo as never, makeGames() as never);
-
-    const stats = await service.getStats('user-1');
+    const stats = await readStats(FULL_STATS);
 
     expect(stats.ratingDistribution).toEqual([
       { rating: 8, count: 1 },
@@ -146,10 +127,7 @@ describe('LibraryService.getStats', () => {
   });
 
   it('returns totalGames from repo count', async () => {
-    const repo = makeRepo({ getStats: vi.fn().mockResolvedValue(FULL_STATS) });
-    const service = new LibraryService(repo as never, makeGames() as never);
-
-    const stats = await service.getStats('user-1');
+    const stats = await readStats(FULL_STATS);
 
     expect(stats.totalGames).toBe(3);
   });

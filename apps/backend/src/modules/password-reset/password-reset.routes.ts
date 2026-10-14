@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { sendPasswordResetEmail } from '@/lib/email.js';
 import { UserRepository } from '@/modules/user/user.repository.js';
 import { PasswordResetController } from './password-reset.controller.js';
 import { PasswordResetRepository } from './password-reset.repository.js';
@@ -15,7 +16,9 @@ const messageResponse = z.object({ message: z.string() });
 export async function passwordResetRoutes(app: FastifyInstance) {
   const userRepo = new UserRepository(app.prisma);
   const tokenRepo = new PasswordResetRepository(app.prisma);
-  const service = new PasswordResetService(userRepo, tokenRepo);
+  const service = new PasswordResetService(userRepo, tokenRepo, (to, code) =>
+    sendPasswordResetEmail(to, code, app.log),
+  );
   const controller = new PasswordResetController(service);
 
   app.post('/password-reset/request', {

@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { sendVerificationEmail } from '@/lib/email.js';
+import type { FastifyBaseLogger } from 'fastify';
+import type { sendVerificationEmail } from '@/lib/email.js';
 import { EmailDeliveryError, UnauthorizedError } from '@/lib/errors.js';
 import { hashPassword, verifyPassword } from '@/lib/hash.js';
-import type { UserRepository } from '@/modules/user/user.repository.js';
+import type { AccountChanges, UserRepository } from '@/modules/user/user.repository.js';
 import {
   EmailAlreadyTakenError,
   EmailAlreadyVerifiedError,
@@ -17,6 +18,21 @@ import type {
   ResendVerificationInput,
   UpdateAccountInput,
 } from './auth.schema.js';
+
+type AuthUsers = Pick<
+  UserRepository,
+  | 'findByEmail'
+  | 'create'
+  | 'deleteById'
+  | 'findByEmailWithHash'
+  | 'consumeVerificationToken'
+  | 'findByEmailForResend'
+  | 'updateVerificationToken'
+  | 'restoreVerificationToken'
+  | 'findByIdWithHash'
+  | 'updateAccount'
+  | 'findByIdWithLibrary'
+>;
 
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -34,7 +50,11 @@ function issueVerification() {
 }
 
 export class AuthService {
-  constructor(private users: UserRepository) {}
+  constructor(
+    private readonly users: AuthUsers,
+    private readonly sendEmail: typeof sendVerificationEmail,
+    private readonly logger?: Pick<FastifyBaseLogger, 'error'>,
+  ) {}
 
   async register(input: RegisterInput) {
     const exists = await this.users.findByEmail(input.email);
@@ -52,12 +72,12 @@ export class AuthService {
     });
 
     try {
-      await sendVerificationEmail(input.email, verification.token);
+      await this.sendEmail(input.email, verification.token);
     } catch {
       try {
         await this.users.deleteById(user.id);
       } catch (rollbackErr) {
-        console.error('[auth] failed to roll back user after email delivery error', rollbackErr);
+        this.logger?.error({ err: rollbackErr }, 'failed to roll back registration');
       }
       throw new EmailDeliveryError();
     }
@@ -78,19 +98,14 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    const user = await this.users.findByVerificationToken(hashVerificationToken(token));
-    const expiresAt = user?.emailVerificationExpiresAt;
-    if (!user || !expiresAt || expiresAt.getTime() <= Date.now()) {
-      throw new InvalidVerificationTokenError();
-    }
-
-    return this.users.verifyEmail(user.id);
+    const consumed = await this.users.consumeVerificationToken(hashVerificationToken(token));
+    if (!consumed) throw new InvalidVerificationTokenError();
   }
 
   async resendVerification(input: ResendVerificationInput) {
     const user = await this.users.findByEmailForResend(input.email);
 
-    // Always return success to avoid user enumeration
+    // Unknown addresses receive the same success response.
     if (!user) return;
     if (user.emailVerified) throw new EmailAlreadyVerifiedError();
 
@@ -99,11 +114,21 @@ export class AuthService {
       user.id,
       verification.tokenHash,
       verification.expiresAt,
+      user.email,
     );
 
     try {
-      await sendVerificationEmail(user.email, verification.token);
+      await this.sendEmail(user.email, verification.token);
     } catch {
+      try {
+        await this.users.restoreVerificationToken(user.id, verification.tokenHash, {
+          email: user.email,
+          tokenHash: user.emailVerificationToken ?? null,
+          expiresAt: user.emailVerificationExpiresAt ?? null,
+        });
+      } catch (error) {
+        this.logger?.error({ err: error }, 'failed to restore previous verification token');
+      }
       throw new EmailDeliveryError();
     }
   }
@@ -115,14 +140,14 @@ export class AuthService {
     const ok = await verifyPassword(user.passwordHash, input.currentPassword);
     if (!ok) throw new UnauthorizedError('Senha atual incorreta');
 
-    const updates: Parameters<UserRepository['updateAccount']>[1] = {};
+    const updates: AccountChanges = {};
 
     if (input.email && input.email !== user.email) {
       const taken = await this.users.findByEmail(input.email);
       if (taken) throw new EmailAlreadyTakenError();
       const verification = issueVerification();
       try {
-        await sendVerificationEmail(input.email, verification.token);
+        await this.sendEmail(input.email, verification.token);
       } catch {
         throw new EmailDeliveryError();
       }
@@ -134,6 +159,7 @@ export class AuthService {
 
     if (input.newPassword) {
       updates.passwordHash = await hashPassword(input.newPassword);
+      updates.sessionVersion = { increment: 1 };
     }
 
     return this.users.updateAccount(userId, updates);

@@ -2,6 +2,21 @@ import { updateLibraryEntryInput } from '@detonado/shared';
 import { describe, expect, it } from 'vitest';
 
 describe('updateLibraryEntryInput', () => {
+  it.each([true, false, [], {}, ''])('rejects nonnumeric rating and hours: %j', (value) => {
+    expect(updateLibraryEntryInput.safeParse({ rating: value }).success).toBe(false);
+    expect(updateLibraryEntryInput.safeParse({ hoursPlayed: value }).success).toBe(false);
+  });
+
+  it('accepts explicit numeric strings and preserves zero and null', () => {
+    expect(updateLibraryEntryInput.parse({ rating: '8', hoursPlayed: '1.26' })).toEqual({
+      rating: 8,
+      hoursPlayed: 1.3,
+    });
+    expect(updateLibraryEntryInput.parse({ rating: 0, hoursPlayed: null })).toEqual({
+      rating: 0,
+      hoursPlayed: null,
+    });
+  });
   it('leaves omitted progress fields out of the patch', () => {
     expect(updateLibraryEntryInput.parse({ status: 'BACKLOG' })).toEqual({ status: 'BACKLOG' });
   });

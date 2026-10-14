@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
-import { describe, expect, it, vi } from 'vitest';
-import { isDatabaseAsleep, mapDatabaseUnavailable, withDatabaseRetry } from '@/lib/databaseWake.js';
+import { describe, expect, it } from 'vitest';
+import { isDatabaseAsleep, mapDatabaseUnavailable } from '@/lib/databaseWake.js';
 import errorHandler from '@/plugins/errorHandler.js';
 
 function connectionError(code: string, message = 'Connection terminated unexpectedly') {
@@ -37,35 +37,6 @@ describe('isDatabaseAsleep', () => {
     expect(isDatabaseAsleep(connectionError('P2002', 'Unique constraint failed'))).toBe(false);
     expect(isDatabaseAsleep(new Error('Credenciais inválidas'))).toBe(false);
     expect(isDatabaseAsleep(new Error('boom'))).toBe(false);
-  });
-});
-
-describe('withDatabaseRetry', () => {
-  it('retries a waking database and returns the later success', async () => {
-    const run = vi
-      .fn()
-      .mockRejectedValueOnce(connectionError('ECONNRESET'))
-      .mockRejectedValueOnce(new Error('Connection terminated unexpectedly'))
-      .mockResolvedValueOnce('ok');
-
-    await expect(withDatabaseRetry(run, { delaysMs: [0, 0, 0] })).resolves.toBe('ok');
-    expect(run).toHaveBeenCalledTimes(3);
-  });
-
-  it('does not retry a query error', async () => {
-    const run = vi.fn().mockRejectedValue(new Error('invalid input'));
-
-    await expect(withDatabaseRetry(run, { delaysMs: [0, 0] })).rejects.toThrow('invalid input');
-    expect(run).toHaveBeenCalledTimes(1);
-  });
-
-  it('stops after the last delay', async () => {
-    const run = vi.fn().mockRejectedValue(connectionError('ECONNRESET'));
-
-    await expect(withDatabaseRetry(run, { delaysMs: [0, 0] })).rejects.toMatchObject({
-      code: 'ECONNRESET',
-    });
-    expect(run).toHaveBeenCalledTimes(3);
   });
 });
 

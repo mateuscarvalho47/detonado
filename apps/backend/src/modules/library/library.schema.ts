@@ -1,23 +1,19 @@
 import {
   createLibraryEntryInput,
+  hltbStatusSchema,
+  type LibraryStatus,
   LibraryStatusEnum,
   libraryStatsSchema,
   updateLibraryEntryInput,
 } from '@detonado/shared';
 import { z } from 'zod';
 
+export type { CreateLibraryEntryInput, UpdateLibraryEntryInput } from '@detonado/shared';
 export { type LibraryStats, type LibraryStatus, LibraryStatusEnum } from '@detonado/shared';
-
-// PascalCase aliases keep backward compat with routes and tests
-export const CreateLibraryEntryInput = createLibraryEntryInput;
-export const UpdateLibraryEntryInput = updateLibraryEntryInput;
-export const LibraryStatsSchema = libraryStatsSchema;
-
-export type CreateLibraryEntryInput = z.infer<typeof CreateLibraryEntryInput>;
-export type UpdateLibraryEntryInput = z.infer<typeof UpdateLibraryEntryInput>;
+export { createLibraryEntryInput, libraryStatsSchema, updateLibraryEntryInput };
 
 // Backend-only: hoursPlayed uses preprocess to coerce Prisma Decimal → number
-export const LibraryEntrySchema = z.object({
+export const libraryEntrySchema = z.object({
   id: z.string(),
   userId: z.string(),
   igdbId: z.number(),
@@ -34,12 +30,20 @@ export const LibraryEntrySchema = z.object({
   hltbMain: z.number().nullable(),
   hltbMainExtra: z.number().nullable(),
   hltbCompletionist: z.number().nullable(),
-  hltbStatus: z.enum(['FOUND', 'MISS', 'FAILED']).nullable(),
+  hltbStatus: hltbStatusSchema.nullable(),
   queuePosition: z.number().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
 
-export type LibraryEntry = z.infer<typeof LibraryEntrySchema>;
+export type LibraryEntry = z.infer<typeof libraryEntrySchema>;
 
-export const LibraryListQuery = z.object({});
+export interface LibraryEntryChanges {
+  status?: LibraryStatus;
+  userPlatform?: string | null;
+  rating?: number | null;
+  hoursPlayed?: number | null;
+  notes?: string | null;
+  completedAt?: Date | null;
+  queuePosition?: number | null;
+}

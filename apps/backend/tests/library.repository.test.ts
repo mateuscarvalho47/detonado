@@ -5,14 +5,14 @@ import { LibraryRepository } from '@/modules/library/library.repository.js';
 const PROGRESS = { in: [...PROGRESS_STATUSES] };
 
 function makeDb() {
-  const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+  const updateMany = vi.fn().mockResolvedValue([{ id: 'entry-1' }]);
   const deleteMany = vi.fn().mockResolvedValue({ count: 1 });
   const findFirst = vi.fn().mockResolvedValue({ id: 'entry-1' });
   const aggregate = vi.fn().mockResolvedValue({ _sum: { hoursPlayed: null } });
   const groupBy = vi.fn().mockResolvedValue([]);
   const db = {
     libraryEntry: {
-      updateMany,
+      updateManyAndReturn: updateMany,
       deleteMany,
       findFirst,
       count: vi.fn().mockResolvedValue(0),
@@ -36,12 +36,12 @@ describe('LibraryRepository writes', () => {
       where: { id: 'entry-1', userId: 'user-1' },
       data: { status: 'PLAYING' },
     });
-    expect(findFirst).toHaveBeenCalledWith({ where: { id: 'entry-1', userId: 'user-1' } });
+    expect(findFirst).not.toHaveBeenCalled();
   });
 
   it('does not read the row back when the owner filter matches nothing', async () => {
     const { db, updateMany, findFirst } = makeDb();
-    updateMany.mockResolvedValueOnce({ count: 0 });
+    updateMany.mockResolvedValueOnce([]);
     const repo = new LibraryRepository(db as never);
 
     await expect(repo.update('entry-1', 'user-2', { status: 'PLAYING' })).resolves.toBeNull();

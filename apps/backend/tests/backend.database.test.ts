@@ -1,0 +1,215 @@
+import { randomUUID } from 'node:crypto';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { PrismaClient } from '@/generated/prisma/client.js';
+import { LibraryRepository } from '@/modules/library/library.repository.js';
+import { LibraryService } from '@/modules/library/library.service.js';
+import { PasswordResetRepository } from '@/modules/password-reset/password-reset.repository.js';
+import { UserRepository } from '@/modules/user/user.repository.js';
+
+// Explicit opt-in; this suite never reads the application's DATABASE_URL.
+const testDatabaseUrl = process.env.BACKEND_TEST_DATABASE_URL;
+
+describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
+  let database: PrismaClient;
+  let ownerId: string;
+  let anotherUserId: string;
+
+  beforeAll(async () => {
+    database = new PrismaClient({ adapter: new PrismaPg({ connectionString: testDatabaseUrl }) });
+    const owner = await database.user.create({
+      data: { email: `${randomUUID()}@test.invalid`, passwordHash: 'test-only' },
+    });
+    ownerId = owner.id;
+    const anotherUser = await database.user.create({
+      data: { email: `${randomUUID()}@test.invalid`, passwordHash: 'test-only' },
+    });
+    anotherUserId = anotherUser.id;
+  });
+
+  afterAll(async () => {
+    if (!database) return;
+    try {
+      if (ownerId || anotherUserId)
+        await database.user.deleteMany({
+          where: { id: { in: [ownerId, anotherUserId].filter(Boolean) } },
+        });
+    } finally {
+      await database.$disconnect();
+    }
+  });
+
+  function library() {
+    const games = {
+      getById: vi.fn(async (igdbId: number) => ({
+        igdbId,
+        name: `Game ${igdbId}`,
+        genres: ['RPG'],
+        platforms: ['PC'],
+        hltbStatus: 'FOUND',
+        hltb: { mainHours: 10, mainExtraHours: 20, completionistHours: null },
+      })),
+      lookupByName: vi.fn().mockResolvedValue({ status: 'FAILED' }),
+    };
+    return new LibraryService(new LibraryRepository(database), games as never);
+  }
+
+  it('serializes concurrent inserts and moves without duplicate queue positions', async () => {
+    const service = library();
+    const entries = await Promise.all(
+      Array.from({ length: 12 }, (_, index) =>
+        service.create(ownerId, { igdbId: index + 1, status: 'BACKLOG' }),
+      ),
+    );
+    expect(
+      entries.map((entry) => entry.queuePosition).sort((a, b) => Number(a) - Number(b)),
+    ).toEqual(Array.from({ length: 12 }, (_, index) => index + 1));
+
+    await Promise.all(
+      entries.slice(0, 6).map((entry) => service.moveInQueue(entry.id, ownerId, 'down')),
+    );
+    const queued = await database.libraryEntry.findMany({
+      where: { userId: ownerId, status: 'BACKLOG' },
+    });
+    expect(new Set(queued.map((entry) => entry.queuePosition)).size).toBe(12);
+
+    await Promise.all(
+      entries.slice(0, 4).map((entry) => service.update(entry.id, ownerId, { status: 'PLAYING' })),
+    );
+    await Promise.all(
+      entries.slice(0, 4).map((entry) => service.update(entry.id, ownerId, { status: 'BACKLOG' })),
+    );
+    const restored = await service.list(ownerId);
+    expect(new Set(restored.map((entry) => entry.queuePosition)).size).toBe(12);
+  });
+
+  it('enforces ownership, preserves HLTB on failure and executes statistics SQL', async () => {
+    const service = library();
+    const entry = (await service.list(ownerId))[0];
+    expect(entry).toBeDefined();
+    await expect(
+      service.update(entry.id, anotherUserId, { notes: 'wrong owner' }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.remove(entry.id, anotherUserId)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+    const refreshed = await service.refreshHltb(entry.id, ownerId);
+    expect(refreshed).toMatchObject({ hltbStatus: 'FAILED', hltbMain: 10, hltbMainExtra: 20 });
+    const stats = await service.getStats(ownerId);
+    expect(stats.totalGames).toBe(12);
+    expect(stats.topGenres).toContainEqual({ genre: 'RPG', count: 12 });
+  });
+
+  it('repairs legacy duplicate and missing positions before swapping neighbors', async () => {
+    const service = library();
+    const entries = await Promise.all(
+      [1, 2, 3].map((igdbId) => service.create(anotherUserId, { igdbId, status: 'BACKLOG' })),
+    );
+    await database.libraryEntry.update({
+      where: { id: entries[0].id },
+      data: { queuePosition: null },
+    });
+    await database.libraryEntry.update({
+      where: { id: entries[1].id },
+      data: { queuePosition: 1 },
+    });
+    await database.libraryEntry.update({
+      where: { id: entries[2].id },
+      data: { queuePosition: 1 },
+    });
+    // The null-position entry sorts last; moving it up must normalize and swap.
+    await service.moveInQueue(entries[0].id, anotherUserId, 'up');
+    const queue = await database.libraryEntry.findMany({
+      where: { userId: anotherUserId },
+      orderBy: { queuePosition: 'asc' },
+    });
+    expect(queue.map((entry) => entry.queuePosition)).toEqual([1, 2, 3]);
+    expect(queue[1].id).toBe(entries[0].id);
+  });
+
+  it('rejects replaced and expired verification tokens and consumes a token only once', async () => {
+    const users = new UserRepository(database);
+    await database.user.update({
+      where: { id: ownerId },
+      data: {
+        emailVerificationToken: 'replacement-hash',
+        emailVerificationExpiresAt: new Date(Date.now() + 60000),
+      },
+    });
+    expect(await users.consumeVerificationToken('old-hash')).toBe(false);
+    const consumed = await Promise.all([
+      users.consumeVerificationToken('replacement-hash'),
+      users.consumeVerificationToken('replacement-hash'),
+    ]);
+    expect(consumed.sort()).toEqual([false, true]);
+    await database.user.update({
+      where: { id: ownerId },
+      data: {
+        emailVerified: false,
+        emailVerificationToken: 'expired-hash',
+        emailVerificationExpiresAt: new Date(0),
+      },
+    });
+    expect(await users.consumeVerificationToken('expired-hash')).toBe(false);
+  });
+
+  it('restores a failed resend without overwriting a newer token', async () => {
+    const users = new UserRepository(database);
+    const user = await database.user.update({
+      where: { id: ownerId },
+      data: {
+        emailVerified: false,
+        emailVerificationToken: 'failed-hash',
+      },
+    });
+    const previous = {
+      email: user.email,
+      tokenHash: 'previous-hash',
+      expiresAt: new Date(Date.now() + 60000),
+    };
+    expect(await users.restoreVerificationToken(ownerId, 'failed-hash', previous)).toMatchObject({
+      count: 1,
+    });
+    await database.user.update({
+      where: { id: ownerId },
+      data: { emailVerificationToken: 'newer-hash' },
+    });
+    expect(await users.restoreVerificationToken(ownerId, 'failed-hash', previous)).toMatchObject({
+      count: 0,
+    });
+    expect(
+      (await database.user.findUniqueOrThrow({ where: { id: ownerId } })).emailVerificationToken,
+    ).toBe('newer-hash');
+  });
+
+  it('issues one active reset token, caps concurrent attempts and consumes resets once', async () => {
+    const tokens = new PasswordResetRepository(database);
+    await Promise.all(
+      Array.from({ length: 5 }, (_, index) =>
+        tokens.replaceActiveToken(ownerId, `hash-${index}`, new Date(Date.now() + 60000)),
+      ),
+    );
+    const active = await database.passwordResetToken.findMany({
+      where: { userId: ownerId, usedAt: null },
+    });
+    expect(active).toHaveLength(1);
+    const attempts = await Promise.all(
+      Array.from({ length: 15 }, () => tokens.claimVerificationAttempt(ownerId)),
+    );
+    expect(attempts.flat()).toHaveLength(10);
+    expect(await tokens.claimVerificationAttempt(ownerId)).toEqual([]);
+
+    const fresh = await tokens.replaceActiveToken(
+      ownerId,
+      'fresh-hash',
+      new Date(Date.now() + 60000),
+    );
+    await tokens.commitVerifiedReset(ownerId, fresh.id, 'new-password-hash');
+    await expect(
+      tokens.commitVerifiedReset(ownerId, fresh.id, 'replayed-password'),
+    ).rejects.toMatchObject({ statusCode: 401 });
+    const user = await database.user.findUniqueOrThrow({ where: { id: ownerId } });
+    expect(user.passwordHash).toBe('new-password-hash');
+    expect(user.sessionVersion).toBe(1);
+  });
+});

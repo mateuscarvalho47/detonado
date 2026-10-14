@@ -1,14 +1,14 @@
 import type { FastifyInstance } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/requireAuth.js';
 import { GameService } from '@/modules/game/game.service.js';
-import { LibraryController } from './library.controller.js';
 import { LibraryRepository } from './library.repository.js';
 import {
-  CreateLibraryEntryInput,
-  LibraryEntrySchema,
-  LibraryStatsSchema,
-  UpdateLibraryEntryInput,
+  createLibraryEntryInput,
+  libraryEntrySchema,
+  libraryStatsSchema,
+  updateLibraryEntryInput,
 } from './library.schema.js';
 import { LibraryService } from './library.service.js';
 
@@ -18,91 +18,102 @@ export async function libraryRoutes(app: FastifyInstance) {
   const repo = new LibraryRepository(app.prisma);
   const games = new GameService(app.igdb, app.redis, app.hltb);
   const service = new LibraryService(repo, games);
-  const controller = new LibraryController(service);
+  const routes = app.withTypeProvider<ZodTypeProvider>();
 
   const opts = {
     preHandler: requireAuth,
     schema: { tags: ['library'], security: [{ sessionCookie: [] }] },
   };
 
-  app.post('/library', {
+  routes.post('/library', {
     ...opts,
     schema: {
       ...opts.schema,
       summary: 'Adicionar jogo à biblioteca',
-      body: CreateLibraryEntryInput,
-      response: { 201: LibraryEntrySchema },
+      body: createLibraryEntryInput,
+      response: { 201: libraryEntrySchema },
     },
-    handler: controller.create,
+    handler: async (req, reply) => {
+      const entry = await service.create(req.userId, req.body);
+      return reply.code(201).send(entry);
+    },
   });
 
-  app.get('/library', {
+  routes.get('/library', {
     ...opts,
     schema: {
       ...opts.schema,
       summary: 'Listar biblioteca do usuário',
-      response: { 200: z.array(LibraryEntrySchema) },
+      response: { 200: z.array(libraryEntrySchema) },
     },
-    handler: controller.list,
+    handler: async (req) => service.list(req.userId),
   });
 
-  app.get('/library/stats', {
+  routes.get('/library/stats', {
     ...opts,
     schema: {
       ...opts.schema,
       summary: 'Estatísticas da biblioteca do usuário',
-      response: { 200: LibraryStatsSchema },
+      response: { 200: libraryStatsSchema },
     },
-    handler: controller.getStats,
+    handler: async (req) => service.getStats(req.userId),
   });
 
-  app.get('/library/:id', {
+  routes.get('/library/:id', {
     ...opts,
     schema: {
       ...opts.schema,
       summary: 'Buscar entrada da biblioteca',
       params: idParam,
-      response: { 200: LibraryEntrySchema },
+      response: { 200: libraryEntrySchema },
     },
-    handler: controller.getById,
+    handler: async (req) => service.getById(req.params.id, req.userId),
   });
 
-  app.post('/library/:id/queue', {
+  routes.post('/library/:id/queue', {
     ...opts,
     schema: {
       ...opts.schema,
       summary: 'Mover um jogo na fila',
       params: idParam,
       body: z.object({ direction: z.enum(['up', 'down']) }),
-      response: { 200: LibraryEntrySchema },
+      response: { 200: libraryEntrySchema },
     },
-    handler: controller.moveQueue,
+    handler: async (req) => service.moveInQueue(req.params.id, req.userId, req.body.direction),
   });
 
-  app.post('/library/:id/hltb', {
+  routes.post('/library/:id/hltb', {
     ...opts,
+    config: {
+      rateLimit: {
+        hook: 'preHandler',
+        max: 5,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.session.userId ?? req.ip,
+      },
+    },
     schema: {
       ...opts.schema,
       summary: 'Buscar de novo os tempos do HowLongToBeat',
       params: idParam,
-      response: { 200: LibraryEntrySchema },
+      response: { 200: libraryEntrySchema },
     },
-    handler: controller.refreshHltb,
+    handler: async (req) => service.refreshHltb(req.params.id, req.userId),
   });
 
-  app.patch('/library/:id', {
+  routes.patch('/library/:id', {
     ...opts,
     schema: {
       ...opts.schema,
       summary: 'Atualizar entrada da biblioteca',
       params: idParam,
-      body: UpdateLibraryEntryInput,
-      response: { 200: LibraryEntrySchema },
+      body: updateLibraryEntryInput,
+      response: { 200: libraryEntrySchema },
     },
-    handler: controller.update,
+    handler: async (req) => service.update(req.params.id, req.userId, req.body),
   });
 
-  app.delete('/library/:id', {
+  routes.delete('/library/:id', {
     ...opts,
     schema: {
       ...opts.schema,
@@ -110,6 +121,9 @@ export async function libraryRoutes(app: FastifyInstance) {
       params: idParam,
       response: { 204: z.null() },
     },
-    handler: controller.remove,
+    handler: async (req, reply) => {
+      await service.remove(req.params.id, req.userId);
+      return reply.code(204).send(null);
+    },
   });
 }

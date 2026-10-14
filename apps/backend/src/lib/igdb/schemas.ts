@@ -1,3 +1,4 @@
+import { type GameDetail, gameSearchResultSchema } from '@detonado/shared';
 import { z } from 'zod';
 
 export const igdbGameRawSchema = z.object({
@@ -12,18 +13,5 @@ export const igdbGameRawSchema = z.object({
 
 export type IgdbGameRaw = z.infer<typeof igdbGameRawSchema>;
 
-export type IgdbGame = {
-  igdbId: number;
-  name: string;
-  coverUrl?: string;
-  releaseYear?: number;
-  platforms: string[];
-  genres: string[];
-  summary?: string;
-  hltb?: {
-    mainHours: number | null;
-    mainExtraHours: number | null;
-    completionistHours: number | null;
-  } | null;
-  hltbStatus?: 'FOUND' | 'MISS' | 'FAILED';
-};
+export const igdbGameSchema = gameSearchResultSchema.extend({ summary: z.string().optional() });
+export type IgdbGame = GameDetail;
