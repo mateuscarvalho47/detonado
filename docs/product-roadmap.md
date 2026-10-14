@@ -90,3 +90,7 @@ Sessões CRUD em `/api/library/:id/sessions` e `/:sessionId`, com `{clientId,pla
 ### Entrega 4 — o que jogar agora?
 
 Seção na Agora sugere até três jogos de Fila/Pausado, com filtros por plataforma registrada, gênero e duração total Principal. Preferência ordena candidatos sem excluir outros, e seleção manual de plataforma prevalece. Desempate determinístico por fila/nome/id; razões explicam status, plataforma e duração. Sem HLTB, candidato fica fora apenas quando há limite, com contagem explicativa. Não estima horas restantes nem duração de sessão. Implementação frontend sem nova API. Checks:100 testes, lint/build e revisão React. Branch `feature/play-next-suggestions`.
+
+### Correção de compatibilidade das sessões
+
+O teste de navegador real confirmou preferência e filtros pela API/DB, mas detectou ausência de `crypto.randomUUID` em HTTP de rede local. Gerador UUIDv4 agora usa `getRandomValues` quando randomUUID não existe, preservando os identificadores de retry. Branch `feature/session-id-compatibility`;101 testes frontend, lint e build passaram.
