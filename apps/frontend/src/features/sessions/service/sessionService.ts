@@ -4,6 +4,7 @@ export interface PlaySession {
 	entryId: string;
 	clientId: string;
 	campaignId?: string;
+	pending?: boolean;
 	playedAt: string;
 	durationMinutes: number;
 	notes: string | null;
@@ -16,7 +17,7 @@ export interface SessionPayload {
 	notes: string | null;
 }
 export function fetchSessions(entryId: string, campaignId?: string) {
-	return api.get<{ sessions: PlaySession[] }>(
+	return api.get<{ sessions: PlaySession[]; offlineHistoryMissing?: boolean }>(
 		`/library/${entryId}/sessions${campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : ""}`,
 	);
 }

@@ -1,6 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import {
+	queuedSessions,
+	synchronizeOfflineSessions,
+} from "@/features/offline/service/offlineService";
 import type { User } from "@/types/api";
 import {
 	type DeleteAccountFormValues,
@@ -51,6 +55,7 @@ export function useLogin() {
 	return useMutation({
 		mutationFn: login,
 		onSuccess: (user) => {
+			qc.clear();
 			qc.setQueryData(["me"], user);
 			qc.invalidateQueries({ queryKey: ["library"] });
 		},
@@ -79,8 +84,23 @@ export function useResendVerification() {
 export function useLogout() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: logout,
-		onSuccess: () => {
+		mutationFn: async () => {
+			if ((await queuedSessions().catch(() => [])).length) {
+				await synchronizeOfflineSessions().catch(() => undefined);
+				const remaining = await queuedSessions().catch(() => []);
+				if (
+					remaining.length &&
+					!window.confirm(
+						`Há ${remaining.length} sessão(ões) ainda não sincronizada(s). Sair descartará esses registros deste navegador. Deseja sair mesmo assim?`,
+					)
+				)
+					return false;
+			}
+			await logout();
+			return true;
+		},
+		onSuccess: (didLogout) => {
+			if (!didLogout) return;
 			qc.setQueryData(["me"], null);
 			qc.clear();
 		},

@@ -87,12 +87,14 @@ export function Sidebar({
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => logout.mutate()}
+						disabled={logout.isPending}
 						title="Sair"
 						aria-label="Sair"
 					>
 						<LogOut />
 					</Button>
 				</div>
+				{logout.isError && <p role="alert">{logout.error.message}</p>}
 			</div>
 		</aside>
 	);

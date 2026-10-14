@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ConsentModal } from "@/features/auth/components/ConsentModal";
 import { useMe } from "@/features/auth/hooks/useAuth";
 import { useLibrary } from "@/features/library/hooks/useLibrary";
+import { OfflineBanner } from "@/features/offline/components/OfflineBanner";
 import { SearchModal } from "@/features/search/components/SearchModal";
 import { BottomNav } from "@/shared/components/BottomNav";
 import { Sidebar } from "@/shared/components/Sidebar";
@@ -117,13 +118,17 @@ function RootLayout() {
 							)}
 						</div>
 						<div className={styles.content}>
+							<OfflineBanner authenticated />
 							<Outlet />
 						</div>
 					</main>
 					<BottomNav libraryCount={library.length} />
 				</div>
 			) : (
-				<Outlet />
+				<>
+					<OfflineBanner authenticated={false} />
+					<Outlet />
+				</>
 			)}
 			{hasShell && (
 				<SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />

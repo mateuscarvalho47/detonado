@@ -11,9 +11,11 @@ import "./index.css";
 const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
+			networkMode: "always",
 			staleTime: 1000 * 60,
 			retry: 1,
 		},
+		mutations: { networkMode: "always" },
 	},
 });
 
@@ -31,6 +33,12 @@ declare module "@tanstack/react-router" {
 const root = document.getElementById("root");
 
 if (!root) throw new Error("Root element not found");
+
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+	window.addEventListener("load", () => {
+		void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+	});
+}
 
 ReactDOM.createRoot(root).render(
 	<StrictMode>
