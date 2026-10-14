@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { CompletionPanel } from "@/features/completion/components/CompletionPanel";
 import { MembershipPanel } from "@/features/organization/components/MembershipPanel";
 import { SessionsPanel } from "@/features/sessions/components/SessionsPanel";
 import type { LibraryEntry } from "@/types/api";
@@ -50,6 +51,7 @@ export function DetailScreen({ game }: DetailScreenProps) {
 					status={status}
 					rating={rating}
 				/>
+				<CompletionPanel game={game} />
 				<MembershipPanel game={game} />
 				<SessionsPanel game={game} />
 			</div>

@@ -3,6 +3,7 @@ import type { GameStatus, LibraryEntry } from "@/types/api";
 
 export interface LibraryEntryPatch {
 	status?: GameStatus;
+	completionGoal?: "MAIN" | "EXTRAS" | "COMPLETIONIST";
 	userPlatform?: string | null;
 	rating?: number | null;
 	hoursPlayed?: number | null;

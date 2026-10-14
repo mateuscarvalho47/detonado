@@ -1,4 +1,6 @@
 import {
+  type CompletionGoal,
+  completionGoalSchema,
   createLibraryEntryInput,
   hltbStatusSchema,
   type LibraryStatus,
@@ -24,6 +26,7 @@ export const libraryEntrySchema = z.object({
   genres: z.array(z.string()),
   platforms: z.array(z.string()),
   status: LibraryStatusEnum,
+  completionGoal: completionGoalSchema,
   userPlatform: z.string().nullable(),
   rating: z.number().nullable(),
   lastSessionAt: z.date().nullable(),
@@ -43,6 +46,7 @@ export const libraryEntrySchema = z.object({
 export type LibraryEntry = z.infer<typeof libraryEntrySchema>;
 
 export interface LibraryEntryChanges {
+  completionGoal?: CompletionGoal;
   status?: LibraryStatus;
   userPlatform?: string | null;
   rating?: number | null;

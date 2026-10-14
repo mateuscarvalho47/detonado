@@ -7,6 +7,7 @@ import {
 import { env } from '@/config/env.js';
 import { serializeRequest } from '@/lib/requestLog.js';
 import { authRoutes } from '@/modules/auth/auth.routes.js';
+import { checklistItemRoutes } from '@/modules/checklist-item/checklist-item.routes.js';
 import { gameRoutes } from '@/modules/game/game.routes.js';
 import { libraryRoutes } from '@/modules/library/library.routes.js';
 import { organizationRoutes } from '@/modules/organization/organization.routes.js';
@@ -55,6 +56,7 @@ export async function buildApp() {
     await app.register(savedFilterRoutes, { prefix: '/api' });
     await app.register(playSessionRoutes, { prefix: '/api' });
     await app.register(organizationRoutes, { prefix: '/api' });
+    await app.register(checklistItemRoutes, { prefix: '/api' });
 
     app.get('/health', async (_req, reply) => {
       try {

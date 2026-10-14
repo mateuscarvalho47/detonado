@@ -101,6 +101,7 @@ export class LibraryService {
         genres: game.genres,
         platforms: game.platforms,
         status: input.status,
+        completionGoal: input.completionGoal ?? 'MAIN',
         userPlatform: blankToNull(input.userPlatform ?? null),
         completedAt,
         queuePosition,

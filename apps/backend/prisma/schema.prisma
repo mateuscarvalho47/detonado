@@ -75,6 +75,8 @@ model LibraryEntry {
   rating            Int?
   baseHours         Decimal?          @db.Decimal(6, 1)
   lastSessionAt     DateTime?
+  completionGoal    CompletionGoal    @default(MAIN)
+  checklist         ChecklistItem[]
   collections       CollectionEntry[]
   tags              TagEntry[]
   sessions          PlaySession[]
@@ -171,4 +173,23 @@ model TagEntry {
 
   @@id([entryId, tagId])
   @@index([tagId])
+}
+
+enum CompletionGoal {
+  MAIN
+  EXTRAS
+  COMPLETIONIST
+}
+
+model ChecklistItem {
+  id        String       @id @default(cuid())
+  entryId   String
+  userId    String
+  entry     LibraryEntry @relation(fields: [entryId, userId], references: [id, userId], onDelete: Cascade)
+  text      String
+  completed Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([entryId, createdAt])
 }
