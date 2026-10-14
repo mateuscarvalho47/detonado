@@ -40,11 +40,11 @@ export function LibraryCard({ game }: { game: LibraryEntry }) {
 					size="md"
 					hover
 				/>
-				<div className={styles.badgeFloat}>
+			</div>
+			<div className={styles.cardBody}>
+				<div className={styles.cardStatus}>
 					<StatusBadge status={game.status} size="sm" />
 				</div>
-			</div>
-			<div>
 				<span className={styles.cardName}>{game.name}</span>
 				<div className={styles.cardMeta}>
 					<span className={styles.truncate}>

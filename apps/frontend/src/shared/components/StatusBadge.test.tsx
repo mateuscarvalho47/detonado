@@ -16,5 +16,8 @@ describe("StatusBadge", () => {
 		expect(screen.getByText("Jogando")).toBeInTheDocument();
 		expect(screen.queryByText("Wishlist")).not.toBeInTheDocument();
 		expect(screen.queryByText("Completo")).not.toBeInTheDocument();
+		expect(screen.getByText("Jogando")).toHaveStyle({
+			"--status-color": "oklch(0.78 0.08 150)",
+		});
 	});
 });

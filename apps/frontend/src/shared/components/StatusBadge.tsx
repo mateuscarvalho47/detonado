@@ -10,12 +10,12 @@ export function StatusBadge({
 }) {
 	const definition = STATUS_BY_KEY[status];
 	return (
-		<span className={styles.status} data-size={size}>
-			<span
-				aria-hidden
-				className={styles.statusMark}
-				style={{ "--status-color": definition.color } as React.CSSProperties}
-			/>
+		<span
+			className={styles.status}
+			data-size={size}
+			style={{ "--status-color": definition.color } as React.CSSProperties}
+		>
+			<span aria-hidden className={styles.statusMark} />
 			{definition.label}
 		</span>
 	);
