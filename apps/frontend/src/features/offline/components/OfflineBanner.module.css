@@ -1,0 +1,40 @@
+.banner {
+	padding: 16px;
+	margin: 16px;
+	border: 1px solid var(--color-line);
+	background: var(--color-surface);
+	color: var(--color-ink);
+	display: grid;
+	gap: 12px;
+}
+.banner p {
+	margin: 0;
+}
+.list {
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 16px;
+}
+.item {
+	display: grid;
+	gap: 8px;
+	border-top: 1px solid var(--color-line);
+	padding-top: 12px;
+}
+.actions,
+.confirm {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+.confirm label {
+	display: flex;
+	gap: 8px;
+	align-items: start;
+}
+.notes {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}

@@ -6,7 +6,7 @@ Data: 13/10/2026.
 
 Evoluir a biblioteca pessoal para facilitar a escolha, o acompanhamento e a retomada dos jogos. Sem feed, amigos, perfil público ou funcionalidades sociais.
 
-Este documento reúne todas as sugestões da conversa. A ordem considera utilidade imediata, esforço e dependências; não representa funcionalidades já disponíveis. O usuário autorizou a execução de todas as etapas, nesta ordem. Cada funcionalidade terá branch própria, commit e push, seguida de integração em produção após validação.
+Este documento reúne todas as sugestões da conversa. A ordem considera utilidade imediata, esforço e dependências. O registro de execução abaixo documenta as funcionalidades implementadas e suas validações. O usuário autorizou a execução de todas as etapas, nesta ordem. Cada funcionalidade terá branch própria, commit e push, seguida de integração em produção após validação.
 
 ## Ordem de prioridade
 
@@ -62,10 +62,10 @@ Responsável por `apps/backend/**` e `packages/shared/**`. Ler também `docs/bac
 - [x] Inspecionar funcionalidades e regras existentes.
 - [x] Documentar todas as propostas em ordem de prioridade.
 - [x] Escopo confirmado pelo usuário: todas as funcionalidades; branch/push/produção por funcionalidade.
-- [ ] Implementar backend da etapa autorizada.
-- [ ] Implementar frontend da etapa autorizada.
-- [ ] Revisar integração e executar verificações.
-- [ ] Atualizar brief/README e registrar resultado, migrações e limitações.
+- [x] Implementar backend de todas as etapas.
+- [x] Implementar frontend de todas as etapas.
+- [x] Revisar integração e executar verificações.
+- [x] Atualizar brief/README e registrar resultado, migrações e limitações.
 
 ## Publicação por funcionalidade
 
@@ -148,3 +148,21 @@ Prévia paginada de até50 jogos na interface, correspondência IGDB pela origem
 `STEAM_WEB_API_KEY` é opcional e exclusiva do backend. Sem chave, startup e demais funções continuam funcionando; status informa configured=false e consultas respondem503. O usuário confirmou que ainda não tem a chave: integração implementada, mas a ativação real depende dessa configuração no Railway. Respostas privadas, vazias, incompletas e falhas do provedor são distintas, com deadline total e sem segredo em URLs/logs.
 
 Validação:228 testes backend, incluindo20 PostgreSQL/HTTP;161 frontend; lint, build/runtime e TypeScript aprovados. Discovery público real do OpenID confirmado. Consulta OwnedGames autenticada e login Steam real não exercitados sem chave; contratos e rejeições cobertos por testes. Branch `feature/steam-library-import`. Entrega12: main83af4ef, CI e deploys success, frontend/API health200.
+
+### Entrega 14 — modo offline
+
+Service worker nativo do build salva arquivos da interface, sem cachear respostas privadas. IndexedDB mantém dados autenticados previamente consultados, separados por conta, com TTL de sete dias. Apenas falhas de rede permitem leitura do cache;401 e demais respostas HTTP continuam visíveis. Versão de desenvolvimento não registra o worker. Capas externas podem não estar disponíveis sem conexão.
+
+Criação de sessões usa fila local de até100 registros. UUID, data, duração, comentário e campanha são preservados; a fila só é removida após confirmação do servidor. Pendências não entram nos totais antes da sincronização. Reconexão, foco e ação manual tentam sincronizar; erros transitórios preservam dados. Conflitos ficam visíveis e não bloqueiam pendências independentes. Registrar em outra campanha exige conferir o histórico, confirmar uma nova sessão e gerar outro UUID.
+
+Logout limpa dados privados e confirma descarte de sessões não sincronizadas. Saída offline deixa apenas marcador para concluir a saída do servidor antes de consultar identidade ou fazer novo login. Troca de conta limpa caches anteriores. Revisão também cobre eventos entre abas e respostas tardias. Sem migration ou nova dependência. Branch `feature/offline-mode`.
+
+Ensaio em Chromium real com build de produção, backend HTTP e PostgreSQL/Redis descartáveis: recarregar ficha sem internet; registrar sessão e recarregar preservando UUID; reconectar e confirmar uma única sessão e horas arredondadas no servidor; mudar campanha antes da reconexão e preservar conflito; confirmar nova sessão na campanha atual; cancelar/confirmar saída com pendências; concluir saída offline antes de login em outra conta; ausência de overflow horizontal em 390px. Todos passaram. Nenhum banco da aplicação ou de produção foi usado.
+
+Revisão final do offline: eventos explícitos de logout/troca de conta limpam o Query das outras abas e invalidam requisições antigas antes que possam restaurar o cache. Login limpa o Query anterior sem apagar pendências da mesma conta no IndexedDB. Estado da conexão Steam exige rede e fica fora do cache offline. Pendências mostram o jogo e um link para conferir o histórico quando disponível. Validação conjunta: 181 testes frontend, lint, geração de rotas, TypeScript e build aprovados; backend permaneceu em 228 testes aprovados.
+
+## Situação final
+
+As 14 entregas foram implementadas e documentadas, cada uma com branch própria. A importação Steam aguarda apenas a configuração de `STEAM_WEB_API_KEY` no Railway pelo usuário; sem uma chave real, o acesso autenticado ao provedor não foi exercitado. O modo offline depende de uma primeira visita com conexão e armazenamento disponível no navegador. Consulte os registros acima para migrações, contratos e limites de cada entrega.
+
+O ensaio final conjunto também confirmou a tela de integração Steam sem chave e a remoção de identidade/dados exibidos após logout em outra aba.

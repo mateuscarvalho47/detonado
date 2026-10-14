@@ -11,9 +11,11 @@ export function SessionsPanel({ game }: { game: LibraryEntry }) {
 		formState: { errors },
 	} = state.form;
 	const sessionMinutes = state.query.data?.sessions.reduce(
-		(total, session) => total + session.durationMinutes,
+		(total, session) => total + (session.pending ? 0 : session.durationMinutes),
 		0,
 	);
+	const pendingCount =
+		state.query.data?.sessions.filter((session) => session.pending).length ?? 0;
 	return (
 		<section className={styles.panel} aria-labelledby="sessions-title">
 			<h2 id="sessions-title">Sessões de jogo</h2>
@@ -28,6 +30,18 @@ export function SessionsPanel({ game }: { game: LibraryEntry }) {
 				Editar as horas totais no registro ajusta as horas anteriores. Sessões
 				são somadas automaticamente.
 			</p>
+			{pendingCount > 0 && (
+				<p role="status">
+					{pendingCount} sessão(ões) salva(s) neste navegador, aguardando
+					sincronização. As horas pendentes ainda não entram no total.
+				</p>
+			)}
+			{state.query.data?.offlineHistoryMissing && (
+				<p>
+					O histórico do servidor ainda não foi salvo neste navegador.
+					Conecte-se para consultar as sessões anteriores.
+				</p>
+			)}
 			{game.lastSessionAt && (
 				<p>Última sessão: {formatSessionDate(game.lastSessionAt)}</p>
 			)}
@@ -109,24 +123,32 @@ export function SessionsPanel({ game }: { game: LibraryEntry }) {
 							</strong>
 							{session.notes && <p className={styles.notes}>{session.notes}</p>}
 						</div>
-						<div className={styles.actions}>
-							<Button
-								variant="ghost"
-								aria-label={`Editar sessão de ${formatSessionDate(session.playedAt)}`}
-								disabled={state.mutation.isPending}
-								onClick={() => state.edit(session)}
-							>
-								Editar
-							</Button>
-							<Button
-								variant="ghost"
-								aria-label={`Excluir sessão de ${formatSessionDate(session.playedAt)}`}
-								disabled={state.mutation.isPending}
-								onClick={() => state.setDeleteId(session.id)}
-							>
-								Excluir
-							</Button>
-						</div>
+						{session.pending && (
+							<p>
+								Aguardando sincronização · gerencie a pendência no aviso
+								offline.
+							</p>
+						)}
+						{!session.pending && (
+							<div className={styles.actions}>
+								<Button
+									variant="ghost"
+									aria-label={`Editar sessão de ${formatSessionDate(session.playedAt)}`}
+									disabled={state.mutation.isPending}
+									onClick={() => state.edit(session)}
+								>
+									Editar
+								</Button>
+								<Button
+									variant="ghost"
+									aria-label={`Excluir sessão de ${formatSessionDate(session.playedAt)}`}
+									disabled={state.mutation.isPending}
+									onClick={() => state.setDeleteId(session.id)}
+								>
+									Excluir
+								</Button>
+							</div>
+						)}
 						{state.deleteId === session.id && (
 							<div className={styles.confirm}>
 								<p>Excluir esta sessão? As horas serão descontadas do total.</p>

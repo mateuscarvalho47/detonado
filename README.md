@@ -369,3 +369,11 @@ Configure `STEAM_WEB_API_KEY` no backend para ativar a integração; obtenha a c
 Em Configurações, conecte a conta pelo login oficial Steam. O servidor verifica a identidade com OpenID antes de consultar a biblioteca; a conexão dura a sessão atual e pode ser removida. Não há campo para consultar IDs de terceiros. Detalhes privados ou indisponíveis recebem uma mensagem específica; biblioteca vazia é tratada separadamente.
 
 Na biblioteca, abra a importação Steam, revise páginas de até50 jogos e resolva correspondências ausentes ou ambíguas pela busca IGDB. O commit reutiliza a importação em lotes de10 e sempre ignora duplicatas. Horas Steam entram como horas anteriores apenas em jogos novos, sem criar sessões datadas ou sobrescrever campanhas existentes. Não há sincronização automática.
+
+### Modo offline
+
+Após abrir o app com conexão, a versão de produção salva a estrutura da interface e os dados autenticados já consultados neste navegador. Biblioteca, fichas e históricos previamente carregados podem ser consultados sem internet; capas externas podem não estar disponíveis. O cache de dados expira após sete dias. Em desenvolvimento, o service worker não é registrado.
+
+Novas sessões ficam em uma fila local de até100 pendências, identificadas pelo mesmo UUID em cada tentativa. As horas pendentes só entram no total após confirmação do servidor. A reconexão tenta sincronizar; erros transitórios preservam as pendências e conflitos exigem ação explícita. Se a campanha mudou, conferir o histórico e confirmar o registro como uma nova sessão na campanha atual gera outro UUID. Alterações diferentes de criar sessões exigem conexão.
+
+Dados locais pertencem à conta atual. Sair limpa cache e pendências, com confirmação antes de descartar sessões ainda não sincronizadas. Ao sair sem internet, a saída do servidor é concluída antes de consultar a identidade ou fazer outro login quando a conexão voltar. Trocar de conta remove o cache da conta anterior. O service worker salva apenas arquivos da interface; dados privados ficam no IndexedDB, separado por proprietário.

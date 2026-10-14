@@ -150,3 +150,7 @@ Modo de seleção explícito, até100 jogos visíveis. Painel escolhe quais camp
 ### Importação Steam
 
 Configurações oferece conexão pelo login oficial Steam; apenas a conta verificada pode ter sua biblioteca consultada. Importação na biblioteca tem prévia paginada, resolução manual IGDB e confirmação. Duplicatas sempre preservadas; horas acumuladas só entram como horas anteriores de jogos novos. Sem chave configurada no servidor, mostrar indisponibilidade sem bloquear outras funcionalidades.
+
+### Modo offline
+
+Aviso contextual mostra quando a tela usa dados salvos e quantas sessões aguardam sincronização. Totais do servidor não incluem pendências. A fila permite consultar os registros, tentar novamente ou confirmar descarte; conflitos de campanha exigem conferir o histórico antes de registrar uma nova sessão. Sair informa sobre sessões não sincronizadas e limpa dados locais. Conteúdo previamente consultado fica disponível por até sete dias; outras alterações precisam de conexão.

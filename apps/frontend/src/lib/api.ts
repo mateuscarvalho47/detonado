@@ -1,3 +1,5 @@
+import { configureOfflineTransport, offlineRequest } from "./offlineRequests";
+
 export class ApiError extends Error {
 	readonly code: string;
 	readonly details: unknown;
@@ -108,14 +110,16 @@ async function request<T>(
 	return res.json() as Promise<T>;
 }
 
+configureOfflineTransport(request, clearCsrfToken);
+
 export const api = {
-	get: <T>(path: string) => request<T>(path),
+	get: <T>(path: string) => offlineRequest<T>(path),
 	post: <T>(path: string, body?: unknown) =>
-		request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+		offlineRequest<T>(path, { method: "POST", body: JSON.stringify(body) }),
 	patch: <T>(path: string, body?: unknown) =>
-		request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
+		offlineRequest<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
 	delete: <T>(path: string, body?: unknown) =>
-		request<T>(path, {
+		offlineRequest<T>(path, {
 			method: "DELETE",
 			body: body !== undefined ? JSON.stringify(body) : undefined,
 		}),

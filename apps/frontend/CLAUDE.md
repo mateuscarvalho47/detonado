@@ -58,3 +58,9 @@ Auth gating is **centralized in `src/routes/__root.tsx`**, not per-route `before
 - Dark only. `__root.tsx` sets `data-theme="dark"` and `.dark` on `<html>`. Type is IBM Plex Sans / IBM Plex Mono. The logged-in home is the shelf (`Agora`: playing, queue, backlog hours), not a metrics dashboard.
 - Brand tokens live in `src/styles/tokens.css`; global primitives and Radix slots live in `src/styles/primitives.css`. Feature UI uses colocated CSS Modules. Prefer semantic class names and shared tokens; do not add utility CSS frameworks. The palette is warm dark with coral for actions, lime for positive state, IBM Plex for UI, and Georgia for editorial display type.
 - Tests colocated as `*.test.ts(x)`, jsdom env, globals on, `@testing-library/react` (`src/test/setup.ts`).
+
+## Offline behavior
+
+Production builds emit a native service worker through build/offlineWorker.ts. It caches application files only, never authenticated API responses. lib/offlineStore.ts owns IndexedDB transactions, owner-scoped cached responses (seven-day TTL), and up to100 queued session creations. lib/offlineRequests.ts wraps the raw API transport: only network failures can fall back to cache or queue session creation; HTTP auth/validation/provider failures remain errors. Preserve UUIDs across retries and remove queued records only after server acknowledgement. Campaign conflicts require explicit confirmation before generating a new UUID.
+
+Keep logout/account changes synchronized across tabs and clear private Query/IndexedDB data on logout or account changes. Offline logout must finish on the server before reading identity or logging in again. Query uses networkMode=always so the offline wrapper can execute. Other mutations remain online-only.
