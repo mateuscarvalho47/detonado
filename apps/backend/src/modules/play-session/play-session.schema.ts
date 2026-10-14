@@ -9,6 +9,7 @@ export {
 export const playSessionResponseSchema = z.object({
   id: z.string(),
   entryId: z.string(),
+  campaignId: z.string(),
   clientId: z.string(),
   playedAt: z.date(),
   durationMinutes: z.number(),

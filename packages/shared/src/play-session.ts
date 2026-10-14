@@ -7,6 +7,7 @@ const sessionFields = z.strictObject({
 	notes: z.string().trim().max(NOTES_MAX).nullable().optional(),
 });
 export const createPlaySessionSchema = sessionFields.extend({
+	campaignId: z.string().min(1).max(100).nullable().optional(),
 	clientId: z.uuid(),
 });
 export const updatePlaySessionSchema = sessionFields

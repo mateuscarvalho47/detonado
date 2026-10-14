@@ -32,9 +32,12 @@ export async function playSessionRoutes(app: FastifyInstance) {
     schema: {
       ...opts.schema,
       params: entryParam,
+      querystring: z.object({ campaignId: z.string().min(1).max(100).optional() }),
       response: { 200: z.object({ sessions: z.array(playSessionResponseSchema) }) },
     },
-    handler: async (req) => ({ sessions: await service.list(req.params.id, req.userId) }),
+    handler: async (req) => ({
+      sessions: await service.list(req.params.id, req.userId, req.query.campaignId),
+    }),
   });
   routes.post('/library/:id/sessions', {
     ...opts,

@@ -16,6 +16,7 @@ export { createLibraryEntryInput, libraryStatsSchema, updateLibraryEntryInput };
 
 // Backend-only: hoursPlayed uses preprocess to coerce Prisma Decimal → number
 export const libraryEntrySchema = z.object({
+  activeCampaignId: z.string().nullable(),
   collectionIds: z.array(z.string()),
   tagIds: z.array(z.string()),
   id: z.string(),

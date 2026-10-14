@@ -34,6 +34,7 @@ export interface LibraryEntry {
 	hltbCompletionist: number | null;
 	hltbStatus?: HltbStatus | null;
 	queuePosition?: number | null;
+	activeCampaignId?: string | null;
 	completionGoal?: "MAIN" | "EXTRAS" | "COMPLETIONIST";
 	collectionIds?: string[];
 	tagIds?: string[];
@@ -58,6 +59,7 @@ export interface GameDetail extends GameSearchResult {
 
 export interface LibraryStats {
 	totalGames: number;
+	completedCampaigns?: number;
 	totalHours: number;
 	countByStatus: Record<GameStatus, number>;
 	topGenres: { genre: string; count: number }[];

@@ -75,6 +75,9 @@ model LibraryEntry {
   rating            Int?
   baseHours         Decimal?          @db.Decimal(6, 1)
   lastSessionAt     DateTime?
+  activeCampaignId  String?
+  activeCampaign    Campaign?         @relation("ActiveCampaign", fields: [activeCampaignId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  campaigns         Campaign[]        @relation("EntryCampaigns")
   completionGoal    CompletionGoal    @default(MAIN)
   checklist         ChecklistItem[]
   collections       CollectionEntry[]
@@ -116,6 +119,8 @@ model PlaySession {
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   entryId         String
   entry           LibraryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  campaignId      String
+  campaign        Campaign     @relation(fields: [campaignId, entryId, userId], references: [id, entryId, userId], onDelete: Cascade)
   clientId        String
   playedAt        DateTime
   durationMinutes Int
@@ -192,4 +197,28 @@ model ChecklistItem {
   updatedAt DateTime     @updatedAt
 
   @@index([entryId, createdAt])
+}
+
+model Campaign {
+  id             String         @id @default(cuid())
+  entryId        String
+  userId         String
+  entry          LibraryEntry   @relation("EntryCampaigns", fields: [entryId, userId], references: [id, userId], onDelete: Cascade)
+  activeFor      LibraryEntry[] @relation("ActiveCampaign")
+  sessions       PlaySession[]
+  startedAt      DateTime       @default(now())
+  archivedAt     DateTime?
+  status         LibraryStatus  @default(PLAYING)
+  baseHours      Decimal?       @db.Decimal(6, 1)
+  hoursPlayed    Decimal?       @db.Decimal(6, 1)
+  rating         Int?
+  notes          String?
+  completedAt    DateTime?
+  completionGoal CompletionGoal @default(MAIN)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([id, entryId, userId])
+  @@index([userId, archivedAt])
+  @@index([entryId, startedAt])
 }

@@ -349,3 +349,5 @@ Sessões requerem `20261013220000_add_play_sessions`. CRUD em `/api/library/:id/
 Coleções e tags requerem `20261013230000_add_collections_and_tags`. CRUD em `/api/library/collections` e `/tags`; vínculos múltiplos em `PATCH /api/library/:id/organization`. Agrupamentos não substituem status e sua exclusão preserva jogos.
 
 Objetivo/checklist requerem `20261013233000_add_completion_goals`. A entrada aceita `completionGoal` e o checklist possui CRUD em `/api/library/:id/checklist` e `/:itemId`, sem modificar o status automaticamente.
+
+Campanhas requerem `20261014003000_add_campaigns`. GET/POST `/api/library/:id/campaigns`; sessões aceitam campaignId esperado e consulta histórica por querystring. A migração vincula sessões anteriores a uma campanha inicial e preserva o registro existente. Estatísticas somam todas campanhas sem duplicar a ativa.

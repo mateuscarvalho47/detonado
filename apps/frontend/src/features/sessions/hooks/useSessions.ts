@@ -18,8 +18,8 @@ import {
 export function useSessions(game: LibraryEntry) {
 	const qc = useQueryClient();
 	const query = useQuery({
-		queryKey: ["sessions", game.id],
-		queryFn: () => fetchSessions(game.id),
+		queryKey: ["sessions", game.id, game.activeCampaignId ?? "active"],
+		queryFn: () => fetchSessions(game.id, game.activeCampaignId ?? undefined),
 	});
 	const [editing, setEditing] = useState<PlaySession | null>(null);
 	const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -42,11 +42,18 @@ export function useSessions(game: LibraryEntry) {
 			list?.map((item) => (item.id === updated.id ? updated : item)),
 		);
 		void qc.invalidateQueries({ queryKey: ["stats"] });
+		void qc.invalidateQueries({ queryKey: ["campaigns", game.id] });
 	}
 	const mutation = useMutation({
 		mutationFn: (
 			action:
-				| { kind: "create"; payload: SessionPayload & { clientId: string } }
+				| {
+						kind: "create";
+						payload: SessionPayload & {
+							clientId: string;
+							campaignId?: string | null;
+						};
+				  }
 				| { kind: "update"; id: string; payload: SessionPayload }
 				| { kind: "delete"; id: string },
 		) => {
@@ -79,12 +86,16 @@ export function useSessions(game: LibraryEntry) {
 			mutation.mutate({ kind: "update", id: editing.id, payload });
 			return;
 		}
-		const fingerprint = JSON.stringify(payload);
+		const creationPayload = {
+			...payload,
+			campaignId: game.activeCampaignId ?? null,
+		};
+		const fingerprint = JSON.stringify(creationPayload);
 		if (attempt.current?.fingerprint !== fingerprint)
 			attempt.current = { fingerprint, clientId: createSessionId() };
 		mutation.mutate({
 			kind: "create",
-			payload: { ...payload, clientId: attempt.current.clientId },
+			payload: { ...creationPayload, clientId: attempt.current.clientId },
 		});
 	});
 	function edit(session: PlaySession | null) {

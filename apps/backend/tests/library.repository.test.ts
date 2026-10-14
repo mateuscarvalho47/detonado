@@ -19,6 +19,10 @@ function makeDb() {
       aggregate,
       groupBy,
     },
+    campaign: {
+      aggregate: vi.fn().mockResolvedValue({ _sum: { hoursPlayed: null } }),
+      count: vi.fn().mockResolvedValue(0),
+    },
     $queryRaw: vi.fn().mockResolvedValue([]),
   };
   return { db, updateMany, deleteMany, findFirst, aggregate, groupBy };
@@ -64,14 +68,14 @@ describe('LibraryRepository writes', () => {
 });
 
 describe('LibraryRepository.getStats', () => {
-  it('sums hours and ratings only for statuses that record progress', async () => {
+  it('sums all recorded hours and limits ratings to progress statuses', async () => {
     const { db, aggregate, groupBy } = makeDb();
     const repo = new LibraryRepository(db as never);
 
     await repo.getStats('user-1');
 
     expect(aggregate).toHaveBeenCalledWith({
-      where: { userId: 'user-1', status: PROGRESS },
+      where: { userId: 'user-1' },
       _sum: { hoursPlayed: true },
     });
     expect(groupBy).toHaveBeenNthCalledWith(

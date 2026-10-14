@@ -7,6 +7,9 @@ import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { PrismaClient } from '@/generated/prisma/client.js';
 import { PreferencesService } from '@/modules/auth/preferences.service.js';
+import { CampaignRepository } from '@/modules/campaign/campaign.repository.js';
+import { campaignRoutes } from '@/modules/campaign/campaign.routes.js';
+import { CampaignService } from '@/modules/campaign/campaign.service.js';
 import { ChecklistItemRepository } from '@/modules/checklist-item/checklist-item.repository.js';
 import { checklistItemRoutes } from '@/modules/checklist-item/checklist-item.routes.js';
 import { ChecklistItemService } from '@/modules/checklist-item/checklist-item.service.js';
@@ -608,6 +611,254 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
     } finally {
       await app.close();
       await database.libraryEntry.deleteMany({ where: { id: entry.id, userId: ownerId } });
+    }
+  });
+
+  it('archives campaigns, isolates historical sessions and counts completions without duplicate active snapshots', async () => {
+    const libraries = library();
+    const entry = await libraries.create(ownerId, { igdbId: 99994, status: 'PLAYING' });
+    const campaigns = new CampaignService(new CampaignRepository(database));
+    const sessions = new PlaySessionService(new PlaySessionRepository(database));
+    try {
+      const foreignEntry = await libraries.create(anotherUserId, {
+        igdbId: 99991,
+        status: 'PLAYING',
+      });
+      try {
+        await expect(
+          database.libraryEntry.update({
+            where: { id: entry.id },
+            data: { activeCampaignId: foreignEntry.activeCampaignId },
+          }),
+        ).rejects.toMatchObject({ code: 'P2003' });
+        await expect(
+          database.playSession.create({
+            data: {
+              entryId: entry.id,
+              userId: ownerId,
+              campaignId: foreignEntry.activeCampaignId ?? '',
+              clientId: randomUUID(),
+              playedAt: new Date(),
+              durationMinutes: 5,
+            },
+          }),
+        ).rejects.toMatchObject({ code: 'P2003' });
+        await expect(
+          sessions.list(entry.id, ownerId, foreignEntry.activeCampaignId ?? ''),
+        ).rejects.toMatchObject({ statusCode: 404 });
+      } finally {
+        await libraries.remove(foreignEntry.id, anotherUserId);
+      }
+      expect(entry.activeCampaignId).toBeTruthy();
+      await libraries.update(entry.id, ownerId, {
+        status: 'COMPLETED',
+        hoursPlayed: 3,
+        rating: 9,
+        notes: 'Primeira campanha',
+        completionGoal: 'EXTRAS',
+      });
+      const input = {
+        clientId: randomUUID(),
+        campaignId: entry.activeCampaignId,
+        playedAt: new Date().toISOString(),
+        durationMinutes: 30,
+        notes: 'Final',
+      };
+      const original = await sessions.create(entry.id, ownerId, input);
+      const checklist = new ChecklistItemService(new ChecklistItemRepository(database));
+      const item = await checklist.create(entry.id, ownerId, { text: 'Missão' });
+      await checklist.update(item.id, entry.id, ownerId, { completed: true });
+      const next = await campaigns.create(entry.id, ownerId, { notes: 'Rejogada' });
+      const current = await libraries.getById(entry.id, ownerId);
+      expect(current).toMatchObject({
+        activeCampaignId: next.id,
+        status: 'PLAYING',
+        rating: null,
+        completedAt: null,
+        notes: 'Rejogada',
+        completionGoal: 'EXTRAS',
+        hltbMain: 10,
+        hltbMainExtra: 20,
+        lastSessionAt: null,
+      });
+      expect(current.hoursPlayed?.toNumber()).toBe(0);
+      expect((await checklist.list(entry.id, ownerId))[0].completed).toBe(false);
+      expect(await sessions.list(entry.id, ownerId)).toEqual([]);
+      expect(await sessions.list(entry.id, ownerId, original.campaignId)).toHaveLength(1);
+      const history = await campaigns.list(entry.id, ownerId);
+      expect(history[0]).toMatchObject({
+        id: next.id,
+        isActive: true,
+        archivedAt: null,
+        hoursPlayed: 0,
+      });
+      expect(history.find((row) => row.id === original.campaignId)).toMatchObject({
+        isActive: false,
+        status: 'COMPLETED',
+        baseHours: 3,
+        hoursPlayed: 3.5,
+        rating: 9,
+        notes: 'Primeira campanha',
+        completionGoal: 'EXTRAS',
+      });
+      expect((await sessions.create(entry.id, ownerId, input)).id).toBe(original.id);
+      await expect(
+        sessions.create(entry.id, ownerId, { ...input, clientId: randomUUID() }),
+      ).rejects.toMatchObject({ statusCode: 409 });
+      await expect(
+        sessions.create(entry.id, ownerId, { ...input, campaignId: next.id }),
+      ).rejects.toMatchObject({ statusCode: 409 });
+      await sessions.update(original.id, entry.id, ownerId, { durationMinutes: 60 });
+      expect(
+        (await campaigns.list(entry.id, ownerId)).find((row) => row.id === original.campaignId)
+          ?.hoursPlayed,
+      ).toBe(4);
+      expect((await libraries.getById(entry.id, ownerId)).hoursPlayed?.toNumber()).toBe(0);
+      await sessions.remove(original.id, entry.id, ownerId);
+      await sessions.create(entry.id, ownerId, {
+        clientId: randomUUID(),
+        campaignId: next.id,
+        playedAt: new Date().toISOString(),
+        durationMinutes: 45,
+      });
+      await libraries.update(entry.id, ownerId, { hoursPlayed: 1, status: 'COMPLETED' });
+      const queued = await libraries.create(ownerId, { igdbId: 99992, status: 'BACKLOG' });
+      await libraries.update(queued.id, ownerId, { hoursPlayed: 2 });
+      await campaigns.create(queued.id, ownerId, {});
+      await libraries.update(queued.id, ownerId, { status: 'WISHLIST', hoursPlayed: 1 });
+      expect((await libraries.getStats(ownerId)).totalHours).toBe(7);
+      await libraries.remove(queued.id, ownerId);
+      const stats = await libraries.getStats(ownerId);
+      expect(stats.totalGames).toBe(1);
+      expect(stats.totalHours).toBe(4);
+      expect(stats.completedCampaigns).toBe(2);
+      expect(stats.completedTimeline.reduce((sum, row) => sum + row.count, 0)).toBe(2);
+      expect(stats.countByStatus.COMPLETED).toBe(1);
+      await Promise.all([
+        campaigns.create(entry.id, ownerId, {}),
+        campaigns.create(entry.id, ownerId, {}),
+      ]);
+      const all = await campaigns.list(entry.id, ownerId);
+      expect(all).toHaveLength(4);
+      expect(all.filter((row) => row.isActive)).toHaveLength(1);
+      expect(all.filter((row) => row.archivedAt !== null)).toHaveLength(3);
+      const exported = await new UserRepository(database).findByIdWithLibrary(ownerId);
+      expect(
+        exported?.libraryEntries.find((row) => row.igdbId === entry.igdbId)?.campaigns,
+      ).toHaveLength(4);
+      await expect(campaigns.list(entry.id, anotherUserId)).rejects.toMatchObject({
+        statusCode: 404,
+      });
+      await expect(campaigns.create(entry.id, anotherUserId, {})).rejects.toMatchObject({
+        statusCode: 404,
+      });
+    } finally {
+      await libraries.remove(entry.id, ownerId);
+    }
+  });
+
+  it('protects campaign HTTP creation and historical session queries', async () => {
+    const entry = await library().create(ownerId, { igdbId: 99993, status: 'PLAYING' });
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    await app.register(csrf);
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id;
+      req.session.sessionVersion = 0;
+      req.session.csrfToken = 'test-csrf';
+      return {};
+    });
+    await app.register(campaignRoutes, { prefix: '/api' });
+    await app.register(playSessionRoutes, { prefix: '/api' });
+    try {
+      const base = `/api/library/${entry.id}/campaigns`;
+      expect((await app.inject({ url: base })).statusCode).toBe(401);
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const cookie = String(login.headers['set-cookie']).split(';')[0];
+      const headers = { cookie, 'x-csrf-token': 'test-csrf' };
+      expect(
+        (await app.inject({ method: 'POST', url: base, headers: { cookie }, payload: {} }))
+          .statusCode,
+      ).toBe(403);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers,
+            payload: { startedAt: 'invalid' },
+          })
+        ).statusCode,
+      ).toBe(400);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers,
+            payload: { startedAt: '2999-01-01T00:00:00Z' },
+          })
+        ).statusCode,
+      ).toBe(400);
+      const created = await app.inject({
+        method: 'POST',
+        url: base,
+        headers,
+        payload: { notes: 'Nova campanha' },
+      });
+      expect(created.statusCode).toBe(201);
+      expect(created.json()).toMatchObject({
+        isActive: true,
+        hoursPlayed: 0,
+        notes: 'Nova campanha',
+      });
+      expect(created.json()).not.toHaveProperty('userId');
+      expect((await app.inject({ url: base, headers })).json().campaigns).toHaveLength(2);
+      const sessions = `/api/library/${entry.id}/sessions`;
+      expect(
+        (await app.inject({ url: `${sessions}?campaignId=${entry.activeCampaignId}`, headers }))
+          .statusCode,
+      ).toBe(200);
+      expect(
+        (await app.inject({ url: `${sessions}?campaignId=missing`, headers })).statusCode,
+      ).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: sessions,
+            headers,
+            payload: {
+              clientId: randomUUID(),
+              campaignId: entry.activeCampaignId,
+              playedAt: new Date().toISOString(),
+              durationMinutes: 10,
+            },
+          })
+        ).statusCode,
+      ).toBe(409);
+      const otherLogin = await app.inject({ url: `/test-session/${anotherUserId}` });
+      const otherHeaders = {
+        cookie: String(otherLogin.headers['set-cookie']).split(';')[0],
+        'x-csrf-token': 'test-csrf',
+      };
+      expect((await app.inject({ url: base, headers: otherHeaders })).statusCode).toBe(404);
+      expect(
+        (await app.inject({ method: 'POST', url: base, headers: otherHeaders, payload: {} }))
+          .statusCode,
+      ).toBe(404);
+    } finally {
+      await app.close();
+      await library().remove(entry.id, ownerId);
     }
   });
 

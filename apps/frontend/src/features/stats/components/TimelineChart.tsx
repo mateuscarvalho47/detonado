@@ -8,7 +8,7 @@ export function TimelineChart({
 	if (timeline.length < 2)
 		return (
 			<div className={styles.chartEmpty}>
-				Complete mais jogos para ver sua linha do tempo.
+				Conclua mais campanhas para ver sua linha do tempo.
 			</div>
 		);
 	const width = 800,
@@ -29,7 +29,7 @@ export function TimelineChart({
 		<div className={styles.timeline}>
 			<svg
 				role="img"
-				aria-label="Jogos concluídos ao longo do tempo"
+				aria-label="Campanhas concluídas ao longo do tempo"
 				width="100%"
 				height="100%"
 				viewBox={`0 0 ${width} ${height}`}
