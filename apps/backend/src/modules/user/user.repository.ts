@@ -134,6 +134,19 @@ export class UserRepository {
             platforms: true,
             status: true,
             completionGoal: true,
+            journal: {
+              select: {
+                id: true,
+                campaignId: true,
+                text: true,
+                occurredAt: true,
+                spoiler: true,
+                legacy: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+              orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+            },
             sources: {
               select: {
                 id: true,

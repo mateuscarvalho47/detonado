@@ -134,3 +134,7 @@ A biblioteca recebe CSV até100 registros com modelo para download, prévia e re
 ## Origem e disponibilidade
 
 A ficha registra múltiplas origens: loja, mídia física, assinatura ou empréstimo. Rótulo e vencimento são independentes da plataforma. Sem vencimento indica acesso permanente/indeterminado; filtro Disponível aceita origem sem vencimento ou futura, Vencido exige todas vencidas e Origem não informada exige ausência. Ao filtrar tipo, disponibilidade considera apenas esse tipo. Vencimentos atualizam a interface automaticamente.
+
+## Diário de progresso
+
+Registros datados por campanha, editáveis e excluíveis, com filtro de campanha/histórico e spoiler oculto até abrir. Anotações prévias são preservadas e marcadas como legadas, sem afirmar uma data original desconhecida. O campo Onde parei permanece independente; criar registro não o sobrescreve.

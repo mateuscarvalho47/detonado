@@ -125,7 +125,7 @@ export function LibraryScreen() {
 				<EmptyState
 					icon={<Search />}
 					title="Nenhum jogo neste filtro"
-					body="Mude a busca ou o status para reencontrar o que procura."
+					body="Mude os filtros para reencontrar o que procura."
 				/>
 			) : filters.view === "grid" ? (
 				<LibraryGrid games={filters.filtered} />

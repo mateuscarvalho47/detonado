@@ -11,6 +11,7 @@ import { campaignRoutes } from '@/modules/campaign/campaign.routes.js';
 import { checklistItemRoutes } from '@/modules/checklist-item/checklist-item.routes.js';
 import { gameRoutes } from '@/modules/game/game.routes.js';
 import { gameSourceRoutes } from '@/modules/game-source/game-source.routes.js';
+import { journalEntryRoutes } from '@/modules/journal-entry/journal-entry.routes.js';
 import { libraryRoutes } from '@/modules/library/library.routes.js';
 import { libraryImportRoutes } from '@/modules/library-import/library-import.routes.js';
 import { organizationRoutes } from '@/modules/organization/organization.routes.js';
@@ -63,6 +64,7 @@ export async function buildApp() {
     await app.register(campaignRoutes, { prefix: '/api' });
     await app.register(libraryImportRoutes, { prefix: '/api' });
     await app.register(gameSourceRoutes, { prefix: '/api' });
+    await app.register(journalEntryRoutes, { prefix: '/api' });
 
     app.get('/health', async (_req, reply) => {
       try {

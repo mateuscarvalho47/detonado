@@ -79,6 +79,7 @@ model LibraryEntry {
   activeCampaign    Campaign?         @relation("ActiveCampaign", fields: [activeCampaignId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   campaigns         Campaign[]        @relation("EntryCampaigns")
   completionGoal    CompletionGoal    @default(MAIN)
+  journal           JournalEntry[]
   sources           GameSource[]
   checklist         ChecklistItem[]
   collections       CollectionEntry[]
@@ -218,6 +219,7 @@ model Campaign {
   completionGoal CompletionGoal @default(MAIN)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  journal        JournalEntry[]
 
   @@unique([id, entryId, userId])
   @@index([userId, archivedAt])
@@ -243,4 +245,21 @@ model GameSource {
   updatedAt DateTime     @updatedAt
 
   @@index([entryId, createdAt])
+}
+
+model JournalEntry {
+  id         String       @id @default(cuid())
+  userId     String
+  entryId    String
+  campaignId String
+  entry      LibraryEntry @relation(fields: [entryId, userId], references: [id, userId], onDelete: Cascade)
+  campaign   Campaign     @relation(fields: [campaignId, entryId, userId], references: [id, entryId, userId], onDelete: Cascade)
+  text       String
+  occurredAt DateTime
+  spoiler    Boolean      @default(false)
+  legacy     Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([entryId, occurredAt])
 }
