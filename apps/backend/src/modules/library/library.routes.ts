@@ -1,9 +1,11 @@
-import type { FastifyInstance } from 'fastify';
+import { retrospectiveQuerySchema, retrospectiveResponseSchema } from '@detonado/shared';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/requireAuth.js';
 import { GameService } from '@/modules/game/game.service.js';
 import { LibraryRepository } from './library.repository.js';
+import { RetrospectiveService } from './library.retrospective.service.js';
 import {
   createLibraryEntryInput,
   libraryEntrySchema,
@@ -18,6 +20,7 @@ export async function libraryRoutes(app: FastifyInstance) {
   const repo = new LibraryRepository(app.prisma);
   const games = new GameService(app.igdb, app.redis, app.hltb);
   const service = new LibraryService(repo, games);
+  const retrospective = new RetrospectiveService(repo);
   const routes = app.withTypeProvider<ZodTypeProvider>();
 
   const opts = {
@@ -47,6 +50,25 @@ export async function libraryRoutes(app: FastifyInstance) {
       response: { 200: z.array(libraryEntrySchema) },
     },
     handler: async (req) => service.list(req.userId),
+  });
+
+  routes.get('/library/retrospective', {
+    ...opts,
+    config: {
+      rateLimit: {
+        hook: 'preHandler',
+        max: 30,
+        timeWindow: '1 minute',
+        keyGenerator: (req: FastifyRequest) => req.session.userId ?? req.ip,
+      },
+    },
+    schema: {
+      ...opts.schema,
+      summary: 'Retrospecto por período',
+      querystring: retrospectiveQuerySchema,
+      response: { 200: retrospectiveResponseSchema },
+    },
+    handler: async (req) => retrospective.get(req.userId, req.query),
   });
 
   routes.get('/library/stats', {

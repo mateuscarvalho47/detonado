@@ -357,3 +357,5 @@ CSV: preview em `POST /api/library/import/preview`(100 registros), commit em `PO
 Origens de acesso requerem `20261014010000_add_game_sources`. CRUD `/api/library/:id/sources` e `/:sourceId`, incluindo kind, label e expiresAt ISO UTC/null; vínculos por usuário/entrada e dados na exportação.
 
 Diário requer `20261014013000_add_progress_journal`. CRUD `/api/library/:id/journal` e `/:journalId`, GET optional campaignId. Migração copia notas atuais/arquivadas sem apagar originais e marca legacy para distinguir data de preservação de data original desconhecida.
+
+Retrospecto: `GET /api/library/retrospective?year=YYYY&month=M` (mês opcional). Usa America/Sao_Paulo para sessões e preserva datas-calendário de conclusão. Compara período anterior e não atribui horas manuais sem data a um período. Sem migration.

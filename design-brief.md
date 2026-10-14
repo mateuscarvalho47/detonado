@@ -138,3 +138,7 @@ A ficha registra múltiplas origens: loja, mídia física, assinatura ou emprés
 ## Diário de progresso
 
 Registros datados por campanha, editáveis e excluíveis, com filtro de campanha/histórico e spoiler oculto até abrir. Anotações prévias são preservadas e marcadas como legadas, sem afirmar uma data original desconhecida. O campo Onde parei permanece independente; criar registro não o sobrescreve.
+
+## Retrospecto por período
+
+Estatísticas incluem seleção de ano e mês opcional, sessões, horas registradas em sessões, jogos jogados e campanhas concluídas, comparação absoluta ao período anterior e série tabular acessível. Fuso fixo America/Sao_Paulo explícito. Horas manuais sem data permanecem nos totais globais, mas não são atribuídas artificialmente a períodos.

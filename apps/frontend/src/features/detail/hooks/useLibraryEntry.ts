@@ -52,6 +52,7 @@ export function useUpdateLibraryEntry(id: string, igdbId: number) {
 			writeLibraryEntry(qc, igdbId, updated);
 			qc.invalidateQueries({ queryKey: ["library"] });
 			qc.invalidateQueries({ queryKey: ["stats"] });
+			qc.invalidateQueries({ queryKey: ["retrospective"] });
 		},
 	});
 }
@@ -74,6 +75,7 @@ export function useRemoveLibraryEntry(id: string) {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["library"] });
 			qc.invalidateQueries({ queryKey: ["stats"] });
+			qc.invalidateQueries({ queryKey: ["retrospective"] });
 		},
 	});
 }

@@ -16,6 +16,8 @@ import { ChecklistItemService } from '@/modules/checklist-item/checklist-item.se
 import { gameSourceRoutes } from '@/modules/game-source/game-source.routes.js';
 import { journalEntryRoutes } from '@/modules/journal-entry/journal-entry.routes.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
+import { RetrospectiveService } from '@/modules/library/library.retrospective.service.js';
+import { libraryRoutes } from '@/modules/library/library.routes.js';
 import { LibraryService } from '@/modules/library/library.service.js';
 import { libraryImportRoutes } from '@/modules/library-import/library-import.routes.js';
 import { OrganizationRepository } from '@/modules/organization/organization.repository.js';
@@ -1371,6 +1373,134 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
       await library().remove(entry.id, ownerId);
     }
     expect(await database.journalEntry.count({ where: { entryId: entry.id } })).toBe(0);
+  });
+
+  it('reports local session dates, calendar completions and previous periods with owner isolation', async () => {
+    const libraries = library();
+    const entry = await libraries.create(ownerId, { igdbId: 99601, status: 'BACKLOG' });
+    const foreign = await libraries.create(anotherUserId, { igdbId: 99601, status: 'PLAYING' });
+    const sessions = new PlaySessionService(new PlaySessionRepository(database));
+    const retrospective = new RetrospectiveService(new LibraryRepository(database));
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    app.decorate('igdb', {} as never);
+    app.decorate('redis', {} as never);
+    app.decorate('hltb', {} as never);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id;
+      req.session.sessionVersion = 0;
+      return {};
+    });
+    await app.register(libraryRoutes, { prefix: '/api' });
+    try {
+      await libraries.update(entry.id, ownerId, { hoursPlayed: 100 });
+      for (const [playedAt, durationMinutes] of [
+        ['2024-02-29T02:59:59Z', 60],
+        ['2024-03-01T02:59:59Z', 30],
+        ['2024-03-01T03:00:00Z', 5],
+      ] as const)
+        await sessions.create(entry.id, ownerId, {
+          clientId: randomUUID(),
+          playedAt,
+          durationMinutes,
+        });
+      await sessions.create(foreign.id, anotherUserId, {
+        clientId: randomUUID(),
+        playedAt: '2024-02-29T12:00:00Z',
+        durationMinutes: 99,
+      });
+      await libraries.update(entry.id, ownerId, { status: 'COMPLETED', completedAt: '2024-02-29' });
+      await new CampaignService(new CampaignRepository(database)).create(entry.id, ownerId, {});
+      await libraries.update(entry.id, ownerId, {
+        status: 'COMPLETED',
+        completedAt: '2024-03-01',
+        hoursPlayed: 200,
+      });
+      for (const [playedAt, durationMinutes] of [
+        ['2025-01-01T02:59:59Z', 15],
+        ['2025-01-01T03:00:00Z', 10],
+      ] as const)
+        await sessions.create(entry.id, ownerId, {
+          clientId: randomUUID(),
+          playedAt,
+          durationMinutes,
+        });
+      const february = await retrospective.get(ownerId, { year: 2024, month: 2 });
+      expect(february.current).toEqual({
+        sessions: 2,
+        minutes: 90,
+        playedGames: 1,
+        completedCampaigns: 1,
+      });
+      expect(february.series).toHaveLength(29);
+      expect(february.series.find((row) => row.date === '2024-02-28')).toMatchObject({
+        minutes: 60,
+      });
+      expect(february.series.find((row) => row.date === '2024-02-29')).toMatchObject({
+        minutes: 30,
+        completedCampaigns: 1,
+      });
+      const march = await retrospective.get(ownerId, { year: 2024, month: 3 });
+      expect(march.current).toEqual({
+        sessions: 1,
+        minutes: 5,
+        playedGames: 1,
+        completedCampaigns: 1,
+      });
+      const january = await retrospective.get(ownerId, { year: 2025, month: 1 });
+      expect(january.current.minutes).toBe(10);
+      expect(january.previous.stats.minutes).toBe(15);
+      expect(january.previous.period.year).toBe(2024);
+      const year = await retrospective.get(ownerId, { year: 2024 });
+      expect(year.series).toHaveLength(12);
+      expect(year.current.minutes).toBe(110);
+      expect(year.current.completedCampaigns).toBe(2);
+      expect(year.untrackedHoursExcluded).toBe(true);
+      const empty = await retrospective.get(ownerId, { year: 2030, month: 12 });
+      expect(empty.current).toEqual({
+        sessions: 0,
+        minutes: 0,
+        playedGames: 0,
+        completedCampaigns: 0,
+      });
+      expect(empty.series).toHaveLength(31);
+      const base = '/api/library/retrospective';
+      expect((await app.inject({ url: `${base}?year=2024&month=2` })).statusCode).toBe(401);
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const headers = { cookie: String(login.headers['set-cookie']).split(';')[0] };
+      for (const query of [
+        'year=1969',
+        'year=2101',
+        'year=2024&month=0',
+        'year=2024&month=13',
+        'year=invalid',
+        'month=2',
+      ])
+        expect((await app.inject({ url: `${base}?${query}`, headers })).statusCode).toBe(400);
+      const response = await app.inject({ url: `${base}?year=2024&month=2`, headers });
+      expect(response.statusCode).toBe(200);
+      expect(response.json().current.minutes).toBe(90);
+      expect(response.json().timeZone).toBe('America/Sao_Paulo');
+      const otherLogin = await app.inject({ url: `/test-session/${anotherUserId}` });
+      const otherHeaders = { cookie: String(otherLogin.headers['set-cookie']).split(';')[0] };
+      expect(
+        (await app.inject({ url: `${base}?year=2024&month=2`, headers: otherHeaders })).json()
+          .current,
+      ).toEqual({ sessions: 1, minutes: 99, playedGames: 1, completedCampaigns: 0 });
+    } finally {
+      await app.close();
+      await libraries.remove(entry.id, ownerId);
+      await libraries.remove(foreign.id, anotherUserId);
+    }
   });
 
   it('serializes concurrent inserts and moves without duplicate queue positions', async () => {

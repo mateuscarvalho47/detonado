@@ -6,6 +6,7 @@ import { useStats } from "../hooks/useStats";
 import { DonutChart } from "./DonutChart";
 import { HBars } from "./HBars";
 import { Histogram } from "./Histogram";
+import { PeriodRetrospective } from "./PeriodRetrospective";
 import styles from "./Stats.module.css";
 import { TimelineChart } from "./TimelineChart";
 
@@ -101,6 +102,8 @@ export function StatsScreen() {
 				/>
 			</div>
 			<div className={styles.stack}>
+				<PeriodRetrospective />
+				<h2>Biblioteca completa</h2>
 				<div className={styles.metrics}>
 					{metrics.map((metric) => (
 						<div key={metric.label} className={styles.metric}>

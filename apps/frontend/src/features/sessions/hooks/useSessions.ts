@@ -42,6 +42,7 @@ export function useSessions(game: LibraryEntry) {
 			list?.map((item) => (item.id === updated.id ? updated : item)),
 		);
 		void qc.invalidateQueries({ queryKey: ["stats"] });
+		void qc.invalidateQueries({ queryKey: ["retrospective"] });
 		void qc.invalidateQueries({ queryKey: ["campaigns", game.id] });
 	}
 	const mutation = useMutation({

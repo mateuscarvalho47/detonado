@@ -8,4 +8,5 @@ export * from "./library.js";
 export * from "./library-import.js";
 export * from "./organization.js";
 export * from "./play-session.js";
+export * from "./retrospective.js";
 export * from "./saved-filter.js";
