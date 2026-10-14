@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import { sendPasswordResetEmail } from '@/lib/email.js';
+import type { sendPasswordResetEmail } from '@/lib/email.js';
 import { EmailDeliveryError } from '@/lib/errors.js';
 import { hashPassword, verifyPassword } from '@/lib/hash.js';
 import type { UserRepository } from '@/modules/user/user.repository.js';
@@ -15,26 +15,28 @@ const TOKEN_TTL_MS = 15 * 60_000;
 
 export class PasswordResetService {
   constructor(
-    private users: UserRepository,
-    private tokens: PasswordResetRepository,
+    private readonly users: Pick<UserRepository, 'findByEmail'>,
+    private readonly tokens: Pick<
+      PasswordResetRepository,
+      'replaceActiveToken' | 'claimVerificationAttempt' | 'invalidateToken' | 'commitVerifiedReset'
+    >,
+    private readonly sendEmail: typeof sendPasswordResetEmail,
   ) {}
 
   async request(input: RequestPasswordResetInput) {
     const user = await this.users.findByEmail(input.email);
     if (!user) return;
 
-    await this.tokens.invalidateActiveForUser(user.id);
-
     const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
     const codeHash = await hashPassword(code);
     const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
-    await this.tokens.createToken(user.id, codeHash, expiresAt);
+    const token = await this.tokens.replaceActiveToken(user.id, codeHash, expiresAt);
 
     try {
-      await sendPasswordResetEmail(user.email, code);
+      await this.sendEmail(user.email, code);
     } catch {
-      await this.tokens.invalidateActiveForUser(user.id);
+      await this.tokens.invalidateToken(token.id);
       throw new EmailDeliveryError();
     }
   }
@@ -43,9 +45,9 @@ export class PasswordResetService {
     const user = await this.users.findByEmail(input.email);
     if (!user) throw new InvalidOrExpiredResetTokenError();
 
-    const active = await this.tokens.findActiveTokensByUserId(user.id);
-    for (const t of active) {
-      if (await verifyPassword(t.codeHash, input.code)) return;
+    const active = await this.tokens.claimVerificationAttempt(user.id);
+    for (const token of active) {
+      if (await verifyPassword(token.codeHash, input.code)) return;
     }
     throw new InvalidOrExpiredResetTokenError();
   }
@@ -54,12 +56,12 @@ export class PasswordResetService {
     const user = await this.users.findByEmail(input.email);
     if (!user) throw new InvalidOrExpiredResetTokenError();
 
-    const active = await this.tokens.findActiveTokensByUserId(user.id);
+    const active = await this.tokens.claimVerificationAttempt(user.id);
 
     let matchedId: string | null = null;
-    for (const t of active) {
-      if (await verifyPassword(t.codeHash, input.code)) {
-        matchedId = t.id;
+    for (const token of active) {
+      if (await verifyPassword(token.codeHash, input.code)) {
+        matchedId = token.id;
         break;
       }
     }

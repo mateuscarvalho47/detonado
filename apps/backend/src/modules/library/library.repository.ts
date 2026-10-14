@@ -1,12 +1,29 @@
-import { PROGRESS_STATUSES } from '@detonado/shared';
+import type { HltbStatus } from '@detonado/shared';
 import type { Prisma, PrismaClient } from '@/generated/prisma/client.js';
-import { compareQueuePosition, reorderIds } from './library.queue.js';
-import type { UpdateLibraryEntryInput } from './library.schema.js';
+import { compareQueuePosition } from './library.queue.js';
+import type { LibraryEntryChanges } from './library.schema.js';
+import { readLibraryStats } from './library.stats.js';
 
-const progressStatuses = { in: [...PROGRESS_STATUSES] };
+interface HltbSnapshotChanges {
+  hltbMain?: number | null;
+  hltbMainExtra?: number | null;
+  hltbCompletionist?: number | null;
+  hltbStatus: HltbStatus;
+}
 
 export class LibraryRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(
+    private readonly database: PrismaClient,
+    private readonly db: Prisma.TransactionClient = database,
+  ) {}
+
+  async withUserLock<T>(userId: string, operation: (repository: LibraryRepository) => Promise<T>) {
+    return this.database.$transaction(async (transaction) => {
+      // Serialize queue membership, positions and status changes for this user.
+      await transaction.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+      return operation(new LibraryRepository(this.database, transaction));
+    });
+  }
 
   findAllByUser(userId: string) {
     return this.db.libraryEntry.findMany({
@@ -28,64 +45,65 @@ export class LibraryRepository {
   }
 
   async nextQueuePosition(userId: string) {
-    const agg = await this.db.libraryEntry.aggregate({
+    const positions = await this.db.libraryEntry.aggregate({
       where: { userId, status: 'BACKLOG' },
       _max: { queuePosition: true },
     });
-    return (agg._max.queuePosition ?? 0) + 1;
+    return (positions._max.queuePosition ?? 0) + 1;
   }
 
   async moveInQueue(userId: string, id: string, direction: 'up' | 'down') {
-    return this.db.$transaction(async (tx) => {
-      const rows = await tx.libraryEntry.findMany({
-        where: { userId, status: 'BACKLOG' },
-        select: { id: true, queuePosition: true, createdAt: true },
-      });
-      const ordered = rows.slice().sort(compareQueuePosition);
-      const next = reorderIds(
-        ordered.map((row) => row.id),
-        id,
-        direction,
-      );
-      if (!next) return tx.libraryEntry.findFirst({ where: { id, userId } });
-      for (let index = 0; index < next.length; index++) {
-        const rowId = next[index];
-        if (!rowId) continue;
-        await tx.libraryEntry.update({
-          where: { id: rowId },
-          data: { queuePosition: index + 1 },
+    const rows = await this.db.libraryEntry.findMany({
+      where: { userId, status: 'BACKLOG' },
+      select: { id: true, queuePosition: true, createdAt: true },
+    });
+    const ordered = rows.sort(compareQueuePosition);
+    const index = ordered.findIndex((entry) => entry.id === id);
+    const neighborIndex = direction === 'up' ? index - 1 : index + 1;
+    if (index < 0) return null;
+    const neighbor = ordered[neighborIndex];
+    if (!neighbor) return this.findByIdAndUser(id, userId);
+
+    const positions = ordered.map((entry) => entry.queuePosition);
+    const needsNormalization =
+      positions.includes(null) || new Set(positions).size !== positions.length;
+    if (needsNormalization) {
+      // Legacy rows can have missing or duplicate positions. Repair only on demand.
+      for (const [position, entry] of ordered.entries()) {
+        entry.queuePosition = position + 1;
+        await this.db.libraryEntry.update({
+          where: { id: entry.id, userId },
+          data: { queuePosition: entry.queuePosition },
         });
       }
-      return tx.libraryEntry.findFirst({ where: { id, userId } });
+    }
+
+    const current = ordered[index];
+    await this.db.libraryEntry.update({
+      where: { id, userId },
+      data: { queuePosition: neighbor.queuePosition },
     });
+    await this.db.libraryEntry.update({
+      where: { id: neighbor.id, userId },
+      data: { queuePosition: current.queuePosition },
+    });
+    return this.findByIdAndUser(id, userId);
   }
 
-  async update(
-    id: string,
-    userId: string,
-    data: Omit<UpdateLibraryEntryInput, 'completedAt'> & {
-      completedAt?: Date | null;
-      queuePosition?: number | null;
-    },
-  ) {
-    const result = await this.db.libraryEntry.updateMany({ where: { id, userId }, data });
-    if (result.count === 0) return null;
-    return this.db.libraryEntry.findFirst({ where: { id, userId } });
+  async update(id: string, userId: string, changes: LibraryEntryChanges) {
+    const [entry] = await this.db.libraryEntry.updateManyAndReturn({
+      where: { id, userId },
+      data: changes,
+    });
+    return entry ?? null;
   }
 
-  async updateHltb(
-    id: string,
-    userId: string,
-    data: {
-      hltbMain: number | null;
-      hltbMainExtra: number | null;
-      hltbCompletionist: number | null;
-      hltbStatus: 'FOUND' | 'MISS' | 'FAILED';
-    },
-  ) {
-    const result = await this.db.libraryEntry.updateMany({ where: { id, userId }, data });
-    if (result.count === 0) return null;
-    return this.db.libraryEntry.findFirst({ where: { id, userId } });
+  async updateHltb(id: string, userId: string, changes: HltbSnapshotChanges) {
+    const [entry] = await this.db.libraryEntry.updateManyAndReturn({
+      where: { id, userId },
+      data: changes,
+    });
+    return entry ?? null;
   }
 
   async delete(id: string, userId: string) {
@@ -93,68 +111,7 @@ export class LibraryRepository {
     return result.count;
   }
 
-  async getStats(userId: string) {
-    const [
-      totalGames,
-      totalHoursAgg,
-      statusGroups,
-      ratingGroups,
-      topGenres,
-      topPlatforms,
-      completedTimeline,
-    ] = await Promise.all([
-      this.db.libraryEntry.count({ where: { userId } }),
-      this.db.libraryEntry.aggregate({
-        where: { userId, status: progressStatuses },
-        _sum: { hoursPlayed: true },
-      }),
-      this.db.libraryEntry.groupBy({
-        by: ['status'],
-        where: { userId },
-        _count: { status: true },
-      }),
-      this.db.libraryEntry.groupBy({
-        by: ['rating'],
-        where: { userId, rating: { not: null }, status: progressStatuses },
-        _count: { rating: true },
-        orderBy: { rating: 'asc' },
-      }),
-      this.db.$queryRaw<Array<{ genre: string; count: bigint }>>`
-          SELECT unnest(genres) AS genre, COUNT(*) AS count
-          FROM "LibraryEntry"
-          WHERE "userId" = ${userId}
-          GROUP BY genre
-          ORDER BY count DESC
-          LIMIT 5
-        `,
-      this.db.$queryRaw<Array<{ platform: string; count: bigint }>>`
-          SELECT COALESCE("userPlatform", platforms[1]) AS platform, COUNT(*) AS count
-          FROM "LibraryEntry"
-          WHERE "userId" = ${userId}
-            AND COALESCE("userPlatform", platforms[1]) IS NOT NULL
-          GROUP BY platform
-          ORDER BY count DESC
-          LIMIT 5
-        `,
-      this.db.$queryRaw<Array<{ month: string; count: bigint }>>`
-          SELECT TO_CHAR(DATE_TRUNC('month', "completedAt"), 'YYYY-MM') AS month, COUNT(*) AS count
-          FROM "LibraryEntry"
-          WHERE "userId" = ${userId}
-            AND "completedAt" IS NOT NULL
-            AND "completedAt" >= NOW() - INTERVAL '12 months'
-          GROUP BY month
-          ORDER BY month ASC
-        `,
-    ]);
-
-    return {
-      totalGames,
-      totalHoursAgg,
-      statusGroups,
-      ratingGroups,
-      topGenres,
-      topPlatforms,
-      completedTimeline,
-    };
+  getStats(userId: string) {
+    return readLibraryStats(this.db, userId);
   }
 }

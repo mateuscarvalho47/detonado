@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { sendVerificationEmail } from '@/lib/email.js';
 import { requireAuth } from '@/lib/requireAuth.js';
 import { UserRepository } from '@/modules/user/user.repository.js';
 import { UserService } from '@/modules/user/user.service.js';
@@ -26,7 +27,11 @@ const messageResponse = z.object({ message: z.string() });
 export async function authRoutes(app: FastifyInstance) {
   const userRepo = new UserRepository(app.prisma);
   const userService = new UserService(userRepo);
-  const authService = new AuthService(userRepo);
+  const authService = new AuthService(
+    userRepo,
+    (to, token) => sendVerificationEmail(to, token, app.log),
+    app.log,
+  );
   const controller = new AuthController(authService, userService);
 
   app.post('/auth/register', {

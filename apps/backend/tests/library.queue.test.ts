@@ -1,16 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compareQueuePosition, reorderIds } from '@/modules/library/library.queue.js';
+import { compareQueuePosition } from '@/modules/library/library.queue.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
-
-describe('reorderIds', () => {
-  it('swaps with the neighbor and refuses the ends', () => {
-    expect(reorderIds(['a', 'b', 'c'], 'b', 'up')).toEqual(['b', 'a', 'c']);
-    expect(reorderIds(['a', 'b', 'c'], 'b', 'down')).toEqual(['a', 'c', 'b']);
-    expect(reorderIds(['a', 'b', 'c'], 'a', 'up')).toBeNull();
-    expect(reorderIds(['a', 'b', 'c'], 'c', 'down')).toBeNull();
-    expect(reorderIds(['a', 'b'], 'missing', 'up')).toBeNull();
-  });
-});
 
 describe('compareQueuePosition', () => {
   it('puts a missing position after a numbered one, then breaks ties by time', () => {

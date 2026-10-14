@@ -17,12 +17,23 @@ describe('parseHltbCache', () => {
     expect(parseHltbCache(JSON.stringify({ status: 'FAILED' }))).toBeNull();
   });
 
-  it('reads a legacy times object as found', () => {
-    expect(parseHltbCache(JSON.stringify(TIMES))).toEqual({ status: 'FOUND', times: TIMES });
+  it('ignores a legacy times object after the cache version change', () => {
+    expect(parseHltbCache(JSON.stringify(TIMES))).toBeNull();
   });
 
   it('ignores a legacy null so a failure is not kept as a miss', () => {
     expect(parseHltbCache('null')).toBeNull();
+  });
+});
+
+describe('invalid cache payloads', () => {
+  it.each([
+    '{broken',
+    '{"status":"FOUND","times":{}}',
+    '{"status":"FOUND","times":{"mainHours":"10"}}',
+    '{"status":"FOUND","times":{"mainHours":-1,"mainExtraHours":null,"completionistHours":null}}',
+  ])('ignores %s', (raw) => {
+    expect(parseHltbCache(raw)).toBeNull();
   });
 });
 

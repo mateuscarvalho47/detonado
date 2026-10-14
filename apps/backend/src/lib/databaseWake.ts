@@ -42,8 +42,6 @@ const WAKE_MESSAGES = [
   'connection refused',
 ];
 
-const RETRY_DELAYS_MS = [250, 750, 2000];
-
 function readError(err: unknown): { codes: string[]; kinds: string[]; text: string } {
   const codes: string[] = [];
   const kinds: string[] = [];
@@ -74,24 +72,4 @@ export function isDatabaseAsleep(err: unknown): boolean {
 export function mapDatabaseUnavailable(err: unknown): DatabaseUnavailableError | null {
   if (!isDatabaseAsleep(err)) return null;
   return new DatabaseUnavailableError();
-}
-
-export async function withDatabaseRetry<T>(
-  run: () => Promise<T>,
-  options?: { delaysMs?: number[]; onRetry?: (err: unknown) => void },
-): Promise<T> {
-  const delaysMs = options?.delaysMs ?? RETRY_DELAYS_MS;
-  let attempt = 0;
-
-  for (;;) {
-    try {
-      return await run();
-    } catch (err) {
-      const wait = delaysMs[attempt];
-      if (wait === undefined || !isDatabaseAsleep(err)) throw err;
-      attempt += 1;
-      options?.onRetry?.(err);
-      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-    }
-  }
 }

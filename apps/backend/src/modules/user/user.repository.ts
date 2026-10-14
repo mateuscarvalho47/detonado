@@ -1,5 +1,14 @@
 import type { PrismaClient } from '@/generated/prisma/client.js';
 
+export interface AccountChanges {
+  email?: string;
+  passwordHash?: string;
+  emailVerificationToken?: string | null;
+  emailVerificationExpiresAt?: Date | null;
+  emailVerified?: boolean;
+  sessionVersion?: { increment: number };
+}
+
 export class UserRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -51,19 +60,10 @@ export class UserRepository {
     });
   }
 
-  updateAccount(
-    userId: string,
-    data: {
-      email?: string;
-      passwordHash?: string;
-      emailVerificationToken?: string | null;
-      emailVerificationExpiresAt?: Date | null;
-      emailVerified?: boolean;
-    },
-  ) {
+  updateAccount(userId: string, changes: AccountChanges) {
     return this.prisma.user.update({
       where: { id: userId },
-      data: data.passwordHash ? { ...data, sessionVersion: { increment: 1 } } : data,
+      data: changes,
       select: { id: true, email: true, emailVerified: true, sessionVersion: true },
     });
   }
@@ -124,34 +124,58 @@ export class UserRepository {
   findByEmailForResend(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, emailVerified: true },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        emailVerificationToken: true,
+        emailVerificationExpiresAt: true,
+      },
     });
   }
 
-  updateVerificationToken(userId: string, token: string, expiresAt: Date) {
+  updateVerificationToken(userId: string, token: string, expiresAt: Date, email: string) {
     return this.prisma.user.update({
-      where: { id: userId },
+      where: { id: userId, email, emailVerified: false },
       data: { emailVerificationToken: token, emailVerificationExpiresAt: expiresAt },
       select: { id: true },
     });
   }
 
-  findByVerificationToken(token: string) {
-    return this.prisma.user.findUnique({
-      where: { emailVerificationToken: token },
-      select: { id: true, email: true, emailVerificationExpiresAt: true },
+  restoreVerificationToken(
+    userId: string,
+    failedTokenHash: string,
+    previous: { email: string; tokenHash: string | null; expiresAt: Date | null },
+  ) {
+    // A failed delivery must not undo a newer resend or email change.
+    return this.prisma.user.updateMany({
+      where: {
+        id: userId,
+        email: previous.email,
+        emailVerified: false,
+        emailVerificationToken: failedTokenHash,
+      },
+      data: {
+        emailVerificationToken: previous.tokenHash,
+        emailVerificationExpiresAt: previous.expiresAt,
+      },
     });
   }
 
-  verifyEmail(userId: string) {
-    return this.prisma.user.update({
-      where: { id: userId },
+  async consumeVerificationToken(tokenHash: string): Promise<boolean> {
+    // Check validity and consume the same token in one write.
+    const result = await this.prisma.user.updateMany({
+      where: {
+        emailVerificationToken: tokenHash,
+        emailVerificationExpiresAt: { gt: new Date() },
+        emailVerified: false,
+      },
       data: {
         emailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpiresAt: null,
       },
-      select: { id: true, email: true },
     });
+    return result.count === 1;
   }
 }

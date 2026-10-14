@@ -9,11 +9,21 @@ import {
 import type { LibraryRepository } from './library.repository.js';
 import type {
   CreateLibraryEntryInput,
+  LibraryEntryChanges,
   LibraryStats,
   UpdateLibraryEntryInput,
 } from './library.schema.js';
 
-const ALL_STATUSES = ['WISHLIST', 'BACKLOG', 'PLAYING', 'PAUSED', 'COMPLETED', 'DROPPED'] as const;
+type LibraryStore = Pick<
+  LibraryRepository,
+  | 'findAllByUser'
+  | 'findByIdAndUser'
+  | 'findByUserAndIgdbId'
+  | 'withUserLock'
+  | 'updateHltb'
+  | 'getStats'
+>;
+type LibraryGames = Pick<GameService, 'getById' | 'lookupByName'>;
 
 function resolveCompletedAt(
   nextStatus: string,
@@ -52,80 +62,92 @@ function hltbSnapshot(game: IgdbGame) {
 
 export class LibraryService {
   constructor(
-    private readonly repo: LibraryRepository,
-    private readonly games: GameService,
+    private readonly repository: LibraryStore,
+    private readonly games: LibraryGames,
   ) {}
 
   async list(userId: string) {
-    return this.repo.findAllByUser(userId);
+    return this.repository.findAllByUser(userId);
   }
 
   async getById(id: string, userId: string) {
-    const entry = await this.repo.findByIdAndUser(id, userId);
+    const entry = await this.repository.findByIdAndUser(id, userId);
     if (!entry) throw new LibraryEntryNotFoundError();
     return entry;
   }
 
   async create(userId: string, input: CreateLibraryEntryInput) {
-    const duplicate = await this.repo.findByUserAndIgdbId(userId, input.igdbId);
+    const duplicate = await this.repository.findByUserAndIgdbId(userId, input.igdbId);
     if (duplicate) throw new LibraryEntryAlreadyExistsError();
 
     const game = await this.games.getById(input.igdbId);
     if (!game) throw new LibraryEntryNotFoundError();
 
-    const completedAt = input.status === 'COMPLETED' ? calendarToday() : null;
-    const hltb = hltbSnapshot(game);
-    const queuePosition =
-      input.status === 'BACKLOG' ? await this.repo.nextQueuePosition(userId) : null;
+    return this.repository.withUserLock(userId, async (repository) => {
+      // Provider calls run outside the lock; recheck after any concurrent insertion.
+      const duplicate = await repository.findByUserAndIgdbId(userId, input.igdbId);
+      if (duplicate) throw new LibraryEntryAlreadyExistsError();
+      const completedAt = input.status === 'COMPLETED' ? calendarToday() : null;
+      const hltb = hltbSnapshot(game);
+      const queuePosition =
+        input.status === 'BACKLOG' ? await repository.nextQueuePosition(userId) : null;
 
-    return this.repo.create({
-      user: { connect: { id: userId } },
-      igdbId: input.igdbId,
-      name: game.name,
-      coverUrl: game.coverUrl ?? null,
-      genres: game.genres,
-      platforms: game.platforms,
-      status: input.status,
-      userPlatform: input.userPlatform ?? null,
-      completedAt,
-      queuePosition,
-      ...hltb,
+      return repository.create({
+        user: { connect: { id: userId } },
+        igdbId: input.igdbId,
+        name: game.name,
+        coverUrl: game.coverUrl ?? null,
+        genres: game.genres,
+        platforms: game.platforms,
+        status: input.status,
+        userPlatform: blankToNull(input.userPlatform ?? null),
+        completedAt,
+        queuePosition,
+        ...hltb,
+      });
     });
   }
 
   async update(id: string, userId: string, input: UpdateLibraryEntryInput) {
-    const entry = await this.repo.findByIdAndUser(id, userId);
-    if (!entry) throw new LibraryEntryNotFoundError();
+    return this.repository.withUserLock(userId, async (repository) => {
+      const entry = await repository.findByIdAndUser(id, userId);
+      if (!entry) throw new LibraryEntryNotFoundError();
 
-    const nextStatus = input.status ?? entry.status;
-    const { completedAt: inputCompletedAt, userPlatform, ...restInput } = input;
-    const completedAt = resolveCompletedAt(nextStatus, inputCompletedAt, entry.completedAt);
-    let queuePosition: number | null | undefined;
-    if (input.status !== undefined && input.status !== entry.status) {
-      if (input.status === 'BACKLOG') {
-        queuePosition = await this.repo.nextQueuePosition(userId);
-      } else if (entry.status === 'BACKLOG') {
-        queuePosition = null;
+      const { completedAt: requestedDate, userPlatform, ...editableFields } = input;
+      const changes: LibraryEntryChanges = { ...editableFields };
+      const nextStatus = input.status ?? entry.status;
+      const completedAt = resolveCompletedAt(nextStatus, requestedDate, entry.completedAt);
+
+      if (userPlatform !== undefined) changes.userPlatform = blankToNull(userPlatform);
+      if (completedAt !== undefined) changes.completedAt = completedAt;
+
+      const statusChanged = input.status !== undefined && input.status !== entry.status;
+      if (statusChanged && nextStatus === 'BACKLOG') {
+        changes.queuePosition = await repository.nextQueuePosition(userId);
+      } else if (statusChanged && entry.status === 'BACKLOG') {
+        changes.queuePosition = null;
       }
-    }
 
-    const updated = await this.repo.update(id, userId, {
-      ...restInput,
-      ...(userPlatform !== undefined ? { userPlatform: blankToNull(userPlatform) } : {}),
-      ...(completedAt !== undefined ? { completedAt } : {}),
-      ...(queuePosition !== undefined ? { queuePosition } : {}),
+      const updated = await repository.update(id, userId, changes);
+      if (!updated) throw new LibraryEntryNotFoundError();
+      return updated;
     });
-    if (!updated) throw new LibraryEntryNotFoundError();
-    return updated;
   }
 
   async refreshHltb(id: string, userId: string) {
-    const entry = await this.repo.findByIdAndUser(id, userId);
+    const entry = await this.repository.findByIdAndUser(id, userId);
     if (!entry) throw new LibraryEntryNotFoundError();
 
     const lookup = await this.games.lookupByName(entry.name);
+    if (lookup.status === 'FAILED') {
+      // Keep the last known times; status describes the latest attempt.
+      const updated = await this.repository.updateHltb(id, userId, { hltbStatus: 'FAILED' });
+      if (!updated) throw new LibraryEntryNotFoundError();
+      return updated;
+    }
+
     const times = lookup.status === 'FOUND' ? lookup.times : null;
-    const updated = await this.repo.updateHltb(id, userId, {
+    const updated = await this.repository.updateHltb(id, userId, {
       hltbMain: times?.mainHours ?? null,
       hltbMainExtra: times?.mainExtraHours ?? null,
       hltbCompletionist: times?.completionistHours ?? null,
@@ -136,51 +158,24 @@ export class LibraryService {
   }
 
   async moveInQueue(id: string, userId: string, direction: 'up' | 'down') {
-    const entry = await this.repo.findByIdAndUser(id, userId);
-    if (!entry) throw new LibraryEntryNotFoundError();
-    if (entry.status !== 'BACKLOG') throw new LibraryEntryNotInQueueError();
-    const updated = await this.repo.moveInQueue(userId, id, direction);
-    if (!updated) throw new LibraryEntryNotFoundError();
-    return updated;
+    return this.repository.withUserLock(userId, async (repository) => {
+      const entry = await repository.findByIdAndUser(id, userId);
+      if (!entry) throw new LibraryEntryNotFoundError();
+      if (entry.status !== 'BACKLOG') throw new LibraryEntryNotInQueueError();
+      const updated = await repository.moveInQueue(userId, id, direction);
+      if (!updated) throw new LibraryEntryNotFoundError();
+      return updated;
+    });
   }
 
   async remove(id: string, userId: string) {
-    const entry = await this.repo.findByIdAndUser(id, userId);
-    if (!entry) throw new LibraryEntryNotFoundError();
-    const removed = await this.repo.delete(id, userId);
-    if (removed === 0) throw new LibraryEntryNotFoundError();
+    return this.repository.withUserLock(userId, async (repository) => {
+      const removed = await repository.delete(id, userId);
+      if (removed === 0) throw new LibraryEntryNotFoundError();
+    });
   }
 
-  async getStats(userId: string): Promise<LibraryStats> {
-    const {
-      totalGames,
-      totalHoursAgg,
-      statusGroups,
-      ratingGroups,
-      topGenres,
-      topPlatforms,
-      completedTimeline,
-    } = await this.repo.getStats(userId);
-
-    const countByStatus = Object.fromEntries(ALL_STATUSES.map((s) => [s, 0])) as Record<
-      (typeof ALL_STATUSES)[number],
-      number
-    >;
-    for (const g of statusGroups) {
-      countByStatus[g.status] = g._count.status;
-    }
-
-    return {
-      totalGames,
-      totalHours: totalHoursAgg._sum.hoursPlayed ? Number(totalHoursAgg._sum.hoursPlayed) : 0,
-      countByStatus,
-      topGenres: topGenres.map((r) => ({ genre: r.genre, count: Number(r.count) })),
-      topPlatforms: topPlatforms.map((r) => ({ platform: r.platform, count: Number(r.count) })),
-      ratingDistribution: ratingGroups.map((r) => ({
-        rating: r.rating as number,
-        count: r._count.rating,
-      })),
-      completedTimeline: completedTimeline.map((r) => ({ month: r.month, count: Number(r.count) })),
-    };
+  getStats(userId: string): Promise<LibraryStats> {
+    return this.repository.getStats(userId);
   }
 }

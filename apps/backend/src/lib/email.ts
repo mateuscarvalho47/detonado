@@ -1,9 +1,14 @@
+import type { FastifyBaseLogger } from 'fastify';
 import { Resend } from 'resend';
 import { env } from '@/config/env.js';
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-export async function sendVerificationEmail(to: string, token: string) {
+export async function sendVerificationEmail(
+  to: string,
+  token: string,
+  logger?: Pick<FastifyBaseLogger, 'error'>,
+) {
   const url = `${env.APP_URL}/verify-email?token=${token}`;
 
   const { error } = await resend.emails.send({
@@ -18,14 +23,16 @@ export async function sendVerificationEmail(to: string, token: string) {
   });
 
   if (error) {
-    console.error('[email] resend error for %s: %o', to, error);
+    logger?.error({ providerCode: error.name }, 'verification email delivery failed');
     throw new Error(error.message);
   }
-
-  console.info('[email] verification sent to %s', to);
 }
 
-export async function sendPasswordResetEmail(to: string, code: string) {
+export async function sendPasswordResetEmail(
+  to: string,
+  code: string,
+  logger?: Pick<FastifyBaseLogger, 'error'>,
+) {
   const { error } = await resend.emails.send({
     from: env.EMAIL_FROM,
     to,
@@ -39,9 +46,7 @@ export async function sendPasswordResetEmail(to: string, code: string) {
   });
 
   if (error) {
-    console.error('[email] resend error (password-reset) for %s: %o', to, error);
+    logger?.error({ providerCode: error.name }, 'password reset email delivery failed');
     throw new Error(error.message);
   }
-
-  console.info('[email] password-reset code sent to %s', to);
 }

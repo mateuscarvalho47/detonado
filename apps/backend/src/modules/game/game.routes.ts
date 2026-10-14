@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/requireAuth.js';
-import { GameController } from './game.controller.js';
 import { gameDetailSchema, gameSearchResultSchema, searchQuerySchema } from './game.schema.js';
 import { GameService } from './game.service.js';
 
@@ -9,9 +9,9 @@ const igdbIdParam = z.object({ igdbId: z.coerce.number().int().positive() });
 
 export async function gameRoutes(app: FastifyInstance) {
   const service = new GameService(app.igdb, app.redis, app.hltb);
-  const controller = new GameController(service);
+  const routes = app.withTypeProvider<ZodTypeProvider>();
 
-  app.get('/games/search', {
+  routes.get('/games/search', {
     schema: {
       tags: ['games'],
       summary: 'Buscar jogos por nome',
@@ -20,10 +20,18 @@ export async function gameRoutes(app: FastifyInstance) {
       response: { 200: z.array(gameSearchResultSchema) },
     },
     preHandler: requireAuth,
-    handler: controller.search,
+    config: {
+      rateLimit: {
+        hook: 'preHandler',
+        max: 60,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.session.userId ?? req.ip,
+      },
+    },
+    handler: async (req) => service.search(req.query.q),
   });
 
-  app.get('/games/:igdbId', {
+  routes.get('/games/:igdbId', {
     schema: {
       tags: ['games'],
       summary: 'Buscar jogo por ID IGDB',
@@ -32,6 +40,14 @@ export async function gameRoutes(app: FastifyInstance) {
       response: { 200: gameDetailSchema },
     },
     preHandler: requireAuth,
-    handler: controller.getById,
+    config: {
+      rateLimit: {
+        hook: 'preHandler',
+        max: 60,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.session.userId ?? req.ip,
+      },
+    },
+    handler: async (req) => service.getById(req.params.igdbId),
   });
 }

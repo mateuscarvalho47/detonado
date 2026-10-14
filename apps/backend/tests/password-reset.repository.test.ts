@@ -5,6 +5,7 @@ import { PasswordResetRepository } from '@/modules/password-reset/password-reset
 function makeDb(markCount: number) {
   const calls: string[] = [];
   const tx = {
+    $queryRaw: vi.fn().mockResolvedValue([]),
     passwordResetToken: {
       updateMany: vi.fn(async (args: { where: { id?: string } }) => {
         calls.push(args.where.id ? 'mark' : 'invalidate');

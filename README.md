@@ -2,6 +2,8 @@
 
 Biblioteca pessoal de jogos. Monorepo com backend Fastify e frontend React: busca no IGDB, seis status, horas e nota manuais, tempos do HowLongToBeat gravados ao adicionar o jogo.
 
+O plano de melhorias, os critérios de legibilidade e o registro de execução do backend estão em [docs/backend-improvements.md](docs/backend-improvements.md).
+
 ## Stack
 
 ### Monorepo
@@ -19,7 +21,6 @@ Biblioteca pessoal de jogos. Monorepo com backend Fastify e frontend React: busc
 - **@fastify/session** + **connect-redis** — sessões server-side
 - **argon2** — hash de senha
 - **zod 4** — validação de schemas
-- **croner** — agendamento de jobs
 - **Swagger / OpenAPI 3.1** — documentação automática
 - **Biome** — lint e formatação
 - **Vitest** — testes unitários
@@ -48,8 +49,8 @@ detonado/
 │   │   ├── bruno/           # coleção Bruno API
 │   │   └── src/
 │   │       ├── config/      # env loader (zod)
-│   │       ├── lib/         # helpers (hash, errors, validate, igdb, hltb, email, requireAuth)
-│   │       ├── plugins/     # prisma, redis, session, csrf, swagger, cron, cors, rateLimit, igdb, hltb, errorHandler
+│   │       ├── lib/         # helpers (hash, errors, cache, igdb, hltb, email, requireAuth)
+│   │       ├── plugins/     # prisma, redis, session, csrf, swagger, cors, rateLimit, igdb, hltb, errorHandler
 │   │       ├── modules/
 │   │       │   ├── auth/    # conta, sessão, verificação de e-mail, consentimento, exportação
 │   │       │   ├── password-reset/ # código de 6 dígitos, 15 min
@@ -72,9 +73,11 @@ detonado/
 
 | Camada     | Responsabilidade                | Pode tocar                  |
 | ---------- | ------------------------------- | --------------------------- |
-| Controller | parse HTTP, validação, response | service                     |
+| Routes/handler | validação HTTP, parâmetros e resposta | service |
 | Service    | regras de negócio, orquestração | repository, outros services |
 | Repository | queries no banco                | Prisma                      |
+
+Controllers separados ficam nos fluxos de conta e recuperação; games e biblioteca mantêm handlers simples junto das rotas. Schemas do pacote shared ficam separados em `auth.ts`, `library.ts` e `game.ts`.
 
 ### Modelo de dados
 
@@ -94,6 +97,12 @@ LibraryEntry
   hltbMain?, hltbMainExtra?, hltbCompletionist?, hltbStatus? (FOUND | MISS | FAILED)
   unique (userId, igdbId)
 ```
+
+HLTB usa `howlongtobeat-ts@1.3.1`, com cache separado do IGDB: resultado encontrado
+por 24 horas e ausência confirmada por uma hora. Falhas não são cacheadas e não
+apagam tempos já salvos. `hltbStatus=FAILED` pode coexistir com os últimos tempos
+válidos. O refresh aceita até cinco chamadas por usuário por minuto. Entradas
+antigas sem tempos podem ser recuperadas pelo botão de atualização no detalhe.
 
 O detalhe no frontend não chama `GET /api/library/:id`. Ele baixa `GET /api/library` e acha a entrada pelo `igdbId`. O `:id` da API é o cuid interno.
 
@@ -285,7 +294,18 @@ Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
 
 ## Testes
 
-Vitest com mocks de repositório (`vi.fn()`), sem dependências externas.
+Vitest com testes de regras, clientes externos simulados e fluxos HTTP isolados.
+A execução padrão não precisa de serviços externos. Testes PostgreSQL são opt-in
+com `BACKEND_TEST_DATABASE_URL`, apontando para um banco de teste com migrations
+aplicadas. Não usam automaticamente o `DATABASE_URL` da aplicação.
+
+Recuperação de senha mantém um orçamento de dez tentativas por código, compartilhado
+entre check e verify. A migration `20261013180000_add_reset_attempts` adiciona o contador.
+Aplique as migrations antes de iniciar esta versão do backend:
+
+```bash
+pnpm --filter backend exec prisma migrate deploy
+```
 
 ```bash
 pnpm test          # tudo
@@ -293,23 +313,10 @@ pnpm test:watch    # watch
 pnpm test:cov      # coverage
 ```
 
-```
-tests/
-├── auth.service.test.ts
-├── csrf.test.ts
-├── game.service.test.ts
-├── igdb.client.test.ts
-├── igdb.genre-translations.test.ts
-├── library.service.test.ts
-├── library.stats.service.test.ts
-├── password-reset.service.test.ts
-├── rateLimitStore.test.ts
-├── requireAuth.test.ts
-├── trustProxy.test.ts
-└── user.service.test.ts
-```
-
-Não há teste HTTP. A suíte não sobe Postgres nem Redis.
+Os testes cobrem auth/CSRF/sessão, biblioteca, fila, estatísticas, validação,
+IGDB, HLTB, limites de taxa e erros. A suíte PostgreSQL cobre concorrência, isolamento
+entre usuários, consumo de tokens e SQL de estatísticas. Consulte
+[docs/backend-improvements.md](docs/backend-improvements.md) para execução isolada.
 
 ## Adicionando um módulo (backend)
 
@@ -317,7 +324,9 @@ Não há teste HTTP. A suíte não sobe Postgres nem Redis.
 pnpm gen:module <name>   # ex: pnpm gen:module product
 ```
 
-Gera `src/modules/<name>/` com todos os arquivos. Depois:
+Gera quatro arquivos em `src/modules/<name>/`: routes, service, repository e schema.
+O template usa autenticação e filtro de proprietário por padrão. O modelo precisa
+de `userId`, `id`, `createdAt` e `updatedAt`; complete os schemas de entrada e resposta. Depois:
 
 1. Adicionar modelo em `prisma/schema.prisma`
 2. `pnpm prisma:migrate && pnpm prisma:generate`

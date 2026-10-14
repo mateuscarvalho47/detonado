@@ -37,7 +37,8 @@ const ENTRY = {
 };
 
 function makeRepo(overrides: Record<string, unknown> = {}) {
-  return {
+  const repository = {
+    withUserLock: vi.fn(),
     findAllByUser: vi.fn(),
     findByIdAndUser: vi.fn(),
     findByUserAndIgdbId: vi.fn(),
@@ -47,8 +48,11 @@ function makeRepo(overrides: Record<string, unknown> = {}) {
     delete: vi.fn(),
     nextQueuePosition: vi.fn().mockResolvedValue(1),
     moveInQueue: vi.fn(),
+    getStats: vi.fn(),
     ...overrides,
   };
+  repository.withUserLock.mockImplementation(async (_userId, operation) => operation(repository));
+  return repository;
 }
 
 function makeGames(overrides: Record<string, unknown> = {}) {
@@ -66,7 +70,7 @@ describe('LibraryService.create', () => {
       findByUserAndIgdbId: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue(ENTRY),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     const result = await service.create('user-1', { igdbId: 1, status: 'BACKLOG' });
 
@@ -88,7 +92,7 @@ describe('LibraryService.create', () => {
       findByUserAndIgdbId: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED' }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.create('user-1', { igdbId: 1, status: 'COMPLETED' });
 
@@ -103,7 +107,7 @@ describe('LibraryService.create', () => {
 
   it('throws LibraryEntryAlreadyExistsError on duplicate', async () => {
     const repo = makeRepo({ findByUserAndIgdbId: vi.fn().mockResolvedValue(ENTRY) });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await expect(service.create('user-1', { igdbId: 1, status: 'BACKLOG' })).rejects.toThrow(
       LibraryEntryAlreadyExistsError,
@@ -118,7 +122,7 @@ describe('LibraryService.create', () => {
     const games = makeGames({
       getById: vi.fn().mockResolvedValue({ ...GAME, hltb: null, hltbStatus: 'MISS' }),
     });
-    const service = new LibraryService(repo as never, games as never);
+    const service = new LibraryService(repo, games);
 
     await service.create('user-1', { igdbId: 1, status: 'BACKLOG' });
 
@@ -144,7 +148,7 @@ describe('LibraryService.create', () => {
         hltb: { mainHours: 40, mainExtraHours: 60, completionistHours: null },
       }),
     });
-    const service = new LibraryService(repo as never, games as never);
+    const service = new LibraryService(repo, games);
 
     await service.create('user-1', { igdbId: 1, status: 'BACKLOG' });
 
@@ -161,7 +165,7 @@ describe('LibraryService.create', () => {
   it('throws LibraryEntryNotFoundError when IGDB game not found', async () => {
     const repo = makeRepo({ findByUserAndIgdbId: vi.fn().mockResolvedValue(null) });
     const games = makeGames({ getById: vi.fn().mockResolvedValue(null) });
-    const service = new LibraryService(repo as never, games as never);
+    const service = new LibraryService(repo, games);
 
     await expect(service.create('user-1', { igdbId: 999, status: 'BACKLOG' })).rejects.toThrow(
       LibraryEntryNotFoundError,
@@ -172,7 +176,7 @@ describe('LibraryService.create', () => {
 describe('LibraryService.update', () => {
   it('throws LibraryEntryNotFoundError when entry does not belong to user', async () => {
     const repo = makeRepo({ findByIdAndUser: vi.fn().mockResolvedValue(null) });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await expect(service.update('entry-1', 'user-1', { status: 'PLAYING' })).rejects.toThrow(
       LibraryEntryNotFoundError,
@@ -184,7 +188,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, completedAt: null }),
       update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED' }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { status: 'COMPLETED' });
 
@@ -201,7 +205,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED', completedAt }),
       update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'PAUSED', completedAt: null }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { status: 'PAUSED' });
 
@@ -218,7 +222,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED', completedAt }),
       update: vi.fn().mockResolvedValue({ ...ENTRY, completedAt: null }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { status: 'COMPLETED', completedAt: null });
 
@@ -234,7 +238,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
       update: vi.fn().mockResolvedValue({ ...ENTRY, hoursPlayed: 0, userPlatform: null }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { hoursPlayed: 0, userPlatform: '' });
 
@@ -251,7 +255,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED', completedAt }),
       update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED', completedAt }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { status: 'COMPLETED' });
 
@@ -264,7 +268,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, hoursPlayed: 12, rating: 8 }),
       update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'BACKLOG' }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { status: 'BACKLOG' });
 
@@ -281,7 +285,7 @@ describe('LibraryService.update', () => {
       update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'BACKLOG', queuePosition: 4 }),
       nextQueuePosition: vi.fn().mockResolvedValue(4),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { status: 'BACKLOG' });
 
@@ -299,7 +303,7 @@ describe('LibraryService.update', () => {
         .fn()
         .mockResolvedValue({ ...ENTRY, status: 'WISHLIST', hoursPlayed: 12, rating: 7 }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { status: 'WISHLIST', hoursPlayed: 12, rating: 7 });
 
@@ -315,7 +319,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
       update: vi.fn().mockResolvedValue({ ...ENTRY, status: 'COMPLETED' }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.update('entry-1', 'user-1', { status: 'COMPLETED', completedAt: '2024-05-03' });
 
@@ -328,7 +332,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
       update: vi.fn(),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await expect(
       service.update('entry-1', 'user-1', { status: 'COMPLETED', completedAt: '2023-02-29' }),
@@ -341,7 +345,7 @@ describe('LibraryService.update', () => {
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
       update: vi.fn().mockResolvedValue(null),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await expect(service.update('entry-1', 'user-1', { status: 'PLAYING' })).rejects.toThrow(
       LibraryEntryNotFoundError,
@@ -350,6 +354,24 @@ describe('LibraryService.update', () => {
 });
 
 describe('LibraryService.refreshHltb', () => {
+  it('preserves stored times when the provider fails', async () => {
+    const entry = { ...ENTRY, hltbMain: 40, hltbMainExtra: 60, hltbCompletionist: 100 };
+    const repo = makeRepo({
+      findByIdAndUser: vi.fn().mockResolvedValue(entry),
+      updateHltb: vi.fn().mockResolvedValue({ ...entry, hltbStatus: 'FAILED' }),
+    });
+    const games = makeGames({ lookupByName: vi.fn().mockResolvedValue({ status: 'FAILED' }) });
+    const service = new LibraryService(repo, games);
+
+    expect(await service.refreshHltb('entry-1', 'user-1')).toMatchObject({
+      hltbMain: 40,
+      hltbMainExtra: 60,
+      hltbCompletionist: 100,
+      hltbStatus: 'FAILED',
+    });
+    expect(repo.updateHltb).toHaveBeenCalledWith('entry-1', 'user-1', { hltbStatus: 'FAILED' });
+  });
+
   it('replaces a failed lookup with the new result', async () => {
     const repo = makeRepo({
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
@@ -361,7 +383,7 @@ describe('LibraryService.refreshHltb', () => {
         times: { mainHours: 12, mainExtraHours: null, completionistHours: null },
       }),
     });
-    const service = new LibraryService(repo as never, games as never);
+    const service = new LibraryService(repo, games);
 
     await service.refreshHltb('entry-1', 'user-1');
 
@@ -382,7 +404,7 @@ describe('LibraryService.refreshHltb', () => {
     const games = makeGames({
       lookupByName: vi.fn().mockResolvedValue({ status: 'MISS' }),
     });
-    const service = new LibraryService(repo as never, games as never);
+    const service = new LibraryService(repo, games);
 
     await service.refreshHltb('entry-1', 'user-1');
 
@@ -398,7 +420,7 @@ describe('LibraryService.refreshHltb', () => {
 describe('LibraryService.getById', () => {
   it('returns entry for valid owner', async () => {
     const repo = makeRepo({ findByIdAndUser: vi.fn().mockResolvedValue(ENTRY) });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     const result = await service.getById('entry-1', 'user-1');
     expect(result).toEqual(ENTRY);
@@ -406,7 +428,7 @@ describe('LibraryService.getById', () => {
 
   it('throws LibraryEntryNotFoundError when entry not found', async () => {
     const repo = makeRepo({ findByIdAndUser: vi.fn().mockResolvedValue(null) });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await expect(service.getById('entry-1', 'user-1')).rejects.toThrow(LibraryEntryNotFoundError);
   });
@@ -418,7 +440,7 @@ describe('LibraryService.remove', () => {
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
       delete: vi.fn().mockResolvedValue(undefined),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await service.remove('entry-1', 'user-1');
     expect(repo.delete).toHaveBeenCalledWith('entry-1', 'user-1');
@@ -429,14 +451,14 @@ describe('LibraryService.remove', () => {
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
       delete: vi.fn().mockResolvedValue(0),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await expect(service.remove('entry-1', 'user-1')).rejects.toThrow(LibraryEntryNotFoundError);
   });
 
   it('throws LibraryEntryNotFoundError when entry not found', async () => {
-    const repo = makeRepo({ findByIdAndUser: vi.fn().mockResolvedValue(null) });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const repo = makeRepo({ delete: vi.fn().mockResolvedValue(0) });
+    const service = new LibraryService(repo, makeGames());
 
     await expect(service.remove('entry-1', 'user-1')).rejects.toThrow(LibraryEntryNotFoundError);
   });
@@ -446,7 +468,7 @@ describe('LibraryService.list', () => {
   it('returns all entries for the given user', async () => {
     const entries = [ENTRY, { ...ENTRY, id: 'entry-2', igdbId: 2, name: 'Hollow Knight' }];
     const repo = makeRepo({ findAllByUser: vi.fn().mockResolvedValue(entries) });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     const result = await service.list('user-1');
 
@@ -456,7 +478,7 @@ describe('LibraryService.list', () => {
 
   it('returns empty array when user has no entries', async () => {
     const repo = makeRepo({ findAllByUser: vi.fn().mockResolvedValue([]) });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     const result = await service.list('user-1');
 
@@ -469,7 +491,7 @@ describe('LibraryService.moveInQueue', () => {
     const repo = makeRepo({
       findByIdAndUser: vi.fn().mockResolvedValue({ ...ENTRY, status: 'PLAYING' }),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await expect(service.moveInQueue('entry-1', 'user-1', 'up')).rejects.toThrow(
       LibraryEntryNotInQueueError,
@@ -483,7 +505,7 @@ describe('LibraryService.moveInQueue', () => {
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
       moveInQueue: vi.fn().mockResolvedValue(moved),
     });
-    const service = new LibraryService(repo as never, makeGames() as never);
+    const service = new LibraryService(repo, makeGames());
 
     await expect(service.moveInQueue('entry-1', 'user-1', 'up')).resolves.toEqual(moved);
     expect(repo.moveInQueue).toHaveBeenCalledWith('user-1', 'entry-1', 'up');

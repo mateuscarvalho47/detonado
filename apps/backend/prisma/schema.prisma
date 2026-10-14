@@ -13,18 +13,18 @@ datasource db {
 }
 
 model User {
-  id                     String               @id @default(cuid())
-  email                  String               @unique
-  passwordHash           String
+  id                         String               @id @default(cuid())
+  email                      String               @unique
+  passwordHash               String
   emailVerified              Boolean              @default(false)
   emailVerificationToken     String?              @unique
   emailVerificationExpiresAt DateTime?
-  consentedAt            DateTime?
-  sessionVersion         Int                  @default(0)
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
-  libraryEntries         LibraryEntry[]
-  passwordResetTokens    PasswordResetToken[]
+  consentedAt                DateTime?
+  sessionVersion             Int                  @default(0)
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+  libraryEntries             LibraryEntry[]
+  passwordResetTokens        PasswordResetToken[]
 }
 
 model PasswordResetToken {
@@ -32,6 +32,7 @@ model PasswordResetToken {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   codeHash  String
+  attempts  Int       @default(0)
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
@@ -56,28 +57,28 @@ enum HltbStatus {
 }
 
 model LibraryEntry {
-  id           String        @id @default(cuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  igdbId       Int
-  name         String
-  coverUrl     String?
-  genres       String[]
-  platforms    String[]
-  status       LibraryStatus
-  userPlatform String?
-  rating       Int?
-  hoursPlayed  Decimal?      @db.Decimal(6, 1)
-  notes        String?
-  completedAt  DateTime?
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  igdbId            Int
+  name              String
+  coverUrl          String?
+  genres            String[]
+  platforms         String[]
+  status            LibraryStatus
+  userPlatform      String?
+  rating            Int?
+  hoursPlayed       Decimal?      @db.Decimal(6, 1)
+  notes             String?
+  completedAt       DateTime?
   hltbMain          Float?
   hltbMainExtra     Float?
   hltbCompletionist Float?
   hltbStatus        HltbStatus?
   // Lower comes first. Set only while status is BACKLOG.
   queuePosition     Int?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@unique([userId, igdbId])
   @@index([userId, status])
