@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useLibrary } from "@/features/library/hooks/useLibrary";
+import { SuggestionsPanel } from "@/features/suggestions/components/SuggestionsPanel";
 import { ArchiveEmpty } from "@/shared/components/ArchiveEmpty";
 import { LoadFailure } from "@/shared/components/LoadFailure";
 import { useSearchModal } from "@/shared/hooks/useSearchModal";
@@ -91,6 +92,7 @@ export function AgoraScreen() {
 					{queue.missing > 0 && (
 						<p className={styles.legend}>{backlogHoursLegend(queue)}</p>
 					)}
+					<SuggestionsPanel library={entries} />
 					{playing.length === 0 && backlog.length === 0 ? (
 						<p>
 							Nada em andamento nem na fila. Veja sua{" "}
