@@ -142,3 +142,7 @@ Registros datados por campanha, editáveis e excluíveis, com filtro de campanha
 ## Retrospecto por período
 
 Estatísticas incluem seleção de ano e mês opcional, sessões, horas registradas em sessões, jogos jogados e campanhas concluídas, comparação absoluta ao período anterior e série tabular acessível. Fuso fixo America/Sao_Paulo explícito. Horas manuais sem data permanecem nos totais globais, mas não são atribuídas artificialmente a períodos.
+
+### Edição em lote
+
+Modo de seleção explícito, até100 jogos visíveis. Painel escolhe quais campos mudar, revisa jogos/alterações e exige confirmação. Resultado individual identifica falhas e preserva alterações atômicas por jogo; filtros removem seleção oculta. Tags substituem vínculos sem alterar coleções.

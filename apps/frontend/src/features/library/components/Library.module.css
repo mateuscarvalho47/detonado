@@ -370,3 +370,33 @@
 		padding: 0.35rem;
 	}
 }
+
+.bulkStart {
+	margin-bottom: 1rem;
+}
+.selectableCard {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+.cardSelection {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: var(--color-ink-muted);
+}
+.rowSelection {
+	width: 40px;
+	flex: 0 0 40px;
+	display: grid;
+	place-items: center;
+}
+.cardSelection input,
+.rowSelection input {
+	width: 20px;
+	height: 20px;
+	accent-color: var(--color-accent);
+}
+.list[data-selection="true"] .listHeader {
+	padding-left: calc(1rem + 40px);
+}

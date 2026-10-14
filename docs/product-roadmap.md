@@ -134,3 +134,7 @@ CRUD `/api/library/:id/journal` e `/:journalId`, text até4000, occurredAt ISO e
 ### Entrega 11 — retrospecto por período
 
 GET `/api/library/retrospective?year=YYYY&month=M` (mês opcional, year1970..2100) entrega sessões, minutos, jogos distintos e campanhas concluídas, período anterior completo e série diária/mensal com zeros. Sessões UTC usam America/Sao_Paulo; conclusões são datas de calendário e não mudam de dia por conversão de fuso. Arquivos e snapshots arquivados contam sem duplicar ativa. Horas manuais sem data ficam explicitamente fora do retrospecto, preservadas nos totais globais. UI compara diferenças absolutas sem divisão por zero, mantém gráficos globais sob Biblioteca completa e invalida período após alterações relevantes. Sem migration. Checks213 testes backend(19PostgreSQL/HTTP),143frontend, lint/build/TypeScript; fronteiras de mês/ano, leapday e isolamento comprovados. Branch `feature/period-retrospective`.
+
+### Entrega 12 — edição em lote
+
+Seleção explícita de até100 jogos visíveis, revisão dos nomes/campos e confirmação antes de enviar. POST `/api/library/bulk` altera status, plataforma registrada e/ou substitui tags, preservando coleções e progresso. Alterações atômicas por jogo; falhas individuais não impedem os demais e aparecem por nome. Plataforma não suportada e tags de outro usuário rejeitadas antes da escrita. Tags isoladas preservam inclusive completedAt=null. Sem migration. Checks216 testes backend(20PostgreSQL/HTTP),150frontend, lint/build/TypeScript. Branch `feature/bulk-library-edit`.

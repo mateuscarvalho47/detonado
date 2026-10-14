@@ -5,6 +5,7 @@ export * from "./game.js";
 export * from "./game-source.js";
 export * from "./journal-entry.js";
 export * from "./library.js";
+export * from "./library-bulk.js";
 export * from "./library-import.js";
 export * from "./organization.js";
 export * from "./play-session.js";

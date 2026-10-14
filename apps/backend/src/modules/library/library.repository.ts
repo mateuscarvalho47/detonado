@@ -85,6 +85,21 @@ export class LibraryRepository {
     return withMemberships(current);
   }
 
+  countOwnedTags(userId: string, tagIds: string[]) {
+    return this.db.tag.count({ where: { userId, id: { in: tagIds } } });
+  }
+  async replaceTags(entryId: string, userId: string, tagIds: string[]) {
+    await this.db.tagEntry.deleteMany({ where: { entryId, userId } });
+    if (tagIds.length)
+      await this.db.tagEntry.createMany({
+        data: tagIds.map((tagId) => ({ entryId, userId, tagId })),
+      });
+    await this.db.libraryEntry.update({
+      where: { id: entryId, userId },
+      data: { updatedAt: new Date() },
+    });
+  }
+
   async sessionMinutes(entryId: string, userId: string) {
     const result = await this.db.playSession.aggregate({
       where: { entryId, userId, campaign: { activeFor: { some: { id: entryId, userId } } } },
