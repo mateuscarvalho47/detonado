@@ -5,7 +5,6 @@ import {
 	Dialog,
 	DialogClose,
 	DialogContent,
-	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -42,14 +41,19 @@ export function AddToLibraryModal({
 				aria-describedby={undefined}
 				className={styles.addModal}
 			>
-				<DialogHeader className={styles.modalHead}>
+				<div className={styles.modalHead}>
 					<DialogTitle>Adicionar à biblioteca</DialogTitle>
 					<DialogClose asChild>
-						<Button variant="ghost" size="icon-sm" aria-label="Fechar">
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label="Fechar"
+							className={styles.modalClose}
+						>
 							<X />
 						</Button>
 					</DialogClose>
-				</DialogHeader>
+				</div>
 				<form onSubmit={onSubmit} className={styles.addForm}>
 					<div className={styles.gameGrid}>
 						<div className={styles.addCover}>
@@ -112,6 +116,7 @@ export function AddToLibraryModal({
 													onClick={() => field.onChange(status.key)}
 													className={styles.status}
 													data-active={field.value === status.key}
+													aria-pressed={field.value === status.key}
 													style={
 														{
 															"--status-color": status.color,

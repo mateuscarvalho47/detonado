@@ -13,9 +13,13 @@ const DialogTrigger = (
 const DialogPortal = (props: React.ComponentProps<typeof Primitive.Portal>) => (
 	<Primitive.Portal data-slot="dialog-portal" {...props} />
 );
-const DialogClose = (props: React.ComponentProps<typeof Primitive.Close>) => (
-	<Primitive.Close data-slot="dialog-close" {...props} />
-);
+function DialogClose({
+	asChild,
+	...props
+}: React.ComponentProps<typeof Primitive.Close>) {
+	if (asChild) return <Primitive.Close asChild {...props} />;
+	return <Primitive.Close data-slot="dialog-close" {...props} />;
+}
 function DialogOverlay({
 	className,
 	...props

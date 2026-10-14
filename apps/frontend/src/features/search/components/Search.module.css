@@ -27,6 +27,11 @@
 	padding: 0.9rem 1rem;
 	border-bottom: 1px solid var(--color-line);
 	color: var(--color-ink-faint);
+	transition: 150ms ease;
+}
+.searchHead:focus-within {
+	background: color-mix(in oklab, var(--color-signal) 4%, var(--color-surface));
+	box-shadow: inset 3px 0 var(--color-signal);
 }
 .searchHead > svg {
 	width: 18px;
@@ -42,6 +47,9 @@
 	color: var(--color-ink);
 	font: inherit;
 	font-size: 1.05rem;
+}
+.searchInput:focus-visible {
+	outline: none;
 }
 .close {
 	display: grid;
@@ -152,7 +160,9 @@
 	font-size: 0.68rem;
 }
 [data-slot="dialog-content"].addModal {
-	max-width: 760px;
+	width: min(calc(100% - 2rem), 760px);
+	max-width: none;
+	gap: 0;
 	padding: 0;
 }
 .modalHead {
@@ -165,6 +175,9 @@
 .modalHead h2 {
 	margin: 0;
 }
+.modalClose {
+	flex: 0 0 auto;
+}
 .addForm {
 	display: grid;
 	gap: 1.5rem;
@@ -172,7 +185,7 @@
 }
 .gameGrid {
 	display: grid;
-	grid-template-columns: 220px minmax(0, 1fr);
+	grid-template-columns: minmax(160px, 190px) minmax(0, 1fr);
 	gap: 1.5rem;
 }
 .addCover {
@@ -223,11 +236,27 @@
 	color: var(--color-ink-muted);
 	font: inherit;
 	cursor: pointer;
+	transition: 150ms ease;
+}
+.status:hover {
+	border-color: color-mix(in oklab, var(--status-color) 45%, var(--color-line));
+	background: color-mix(
+		in oklab,
+		var(--status-color) 7%,
+		var(--color-surface-raised)
+	);
 }
 .status[data-active="true"] {
 	border-color: var(--status-color);
+	background: color-mix(
+		in oklab,
+		var(--status-color) 14%,
+		var(--color-surface-raised)
+	);
 	color: var(--color-ink);
-	box-shadow: inset 3px 0 var(--status-color);
+	box-shadow:
+		inset 3px 0 var(--status-color),
+		0 0 0 1px color-mix(in oklab, var(--status-color) 18%, transparent);
 }
 .dot {
 	width: 6px;
@@ -259,10 +288,28 @@
 		grid-column: 1 / -1;
 		grid-template-columns: 1fr;
 	}
+	.actions {
+		width: 100%;
+	}
+	.actions > * {
+		flex: 1;
+	}
 	.result {
 		grid-template-columns: 38px minmax(0, 1fr);
 	}
 	.result > :last-child {
 		display: none;
+	}
+}
+@media (max-width: 520px) {
+	.gameGrid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+	.addCover {
+		width: 112px;
+	}
+	.gameFields h3 {
+		font-size: 1.65rem;
 	}
 }
