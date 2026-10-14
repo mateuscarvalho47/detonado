@@ -110,3 +110,7 @@ Status combináveis, plataforma registrada, gênero, duração Principal máxima
 ## Sessões de jogo
 
 A ficha registra sessões com data/hora local, duração em minutos e comentário opcional. Permite editar e excluir com confirmação. Exibe total, horas anteriores e horas em sessões, sem duplicar o histórico manual anterior. O total manual ajusta o saldo anterior e não pode ficar abaixo do registrado em sessões. A última sessão aparece também em Jogando na Agora. A exportação inclui as sessões.
+
+## Escolha do próximo jogo
+
+A Agora inclui O que jogar agora?, com até três jogos da Fila ou Pausados e motivos para a sugestão. Filtros por plataforma registrada, gênero e duração total Principal. A plataforma preferida prioriza candidatos quando não há plataforma escolhida manualmente. Duração não significa tempo restante ou duração de sessão.
