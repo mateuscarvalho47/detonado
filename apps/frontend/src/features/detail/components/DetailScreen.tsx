@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { CampaignsPanel } from "@/features/campaigns/components/CampaignsPanel";
 import { CompletionPanel } from "@/features/completion/components/CompletionPanel";
+import { JournalPanel } from "@/features/journal/components/JournalPanel";
 import { MembershipPanel } from "@/features/organization/components/MembershipPanel";
 import { SessionsPanel } from "@/features/sessions/components/SessionsPanel";
 import { SourcesPanel } from "@/features/sources/components/SourcesPanel";
@@ -59,6 +60,7 @@ export function DetailScreen({ game }: DetailScreenProps) {
 				<MembershipPanel game={game} />
 				<SourcesPanel game={game} />
 				<SessionsPanel game={game} />
+				<JournalPanel game={game} />
 			</div>
 
 			{confirmRemove && (

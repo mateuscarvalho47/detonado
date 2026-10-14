@@ -14,6 +14,7 @@ import { ChecklistItemRepository } from '@/modules/checklist-item/checklist-item
 import { checklistItemRoutes } from '@/modules/checklist-item/checklist-item.routes.js';
 import { ChecklistItemService } from '@/modules/checklist-item/checklist-item.service.js';
 import { gameSourceRoutes } from '@/modules/game-source/game-source.routes.js';
+import { journalEntryRoutes } from '@/modules/journal-entry/journal-entry.routes.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
 import { LibraryService } from '@/modules/library/library.service.js';
 import { libraryImportRoutes } from '@/modules/library-import/library-import.routes.js';
@@ -1192,6 +1193,184 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
       await app.close();
       await database.libraryEntry.deleteMany({ where: { id: entry.id, userId: ownerId } });
     }
+  });
+
+  it('keeps a dated journal across campaigns and never overwrites where-I-stopped notes', async () => {
+    const entry = await library().create(ownerId, { igdbId: 99701, status: 'PLAYING' });
+    await library().update(entry.id, ownerId, { notes: 'Onde parei original' });
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    await app.register(csrf);
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id;
+      req.session.sessionVersion = 0;
+      req.session.csrfToken = 'test-csrf';
+      return {};
+    });
+    await app.register(journalEntryRoutes, { prefix: '/api' });
+    try {
+      const base = `/api/library/${entry.id}/journal`;
+      expect((await app.inject({ url: base })).statusCode).toBe(401);
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const cookie = String(login.headers['set-cookie']).split(';')[0];
+      const headers = { cookie, 'x-csrf-token': 'test-csrf' };
+      const payload = {
+        text: '  Diário da campanha  ',
+        occurredAt: '2026-10-14T01:00:00-03:00',
+        campaignId: entry.activeCampaignId,
+      };
+      expect(
+        (await app.inject({ method: 'POST', url: base, headers: { cookie }, payload })).statusCode,
+      ).toBe(403);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers,
+            payload: { ...payload, text: '' },
+          })
+        ).statusCode,
+      ).toBe(400);
+      const created = await app.inject({ method: 'POST', url: base, headers, payload });
+      expect(created.statusCode).toBe(201);
+      expect(created.json()).toMatchObject({
+        text: 'Diário da campanha',
+        occurredAt: '2026-10-14T04:00:00.000Z',
+        spoiler: false,
+        legacy: false,
+        campaignId: entry.activeCampaignId,
+      });
+      expect(created.json()).not.toHaveProperty('userId');
+      expect((await library().getById(entry.id, ownerId)).notes).toBe('Onde parei original');
+      const path = `${base}/${created.json().id}`;
+      expect(
+        (
+          await app.inject({ method: 'PATCH', url: path, headers, payload: { spoiler: true } })
+        ).json().spoiler,
+      ).toBe(true);
+      expect(
+        (await app.inject({ method: 'PATCH', url: path, headers, payload: { legacy: true } }))
+          .statusCode,
+      ).toBe(400);
+      const next = await new CampaignService(new CampaignRepository(database)).create(
+        entry.id,
+        ownerId,
+        { notes: 'Onde parei agora' },
+      );
+      expect((await app.inject({ method: 'POST', url: base, headers, payload })).statusCode).toBe(
+        409,
+      );
+      const newer = await app.inject({
+        method: 'POST',
+        url: base,
+        headers,
+        payload: { ...payload, campaignId: next.id, text: 'Nova campanha' },
+      });
+      expect(newer.statusCode).toBe(201);
+      expect((await app.inject({ url: base, headers })).json().entries).toHaveLength(2);
+      expect(
+        (await app.inject({ url: `${base}?campaignId=${entry.activeCampaignId}`, headers })).json()
+          .entries,
+      ).toHaveLength(1);
+      expect((await app.inject({ url: `${base}?campaignId=missing`, headers })).statusCode).toBe(
+        404,
+      );
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: path,
+            headers,
+            payload: { text: 'Histórico editado', spoiler: false },
+          })
+        ).json(),
+      ).toMatchObject({
+        text: 'Histórico editado',
+        spoiler: false,
+        campaignId: entry.activeCampaignId,
+      });
+      expect((await library().getById(entry.id, ownerId)).notes).toBe('Onde parei agora');
+      const legacy = await database.journalEntry.create({
+        data: {
+          entryId: entry.id,
+          userId: ownerId,
+          campaignId: next.id,
+          text: 'Anotação antiga',
+          occurredAt: new Date(),
+          legacy: true,
+        },
+      });
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: `${base}/${legacy.id}`,
+            headers,
+            payload: { text: 'Antiga revisada' },
+          })
+        ).json(),
+      ).toMatchObject({ text: 'Antiga revisada', legacy: true });
+      const exported = await new UserRepository(database).findByIdWithLibrary(ownerId);
+      expect(
+        exported?.libraryEntries.find((row) => row.igdbId === entry.igdbId)?.journal,
+      ).toHaveLength(3);
+      const otherLogin = await app.inject({ url: `/test-session/${anotherUserId}` });
+      const otherHeaders = {
+        cookie: String(otherLogin.headers['set-cookie']).split(';')[0],
+        'x-csrf-token': 'test-csrf',
+      };
+      expect((await app.inject({ url: base, headers: otherHeaders })).statusCode).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers: otherHeaders,
+            payload: { ...payload, campaignId: next.id },
+          })
+        ).statusCode,
+      ).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: path,
+            headers: otherHeaders,
+            payload: { text: 'Other' },
+          })
+        ).statusCode,
+      ).toBe(404);
+      expect(
+        (await app.inject({ method: 'DELETE', url: path, headers: otherHeaders })).statusCode,
+      ).toBe(404);
+      await expect(
+        database.journalEntry.create({
+          data: {
+            entryId: entry.id,
+            userId: anotherUserId,
+            campaignId: next.id,
+            text: 'Foreign',
+            occurredAt: new Date(),
+          },
+        }),
+      ).rejects.toMatchObject({ code: 'P2003' });
+      expect((await app.inject({ method: 'DELETE', url: path, headers })).statusCode).toBe(204);
+      expect((await library().getById(entry.id, ownerId)).notes).toBe('Onde parei agora');
+    } finally {
+      await app.close();
+      await library().remove(entry.id, ownerId);
+    }
+    expect(await database.journalEntry.count({ where: { entryId: entry.id } })).toBe(0);
   });
 
   it('serializes concurrent inserts and moves without duplicate queue positions', async () => {
