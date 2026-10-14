@@ -25,6 +25,8 @@ type LibraryStore = Pick<
   | 'getStats'
 >;
 type LibraryGames = Pick<GameService, 'getById' | 'lookupByName'>;
+type LibraryCreation = CreateLibraryEntryInput &
+  Pick<UpdateLibraryEntryInput, 'hoursPlayed' | 'rating' | 'notes' | 'completedAt'>;
 
 function resolveCompletedAt(
   nextStatus: string,
@@ -77,7 +79,7 @@ export class LibraryService {
     return entry;
   }
 
-  async create(userId: string, input: CreateLibraryEntryInput) {
+  async create(userId: string, input: LibraryCreation) {
     const duplicate = await this.repository.findByUserAndIgdbId(userId, input.igdbId);
     if (duplicate) throw new LibraryEntryAlreadyExistsError();
 
@@ -88,7 +90,7 @@ export class LibraryService {
       // Provider calls run outside the lock; recheck after any concurrent insertion.
       const duplicate = await repository.findByUserAndIgdbId(userId, input.igdbId);
       if (duplicate) throw new LibraryEntryAlreadyExistsError();
-      const completedAt = input.status === 'COMPLETED' ? calendarToday() : null;
+      const completedAt = resolveCompletedAt(input.status, input.completedAt, null) ?? null;
       const hltb = hltbSnapshot(game);
       const queuePosition =
         input.status === 'BACKLOG' ? await repository.nextQueuePosition(userId) : null;
@@ -102,6 +104,10 @@ export class LibraryService {
         platforms: game.platforms,
         status: input.status,
         completionGoal: input.completionGoal ?? 'MAIN',
+        hoursPlayed: input.hoursPlayed ?? null,
+        baseHours: input.hoursPlayed ?? null,
+        rating: input.rating ?? null,
+        notes: blankToNull(input.notes ?? null),
         userPlatform: blankToNull(input.userPlatform ?? null),
         completedAt,
         queuePosition,

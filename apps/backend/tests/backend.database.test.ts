@@ -15,6 +15,7 @@ import { checklistItemRoutes } from '@/modules/checklist-item/checklist-item.rou
 import { ChecklistItemService } from '@/modules/checklist-item/checklist-item.service.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
 import { LibraryService } from '@/modules/library/library.service.js';
+import { libraryImportRoutes } from '@/modules/library-import/library-import.routes.js';
 import { OrganizationRepository } from '@/modules/organization/organization.repository.js';
 import { organizationRoutes } from '@/modules/organization/organization.routes.js';
 import { OrganizationService } from '@/modules/organization/organization.service.js';
@@ -859,6 +860,192 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
     } finally {
       await app.close();
       await library().remove(entry.id, ownerId);
+    }
+  });
+
+  it('imports HTTP rows with explicit duplicate updates, owner isolation and session hour guards', async () => {
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    const cache = new Map<string, string>();
+    app.decorate('redis', {
+      get: async (key: string) => cache.get(key) ?? null,
+      set: async (key: string, value: string) => {
+        cache.set(key, value);
+      },
+    } as never);
+    app.decorate('igdb', {
+      getGameById: vi.fn(async (igdbId: number) =>
+        igdbId === 99903
+          ? null
+          : { igdbId, name: `Imported ${igdbId}`, platforms: ['PC'], genres: ['RPG'] },
+      ),
+    } as never);
+    app.decorate('hltb', {
+      findByName: vi.fn().mockResolvedValue({
+        status: 'FOUND',
+        times: { mainHours: 10, mainExtraHours: 20, completionistHours: 30 },
+      }),
+    } as never);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    await app.register(csrf);
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id === 'anonymous' ? undefined : req.params.id;
+      req.session.sessionVersion = 0;
+      req.session.csrfToken = 'test-csrf';
+      return {};
+    });
+    await app.register(libraryImportRoutes, { prefix: '/api' });
+    try {
+      const base = '/api/library/import';
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const cookie = String(login.headers['set-cookie']).split(';')[0];
+      const headers = { cookie, 'x-csrf-token': 'test-csrf' };
+      const anon = await app.inject({ url: '/test-session/anonymous' });
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: `${base}/preview`,
+            headers: {
+              cookie: String(anon.headers['set-cookie']).split(';')[0],
+              'x-csrf-token': 'test-csrf',
+            },
+            payload: { rows: [{ igdbId: 99901 }] },
+          })
+        ).statusCode,
+      ).toBe(401);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers: { cookie },
+            payload: { rows: [{ igdbId: 99901 }] },
+          })
+        ).statusCode,
+      ).toBe(403);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: `${base}/preview`,
+            headers,
+            payload: { rows: Array(101).fill({ igdbId: 99901 }) },
+          })
+        ).statusCode,
+      ).toBe(400);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers,
+            payload: { rows: Array(11).fill({ igdbId: 99901 }) },
+          })
+        ).statusCode,
+      ).toBe(400);
+      const preview = await app.inject({
+        method: 'POST',
+        url: `${base}/preview`,
+        headers,
+        payload: { rows: [{ igdbId: '99901', hoursPlayed: '2' }, { name: 'Unresolved' }, false] },
+      });
+      expect(preview.statusCode).toBe(200);
+      expect(preview.json().rows.map((row: { state: string }) => row.state)).toEqual([
+        'READY',
+        'NEEDS_MATCH',
+        'INVALID',
+      ]);
+      expect(await database.libraryEntry.count({ where: { userId: ownerId } })).toBe(0);
+      const created = await app.inject({
+        method: 'POST',
+        url: base,
+        headers,
+        payload: {
+          rows: [
+            {
+              igdbId: 99901,
+              status: 'PLAYING',
+              hoursPlayed: 2,
+              rating: 0,
+              notes: 'Preservar',
+              completionGoal: 'EXTRAS',
+            },
+            { igdbId: 99903 },
+          ],
+        },
+      });
+      expect(created.statusCode).toBe(200);
+      expect(created.json().summary).toEqual({ added: 1, updated: 0, skipped: 0, failed: 1 });
+      const entryId = created.json().results[0].entryId;
+      const entry = await library().getById(entryId, ownerId);
+      expect(entry.activeCampaignId).toBeTruthy();
+      expect(entry.baseHours?.toNumber()).toBe(2);
+      expect(entry.rating).toBe(0);
+      const sessions = new PlaySessionService(new PlaySessionRepository(database));
+      await sessions.create(entryId, ownerId, {
+        clientId: randomUUID(),
+        campaignId: entry.activeCampaignId,
+        playedAt: new Date().toISOString(),
+        durationMinutes: 45,
+      });
+      const skipped = await app.inject({
+        method: 'POST',
+        url: base,
+        headers,
+        payload: { rows: [{ igdbId: 99901, hoursPlayed: 0 }] },
+      });
+      expect(skipped.json().summary.skipped).toBe(1);
+      expect((await library().getById(entryId, ownerId)).hoursPlayed?.toNumber()).toBe(2.8);
+      const updated = await app.inject({
+        method: 'POST',
+        url: base,
+        headers,
+        payload: {
+          rows: [
+            { igdbId: 99901, duplicateAction: 'UPDATE', hoursPlayed: 0.5 },
+            { igdbId: 99901, duplicateAction: 'UPDATE', rating: 9 },
+          ],
+        },
+      });
+      expect(updated.json().summary).toEqual({ added: 0, updated: 1, skipped: 0, failed: 1 });
+      expect(await library().getById(entryId, ownerId)).toMatchObject({
+        status: 'PLAYING',
+        notes: 'Preservar',
+        completionGoal: 'EXTRAS',
+        activeCampaignId: entry.activeCampaignId,
+        rating: 9,
+      });
+      expect(await sessions.list(entryId, ownerId)).toHaveLength(1);
+      const otherLogin = await app.inject({ url: `/test-session/${anotherUserId}` });
+      const otherHeaders = {
+        cookie: String(otherLogin.headers['set-cookie']).split(';')[0],
+        'x-csrf-token': 'test-csrf',
+      };
+      const other = await app.inject({
+        method: 'POST',
+        url: base,
+        headers: otherHeaders,
+        payload: { rows: [{ igdbId: 99901, duplicateAction: 'UPDATE', notes: 'Minha conta' }] },
+      });
+      expect(other.json().summary.added).toBe(1);
+      expect((await library().getById(entryId, ownerId)).notes).toBe('Preservar');
+      expect(await database.libraryEntry.count({ where: { userId: ownerId, igdbId: 99903 } })).toBe(
+        0,
+      );
+    } finally {
+      await app.close();
+      await database.libraryEntry.deleteMany({
+        where: { userId: { in: [ownerId, anotherUserId] }, igdbId: { in: [99901, 99903] } },
+      });
     }
   });
 
