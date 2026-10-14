@@ -153,11 +153,27 @@
 	color: var(--color-ink-muted);
 	font: inherit;
 	cursor: pointer;
+	transition: 150ms ease;
+}
+.statusButton:hover {
+	border-color: color-mix(in oklab, var(--status-color) 45%, var(--color-line));
+	background: color-mix(
+		in oklab,
+		var(--status-color) 7%,
+		var(--color-surface-raised)
+	);
 }
 .statusButton[data-active="true"] {
 	border-color: var(--status-color);
+	background: color-mix(
+		in oklab,
+		var(--status-color) 14%,
+		var(--color-surface-raised)
+	);
 	color: var(--color-ink);
-	box-shadow: inset 3px 0 var(--status-color);
+	box-shadow:
+		inset 3px 0 var(--status-color),
+		0 0 0 1px color-mix(in oklab, var(--status-color) 18%, transparent);
 }
 .statusDot {
 	width: 6px;

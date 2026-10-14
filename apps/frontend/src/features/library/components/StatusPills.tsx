@@ -35,6 +35,7 @@ export function StatusPills({
 					onClick={() => onChange(active === status.key ? null : status.key)}
 					className={styles.pill}
 					data-active={active === status.key}
+					aria-pressed={active === status.key}
 					style={{ "--pill-color": status.color } as React.CSSProperties}
 				>
 					<span>{status.label}</span>
