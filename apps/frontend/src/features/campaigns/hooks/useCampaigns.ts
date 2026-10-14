@@ -47,6 +47,7 @@ export function useCampaigns(game: LibraryEntry, disabled: boolean) {
 				qc.invalidateQueries({ queryKey: ["sessions", game.id] }),
 				qc.invalidateQueries({ queryKey: ["checklist", game.id] }),
 				qc.invalidateQueries({ queryKey: ["stats"] }),
+				qc.invalidateQueries({ queryKey: ["retrospective"] }),
 			]);
 		},
 	});

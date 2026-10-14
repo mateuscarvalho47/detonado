@@ -1,6 +1,7 @@
-import type { HltbStatus } from '@detonado/shared';
+import type { HltbStatus, RetrospectivePeriod } from '@detonado/shared';
 import type { Prisma, PrismaClient } from '@/generated/prisma/client.js';
 import { compareQueuePosition } from './library.queue.js';
+import { readPeriodStats } from './library.retrospective.js';
 import type { LibraryEntryChanges } from './library.schema.js';
 import { readLibraryStats } from './library.stats.js';
 
@@ -172,6 +173,10 @@ export class LibraryRepository {
   async delete(id: string, userId: string) {
     const result = await this.db.libraryEntry.deleteMany({ where: { id, userId } });
     return result.count;
+  }
+
+  getPeriodStats(userId: string, period: RetrospectivePeriod) {
+    return readPeriodStats(this.db, userId, period);
   }
 
   getStats(userId: string) {

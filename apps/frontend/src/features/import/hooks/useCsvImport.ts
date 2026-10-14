@@ -72,6 +72,7 @@ export function useCsvImport() {
 				);
 			}
 			void qc.invalidateQueries({ queryKey: ["stats"] });
+			void qc.invalidateQueries({ queryKey: ["retrospective"] });
 			void qc.invalidateQueries({ queryKey: ["campaigns"] });
 		},
 	});
