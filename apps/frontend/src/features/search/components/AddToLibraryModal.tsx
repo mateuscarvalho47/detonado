@@ -25,7 +25,10 @@ export function AddToLibraryModal({
 	onClose: () => void;
 	onAdded: (igdbId: number) => void;
 }) {
-	const { form, onSubmit, isPending } = useAddToLibraryForm(game, onAdded);
+	const { form, onSubmit, isPending, selectPlatform } = useAddToLibraryForm(
+		game,
+		onAdded,
+	);
 	const { control } = form;
 	const { data: detail, isLoading } = useGameDetail(game.igdbId);
 	const hltb = detail?.hltb;
@@ -141,7 +144,7 @@ export function AddToLibraryModal({
 											id="add-platform"
 											className={styles.select}
 											value={field.value ?? ""}
-											onChange={field.onChange}
+											onChange={(event) => selectPlatform(event.target.value)}
 										>
 											<option value="">Escolha uma plataforma</option>
 											{game.platforms.map((platform) => (

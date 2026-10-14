@@ -5,6 +5,7 @@ import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod
 import { describe, expect, it, vi } from 'vitest';
 import { sendVerificationEmail } from '@/lib/email.js';
 import { authRoutes } from '@/modules/auth/auth.routes.js';
+import { gameRoutes } from '@/modules/game/game.routes.js';
 import csrf from '@/plugins/csrf.js';
 import errorHandler from '@/plugins/errorHandler.js';
 
@@ -23,6 +24,10 @@ describe('authentication HTTP flow', () => {
     const app = Fastify();
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
+    const getPlatforms = vi.fn().mockResolvedValue(['PC (Microsoft Windows)', 'PlayStation 5']);
+    app.decorate('igdb', { getPlatforms } as never);
+    app.decorate('redis', {} as never);
+    app.decorate('hltb', {} as never);
     app.decorate('prisma', {
       user: {
         findUnique: vi.fn(async () => user),
@@ -30,11 +35,16 @@ describe('authentication HTTP flow', () => {
           user = {
             ...data,
             id: 'user-1',
+            preferredPlatform: null,
             emailVerified: false,
             sessionVersion: 0,
             createdAt: new Date(),
           };
           return user;
+        }),
+        update: vi.fn(async ({ data }) => {
+          Object.assign(user ?? {}, data);
+          return { preferredPlatform: user?.preferredPlatform };
         }),
         updateMany: vi.fn(async ({ where, data }) => {
           if (
@@ -58,6 +68,7 @@ describe('authentication HTTP flow', () => {
     });
     await app.register(csrf);
     await app.register(authRoutes, { prefix: '/api' });
+    await app.register(gameRoutes, { prefix: '/api' });
 
     try {
       const initialCsrf = await app.inject({ method: 'GET', url: '/api/auth/csrf' });
@@ -106,6 +117,68 @@ describe('authentication HTTP flow', () => {
         headers: { cookie: loggedInCookie },
       });
       expect(nextCsrf.json().token).not.toBe(initialToken);
+      const authenticatedHeaders = {
+        cookie: loggedInCookie,
+        'x-csrf-token': nextCsrf.json().token,
+      };
+      expect(login.json().preferredPlatform).toBeNull();
+      const catalog = await app.inject({
+        method: 'GET',
+        url: '/api/games/platforms',
+        headers: authenticatedHeaders,
+      });
+      expect(catalog.json()).toEqual({ platforms: ['PC (Microsoft Windows)', 'PlayStation 5'] });
+      expect((await app.inject({ method: 'GET', url: '/api/games/platforms' })).statusCode).toBe(
+        401,
+      );
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: '/api/auth/preferences',
+            headers: { cookie: loggedInCookie },
+            payload: { preferredPlatform: null },
+          })
+        ).statusCode,
+      ).toBe(403);
+      for (const preferredPlatform of ['', 'x'.repeat(201), 'Unknown', 2]) {
+        const invalid = await app.inject({
+          method: 'PATCH',
+          url: '/api/auth/preferences',
+          headers: authenticatedHeaders,
+          payload: { preferredPlatform },
+        });
+        expect(invalid.statusCode).toBe(400);
+      }
+      const saved = await app.inject({
+        method: 'PATCH',
+        url: '/api/auth/preferences',
+        headers: authenticatedHeaders,
+        payload: { preferredPlatform: 'PlayStation 5' },
+      });
+      expect(saved.json()).toEqual({ preferredPlatform: 'PlayStation 5' });
+      const current = await app.inject({
+        method: 'GET',
+        url: '/api/auth/me',
+        headers: authenticatedHeaders,
+      });
+      expect(current.json().preferredPlatform).toBe('PlayStation 5');
+      const exported = await app.inject({
+        method: 'GET',
+        url: '/api/auth/export',
+        headers: authenticatedHeaders,
+      });
+      expect(exported.json().preferredPlatform).toBe('PlayStation 5');
+      expect(current.statusCode).toBe(200);
+      expect((user as Record<string, unknown> | null)?.sessionVersion).toBe(0);
+      getPlatforms.mockRejectedValue(new Error('provider unavailable'));
+      const removed = await app.inject({
+        method: 'PATCH',
+        url: '/api/auth/preferences',
+        headers: authenticatedHeaders,
+        payload: { preferredPlatform: null },
+      });
+      expect(removed.json()).toEqual({ preferredPlatform: null });
       const logout = await app.inject({
         method: 'POST',
         url: '/api/auth/logout',

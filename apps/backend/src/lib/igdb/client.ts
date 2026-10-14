@@ -22,6 +22,7 @@ const tokenSchema = z.object({
 });
 
 export class IgdbClient {
+  private pendingPlatforms: Promise<string[]> | null = null;
   private pendingToken: Promise<string> | null = null;
   constructor(
     private readonly redis: RedisLike,
@@ -42,9 +43,57 @@ export class IgdbClient {
     return transformGame(raw[0]);
   }
 
-  private async query(body: string, isRetry = false): Promise<IgdbGameRaw[]> {
+  async getPlatforms(): Promise<string[]> {
+    if (this.pendingPlatforms) return this.pendingPlatforms;
+    this.pendingPlatforms = this.loadPlatforms();
+    try {
+      return await this.pendingPlatforms;
+    } finally {
+      this.pendingPlatforms = null;
+    }
+  }
+
+  private async loadPlatforms(): Promise<string[]> {
+    const cached = await this.redis.get('igdb:v1:platforms');
+    if (cached) {
+      try {
+        const parsed = z.array(z.string().min(1).max(200)).safeParse(JSON.parse(cached));
+        if (parsed.success) return parsed.data;
+      } catch {
+        /* Invalid cache is replaced from the provider. */
+      }
+    }
+    const names: string[] = [];
+    const schema = z.array(z.object({ name: z.string().min(1).max(200) }));
+    // Bound upstream work even if a provider repeats a full page indefinitely.
+    for (let offset = 0; offset < 10000; offset += 500) {
+      const rows = await this.request(
+        'platforms',
+        `fields name; sort id asc; limit 500; offset ${offset};`,
+        schema,
+      );
+      names.push(...rows.map((row) => row.name));
+      if (rows.length < 500) {
+        const platforms = [...new Set(names)].sort((a, b) => a.localeCompare(b));
+        await this.redis.set('igdb:v1:platforms', JSON.stringify(platforms), { EX: 86400 });
+        return platforms;
+      }
+    }
+    throw new IgdbError('IGDB platform catalog exceeded pagination limit', 502);
+  }
+
+  private query(body: string): Promise<IgdbGameRaw[]> {
+    return this.request('games', body, z.array(igdbGameRawSchema));
+  }
+
+  private async request<T>(
+    endpoint: string,
+    body: string,
+    schema: z.ZodType<T>,
+    isRetry = false,
+  ): Promise<T> {
     const token = await this.getToken();
-    const res = await this.fetchJson(`${IGDB_BASE_URL}/games`, {
+    const res = await this.fetchJson(`${IGDB_BASE_URL}/${endpoint}`, {
       method: 'POST',
       headers: {
         'Client-ID': this.clientId,
@@ -53,15 +102,13 @@ export class IgdbClient {
       },
       body,
     });
-
     if (res.status === 401 && !isRetry) {
       await this.redis.del(TOKEN_KEY);
-      return this.query(body, true);
+      return this.request(endpoint, body, schema, true);
     }
-
     if (res.status < 200 || res.status >= 300) this.mapHttpError(res.status);
-    const parsed = z.array(igdbGameRawSchema).safeParse(res.data);
-    if (!parsed.success) throw new IgdbError('IGDB returned an invalid game payload', 502);
+    const parsed = schema.safeParse(res.data);
+    if (!parsed.success) throw new IgdbError('IGDB returned an invalid payload', 502);
     return parsed.data;
   }
 

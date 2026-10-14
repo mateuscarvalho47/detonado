@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Database, LogOut } from "lucide-react";
 import { AccountEditSection } from "@/features/auth/components/AccountEditSection";
+import { PreferencesSection } from "@/features/auth/components/PreferencesSection";
 import { useLogout } from "@/features/auth/hooks/useAuth";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import styles from "@/styles/Routes.module.css";
@@ -18,6 +19,7 @@ function AccountPage() {
 			<AccountEditSection />
 			<div className={styles.divider} />
 			<p className={styles.eyebrow}>Preferências</p>
+			<PreferencesSection />
 			<div className={styles.menu}>
 				<button
 					type="button"

@@ -25,6 +25,7 @@ export class UserRepository {
       select: {
         id: true,
         email: true,
+        preferredPlatform: true,
         passwordHash: true,
         emailVerified: true,
         sessionVersion: true,
@@ -35,7 +36,21 @@ export class UserRepository {
   findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, consentedAt: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        preferredPlatform: true,
+        consentedAt: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  updatePreferences(userId: string, preferredPlatform: string | null) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { preferredPlatform },
+      select: { preferredPlatform: true },
     });
   }
 
@@ -74,6 +89,7 @@ export class UserRepository {
       select: {
         id: true,
         email: true,
+        preferredPlatform: true,
         passwordHash: true,
         emailVerified: true,
         sessionVersion: true,
@@ -92,6 +108,7 @@ export class UserRepository {
         id: true,
         email: true,
         emailVerified: true,
+        preferredPlatform: true,
         consentedAt: true,
         createdAt: true,
         libraryEntries: {

@@ -11,6 +11,24 @@ export async function gameRoutes(app: FastifyInstance) {
   const service = new GameService(app.igdb, app.redis, app.hltb);
   const routes = app.withTypeProvider<ZodTypeProvider>();
 
+  routes.get('/games/platforms', {
+    config: {
+      rateLimit: {
+        hook: 'preHandler',
+        max: 60,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.session.userId ?? req.ip,
+      },
+    },
+    schema: {
+      tags: ['games'],
+      security: [{ sessionCookie: [] }],
+      response: { 200: z.object({ platforms: z.array(z.string()) }) },
+    },
+    preHandler: requireAuth,
+    handler: async () => ({ platforms: await app.igdb.getPlatforms() }),
+  });
+
   routes.get('/games/search', {
     schema: {
       tags: ['games'],

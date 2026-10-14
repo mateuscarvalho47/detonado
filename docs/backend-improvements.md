@@ -203,3 +203,7 @@ com CORS correto. Build, TypeScript, lint e 182 testes passaram (seis testes de
 PostgreSQL não foram executados nesta checagem). Nenhuma migration adicional.
 Em desenvolvimento, alterações em packages/shared/src precisam de um novo build
 shared ou reinício do comando dev do backend.
+
+## Evolução de produto — plataforma preferida
+
+Em 13/10/2026, preferência nullable por usuário com migration aditiva `20261013200000_add_preferred_platform`, catálogo IGDB com cache/inflight/limite de paginação e endpoints autenticados/CSRF. Ver roadmap em `product-roadmap.md`. Validação: 192 testes com PostgreSQL17 descartável, lint, TypeScript e build/runtime. Produção acompanha main e Railway aplica migrations antes do startup, conforme confirmação do usuário.

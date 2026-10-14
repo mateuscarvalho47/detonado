@@ -22,12 +22,14 @@ import {
 	deleteAccount,
 	exportData,
 	fetchMe,
+	fetchPlatforms,
 	login,
 	logout,
 	register,
 	requestPasswordReset,
 	resendVerification,
 	updateAccount,
+	updatePreferences,
 	verifyEmail,
 	verifyPasswordReset,
 } from "../service/authService";
@@ -231,4 +233,23 @@ export function useVerifyResetForm(email: string, onSuccess: () => void) {
 	});
 
 	return { form, onSubmit, mutation };
+}
+
+export function usePlatforms() {
+	return useQuery({
+		queryKey: ["platforms"],
+		queryFn: fetchPlatforms,
+		staleTime: 3600000,
+	});
+}
+export function usePreferences() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: updatePreferences,
+		onSuccess: (data) => {
+			qc.setQueryData(["me"], (user: User | null) =>
+				user ? { ...user, ...data } : user,
+			);
+		},
+	});
 }

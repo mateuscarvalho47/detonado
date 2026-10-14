@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { PrismaClient } from '@/generated/prisma/client.js';
+import { PreferencesService } from '@/modules/auth/preferences.service.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
 import { LibraryService } from '@/modules/library/library.service.js';
 import { PasswordResetRepository } from '@/modules/password-reset/password-reset.repository.js';
@@ -53,6 +54,33 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
     };
     return new LibraryService(new LibraryRepository(database), games as never);
   }
+
+  it('persists and removes platform preference without changing library or session version', async () => {
+    const users = new UserRepository(database);
+    const catalog = { getPlatforms: vi.fn().mockResolvedValue(['PC (Microsoft Windows)']) };
+    const service = new PreferencesService(users, catalog);
+    expect((await users.findById(ownerId))?.preferredPlatform).toBeNull();
+    await service.update(ownerId, { preferredPlatform: 'PC (Microsoft Windows)' });
+    expect((await users.findById(ownerId))?.preferredPlatform).toBe('PC (Microsoft Windows)');
+    expect(
+      (await users.findByEmailWithHash((await users.findById(ownerId))?.email ?? ''))
+        ?.preferredPlatform,
+    ).toBe('PC (Microsoft Windows)');
+    expect((await users.findByIdWithLibrary(ownerId))?.preferredPlatform).toBe(
+      'PC (Microsoft Windows)',
+    );
+    expect((await users.findById(anotherUserId))?.preferredPlatform).toBeNull();
+    await expect(service.update(ownerId, { preferredPlatform: 'Unknown' })).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    catalog.getPlatforms.mockRejectedValue(new Error('unavailable'));
+    await service.update(ownerId, { preferredPlatform: null });
+    expect((await users.findById(ownerId))?.preferredPlatform).toBeNull();
+    expect((await database.user.findUniqueOrThrow({ where: { id: ownerId } })).sessionVersion).toBe(
+      0,
+    );
+    expect(await database.libraryEntry.count({ where: { userId: ownerId } })).toBe(0);
+  });
 
   it('serializes concurrent inserts and moves without duplicate queue positions', async () => {
     const service = library();
