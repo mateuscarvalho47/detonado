@@ -9,7 +9,7 @@ O plano de melhorias, os critérios de legibilidade e o registro de execução d
 ### Monorepo
 
 - **pnpm workspaces** — gerenciador de pacotes e workspaces
-- **`packages/shared`** (`@detonado/shared`) — schemas Zod usados pelo backend. O frontend mantém os tipos em `apps/frontend/src/types/api.ts`.
+- **`packages/shared`** (`@detonado/shared`) — schemas Zod usados pelo backend; o runtime carrega JavaScript compilado em `dist`. Os comandos de build, dev e teste do backend compilam o pacote antes de executar. O frontend mantém os tipos em `apps/frontend/src/types/api.ts`.
 
 ### Backend (`apps/backend`)
 

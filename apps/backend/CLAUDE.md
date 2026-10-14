@@ -126,3 +126,12 @@ A new reset code atomically invalidates old codes while locking the user. Both
 check and verify increment the same attempts counter (maximum ten); commit locks
 the same user before marking tokens and changing the password to avoid lock-order
 inversion. Migration 20261013180000_add_reset_attempts is required.
+
+## Production package imports
+
+@detonado/shared exports compiled dist/index.js at runtime and src/index.ts for
+TypeScript. Backend build/dev/test commands compile shared first. Never point
+production exports back to src: Node does not resolve .js specifiers to .ts.
+`pnpm check:runtime` checks shared and a compiled backend module with plain Node;
+it runs at the end of build and in CI. Rebuild shared after editing its schemas
+while the dev server is already running.
