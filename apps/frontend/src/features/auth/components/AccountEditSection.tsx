@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useDraftRegistration } from "@/shared/components/DraftBoundary";
 import { useUpdateAccountForm } from "../hooks/useAuth";
 import styles from "./Auth.module.css";
 export function AccountEditSection() {
@@ -11,6 +12,7 @@ export function AccountEditSection() {
 		setSuccess(true);
 		setTimeout(() => setSuccess(false), 4000);
 	});
+	useDraftRegistration("account", form.formState.isDirty || mutation.isPending);
 	const {
 		register,
 		formState: { errors },
@@ -19,7 +21,7 @@ export function AccountEditSection() {
 		<section className={styles.accountSection}>
 			<h2>
 				<Mail />
-				Editar conta
+				Segurança e conta
 			</h2>
 			<p>Confirme sua senha atual para alterar o e-mail, a senha ou ambos.</p>
 			<form onSubmit={onSubmit} className={styles.accountForm}>

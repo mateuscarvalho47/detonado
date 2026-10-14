@@ -80,6 +80,18 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
     return new LibraryService(new LibraryRepository(database), games as never);
   }
 
+  it('completes onboarding for only the authenticated account without requiring a platform', async () => {
+    const users = new UserRepository(database);
+    expect((await users.findById(ownerId))?.onboardingCompletedAt).toBeNull();
+    const saved = await users.completeOnboarding(ownerId);
+    expect(saved.onboardingCompletedAt).toBeInstanceOf(Date);
+    expect((await users.findById(ownerId))?.onboardingCompletedAt).toEqual(
+      saved.onboardingCompletedAt,
+    );
+    expect((await users.findById(ownerId))?.preferredPlatform).toBeNull();
+    expect((await users.findById(anotherUserId))?.onboardingCompletedAt).toBeNull();
+  });
+
   it('persists and removes platform preference without changing library or session version', async () => {
     const users = new UserRepository(database);
     const catalog = { getPlatforms: vi.fn().mockResolvedValue(['PC (Microsoft Windows)']) };

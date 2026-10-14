@@ -1,18 +1,17 @@
+import { Link } from "@tanstack/react-router";
 import { LayoutGrid, List, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BulkEditPanel } from "@/features/bulk/components/BulkEditPanel";
 import { useBulkSelection } from "@/features/bulk/hooks/useBulkSelection";
-import { CsvImportPanel } from "@/features/import/components/CsvImportPanel";
-import { GroupManager } from "@/features/organization/components/GroupManager";
-import { SteamImportPanel } from "@/features/steam/components/SteamImportPanel";
 import { ArchiveEmpty } from "@/shared/components/ArchiveEmpty";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { LoadFailure } from "@/shared/components/LoadFailure";
 import { useSearchModal } from "@/shared/hooks/useSearchModal";
 import { useLibrary } from "../hooks/useLibrary";
 import { useLibraryFilters } from "../hooks/useLibraryFilters";
+import { ActiveLibraryFilters } from "./ActiveLibraryFilters";
 import styles from "./Library.module.css";
 import { LibraryFiltersPanel } from "./LibraryFiltersPanel";
 import { LibraryGrid } from "./LibraryGrid";
@@ -74,14 +73,14 @@ export function LibraryScreen() {
 				</div>
 				<div className={styles.controls}>
 					<label className={styles.filter} htmlFor="library-filter">
-						<span className="sr-only">Filtrar biblioteca</span>
+						<span className="sr-only">Filtrar minha biblioteca</span>
 						<Search />
 						<Input
 							id="library-filter"
 							maxLength={100}
 							value={filters.search}
 							onChange={(event) => filters.setSearch(event.target.value)}
-							placeholder="Encontre um jogo na biblioteca"
+							placeholder="Filtrar minha biblioteca"
 						/>
 					</label>
 					<select
@@ -120,10 +119,8 @@ export function LibraryScreen() {
 					</fieldset>
 				</div>
 			</div>
+			<ActiveLibraryFilters filters={filters} />
 			<LibraryFiltersPanel library={library} filters={filters} />
-			<GroupManager />
-			<CsvImportPanel />
-			<SteamImportPanel />
 			{selection.active ? (
 				<BulkEditPanel
 					selection={selection}
@@ -141,7 +138,12 @@ export function LibraryScreen() {
 				</div>
 			)}
 			{library.length === 0 ? (
-				<ArchiveEmpty onAdd={() => setOpen(true)} />
+				<div>
+					<ArchiveEmpty onAdd={() => setOpen(true)} />
+					<p>
+						<Link to="/imports">Importar jogos da Steam ou CSV</Link>
+					</p>
+				</div>
 			) : filters.filtered.length === 0 ? (
 				<EmptyState
 					icon={<Search />}

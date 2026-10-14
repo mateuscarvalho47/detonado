@@ -13,15 +13,12 @@ import {
 	formatBacklogHours,
 } from "@/shared/lib/backlogHours";
 import { compareQueue } from "@/shared/lib/queueOrder";
-import { useAppStore } from "@/store/useAppStore";
 import { BacklogList } from "./BacklogList";
 import styles from "./Dashboard.module.css";
 import { PlayingList } from "./PlayingList";
 
 export function AgoraScreen() {
 	const navigate = useNavigate();
-	const setStatusFilter = useAppStore((state) => state.setLibraryStatusFilter);
-	const setSearch = useAppStore((state) => state.setLibrarySearch);
 	const { setOpen } = useSearchModal();
 	const { data: library, isLoading, isError, refetch } = useLibrary();
 	const entries = useMemo(() => library ?? [], [library]);
@@ -37,9 +34,7 @@ export function AgoraScreen() {
 	);
 
 	function openLibrary() {
-		setStatusFilter(null);
-		setSearch("");
-		void navigate({ to: "/library" });
+		void navigate({ to: "/library", search: {} });
 	}
 
 	if (isLoading)
@@ -92,7 +87,6 @@ export function AgoraScreen() {
 					{queue.missing > 0 && (
 						<p className={styles.legend}>{backlogHoursLegend(queue)}</p>
 					)}
-					<SuggestionsPanel library={entries} />
 					{playing.length === 0 && backlog.length === 0 ? (
 						<p>
 							Nada em andamento nem na fila. Veja sua{" "}
@@ -111,6 +105,7 @@ export function AgoraScreen() {
 							<BacklogList games={backlog} />
 						</div>
 					)}
+					<SuggestionsPanel library={entries} />
 				</div>
 			)}
 		</div>

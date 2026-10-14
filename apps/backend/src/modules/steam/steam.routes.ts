@@ -3,7 +3,9 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/requireAuth.js';
 import { SteamClient } from '@/lib/steam/client.js';
+import { requireSteamKey } from '@/lib/steam/http.js';
 import { SteamOpenId } from '@/lib/steam/openid.js';
+import { SteamAuthorization } from './steam.authorization.js';
 import { SteamRepository } from './steam.repository.js';
 import {
   steamPreviewResponseSchema,
@@ -18,6 +20,7 @@ export interface SteamRouteOptions {
 }
 export async function steamRoutes(app: FastifyInstance, options: SteamRouteOptions) {
   const routes = app.withTypeProvider<ZodTypeProvider>();
+  const authorization = new SteamAuthorization(app.redis);
   const openid = new SteamOpenId(app.redis, options.appUrl, options.steamApiKey);
   const service = new SteamService(
     new SteamClient(options.steamApiKey, app.redis),
@@ -42,18 +45,31 @@ export async function steamRoutes(app: FastifyInstance, options: SteamRouteOptio
     schema: { ...opts.schema, response: { 200: steamStatusSchema } },
     handler: async (req) => ({
       configured: Boolean(options.steamApiKey),
-      steamId: req.session.steamVerifiedId ?? null,
+      steamId: (await authorization.active(req.userId, req.session.steamAuthorizationToken))
+        ? (req.session.steamVerifiedId ?? null)
+        : null,
     }),
   });
   routes.post('/library/steam/connect', {
     ...opts,
     schema: {
       ...opts.schema,
-      body: z.strictObject({}),
+      body: z.strictObject({
+        authorizationVersion: z.string().max(50).optional(),
+        returnTo: z.enum(['/account', '/onboarding']).optional(),
+      }),
       response: { 200: z.object({ url: z.url() }) },
     },
     handler: async (req) => {
-      const result = await openid.connect(req.userId, req.session.steamOpenIdState);
+      requireSteamKey(options.steamApiKey);
+      const token = await authorization.grant(req.userId, req.body.authorizationVersion);
+      await authorization.revoke(req.session.steamAuthorizationToken);
+      const result = await openid.connect(
+        req.userId,
+        req.session.steamOpenIdState,
+        req.body.returnTo,
+      );
+      req.session.steamAuthorizationToken = token;
       req.session.steamOpenIdState = result.state;
       delete req.session.steamVerifiedId;
       return { url: result.url };
@@ -67,12 +83,14 @@ export async function steamRoutes(app: FastifyInstance, options: SteamRouteOptio
       response: { 200: z.object({ steamId: z.string() }) },
     },
     handler: async (req) => {
+      await authorization.require(req.userId, req.session.steamAuthorizationToken);
       const steamId = await openid.verify(
         req.userId,
         req.session.steamOpenIdState,
         req.body.parameters,
         req.body.callbackUrl,
       );
+      await authorization.require(req.userId, req.session.steamAuthorizationToken);
       req.session.steamVerifiedId = steamId;
       delete req.session.steamOpenIdState;
       return { steamId };
@@ -82,6 +100,8 @@ export async function steamRoutes(app: FastifyInstance, options: SteamRouteOptio
     ...opts,
     schema: { ...opts.schema, response: { 204: z.null() } },
     handler: async (req, reply) => {
+      await authorization.revoke(req.session.steamAuthorizationToken);
+      delete req.session.steamAuthorizationToken;
       await openid.disconnect(req.session.steamOpenIdState);
       delete req.session.steamOpenIdState;
       delete req.session.steamVerifiedId;
@@ -95,6 +115,12 @@ export async function steamRoutes(app: FastifyInstance, options: SteamRouteOptio
       body: steamPreviewSchema,
       response: { 200: steamPreviewResponseSchema },
     },
-    handler: async (req) => service.preview(req.userId, req.session.steamVerifiedId, req.body),
+    handler: async (req) => {
+      requireSteamKey(options.steamApiKey);
+      await authorization.require(req.userId, req.session.steamAuthorizationToken);
+      const preview = await service.preview(req.userId, req.session.steamVerifiedId, req.body);
+      await authorization.require(req.userId, req.session.steamAuthorizationToken);
+      return preview;
+    },
   });
 }

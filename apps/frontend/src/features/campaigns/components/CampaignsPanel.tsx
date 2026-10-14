@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { COMPLETION_GOALS } from "@/features/completion/lib/completionEstimate";
 import { formatSessionDate } from "@/features/sessions/lib/sessionTime";
+import {
+	useDraftRegistration,
+	useOtherDrafts,
+} from "@/shared/components/DraftBoundary";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import type { LibraryEntry } from "@/types/api";
 import { useCampaignSessions, useCampaigns } from "../hooks/useCampaigns";
@@ -105,7 +109,13 @@ export function CampaignsPanel({
 	game: LibraryEntry;
 	disabled?: boolean;
 }) {
-	const state = useCampaigns(game, disabled);
+	const otherDrafts = useOtherDrafts("campaign");
+	const blocked = disabled || otherDrafts;
+	const state = useCampaigns(game, blocked);
+	useDraftRegistration(
+		"campaign",
+		state.form.formState.isDirty || state.mutation.isPending,
+	);
 	const active = state.query.data?.campaigns.find(
 		(campaign) => campaign.id === game.activeCampaignId,
 	);
@@ -130,13 +140,13 @@ export function CampaignsPanel({
 			<div>
 				<Button
 					variant="outline"
-					disabled={disabled || state.mutation.isPending}
+					disabled={blocked || state.mutation.isPending}
 					onClick={() => state.setConfirming(true)}
 				>
-					Iniciar nova campanha
+					Jogar novamente
 				</Button>
 			</div>
-			{disabled && (
+			{blocked && (
 				<p role="status">Aguarde o salvamento das alterações no registro.</p>
 			)}
 			{state.confirming && (
@@ -170,7 +180,7 @@ export function CampaignsPanel({
 						<Button
 							type="submit"
 							variant="outline"
-							disabled={disabled || state.mutation.isPending}
+							disabled={blocked || state.mutation.isPending}
 						>
 							{state.mutation.isPending
 								? "Iniciando…"

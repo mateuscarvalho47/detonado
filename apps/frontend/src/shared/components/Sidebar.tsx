@@ -1,23 +1,15 @@
-import { useNavigate, useRouterState } from "@tanstack/react-router";
-import {
-	BarChart3,
-	BookMarked,
-	Home,
-	LogOut,
-	Search,
-	Settings,
-} from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { LogOut, Search, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLogout } from "@/features/auth/hooks/useAuth";
+import {
+	isDestinationActive,
+	PRIMARY_DESTINATIONS,
+	SECONDARY_DESTINATIONS,
+} from "@/shared/lib/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import styles from "@/styles/Shell.module.css";
 import type { User } from "@/types/api";
-
-const NAV_ITEMS = [
-	{ to: "/", label: "Agora", icon: Home },
-	{ to: "/library", label: "Biblioteca", icon: BookMarked },
-	{ to: "/stats", label: "Retrospecto", icon: BarChart3 },
-] as const;
 
 export function Sidebar({
 	me,
@@ -26,12 +18,9 @@ export function Sidebar({
 	me: User;
 	libraryCount?: number;
 }) {
-	const navigate = useNavigate();
 	const currentPath = useRouterState().location.pathname;
 	const setSearchOpen = useAppStore((state) => state.setSearchOpen);
 	const logout = useLogout();
-	const isActive = (to: string) =>
-		to === "/" ? currentPath === "/" : currentPath.startsWith(to);
 
 	return (
 		<aside className={styles.sidebar}>
@@ -52,36 +41,35 @@ export function Sidebar({
 				</div>
 			</button>
 			<nav className={styles.nav} aria-label="Principal">
-				{NAV_ITEMS.map(({ to, label, icon: Icon }) => {
-					const active = isActive(to);
-					return (
-						<button
-							type="button"
-							key={to}
-							onClick={() => navigate({ to })}
-							className={styles.navButton}
-							data-active={active}
-							aria-current={active ? "page" : undefined}
-						>
-							<Icon />
-							<span className={styles.navLabel}>{label}</span>
-							{to === "/library" && libraryCount !== undefined && (
-								<span className={styles.count}>{libraryCount}</span>
-							)}
-						</button>
-					);
-				})}
+				{[...PRIMARY_DESTINATIONS, SECONDARY_DESTINATIONS[0]].map(
+					({ to, label, icon: Icon }) => {
+						const active = isDestinationActive(currentPath, to);
+						return (
+							<Link
+								to={to}
+								key={to}
+								className={styles.navButton}
+								data-active={active}
+								aria-current={active ? "page" : undefined}
+							>
+								<Icon />
+								<span className={styles.navLabel}>{label}</span>
+								{to === "/library" && libraryCount !== undefined && (
+									<span className={styles.count}>{libraryCount}</span>
+								)}
+							</Link>
+						);
+					},
+				)}
 			</nav>
 			<div className={styles.account}>
 				<p className={styles.accountEmail}>{me.email}</p>
 				<div className={styles.accountActions}>
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => navigate({ to: "/account" })}
-					>
-						<Settings />
-						<span>Configurações</span>
+					<Button variant="ghost" size="sm" asChild>
+						<Link to="/account">
+							<Settings />
+							<span>Configurações</span>
+						</Link>
 					</Button>
 					<Button
 						variant="ghost"

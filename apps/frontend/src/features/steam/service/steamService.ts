@@ -23,8 +23,13 @@ export interface SteamPreview {
 export function fetchSteamStatus() {
 	return api.get<SteamStatus>("/library/steam/status");
 }
-export function connectSteam() {
-	return api.post<{ url: string }>("/library/steam/connect", {});
+export function connectSteam(
+	returnTo: "/account" | "/onboarding" = "/account",
+) {
+	return api.post<{ url: string }>("/library/steam/connect", {
+		authorizationVersion: "2026-10-14",
+		returnTo,
+	});
 }
 export function verifySteam(
 	parameters: Record<string, string>,

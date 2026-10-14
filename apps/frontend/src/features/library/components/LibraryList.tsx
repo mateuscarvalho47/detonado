@@ -135,6 +135,7 @@ export function LibraryList({
 							onClick={() =>
 								navigate({
 									to: "/library/$igdbId",
+									search: true,
 									params: { igdbId: String(game.igdbId) },
 								})
 							}

@@ -141,46 +141,56 @@ export function DetailEditForm({
 						</div>
 						{tracksProgress && (
 							<div className={styles.field}>
-								<Label>Horas jogadas</Label>
-								<Controller
-									control={control}
-									name="hoursPlayed"
-									render={({ field }) => (
-										<div className={styles.stepper}>
-											<button
-												type="button"
-												aria-label="Diminuir meia hora"
-												onClick={() =>
-													field.onChange(clampHours(field.value - 0.5))
-												}
-											>
-												−
-											</button>
-											<input
-												aria-label="Horas jogadas"
-												inputMode="decimal"
-												value={field.value === 0 ? "0" : field.value || ""}
-												onChange={(event) => {
-													const value = Number.parseFloat(
-														event.target.value.replace(",", "."),
-													);
-													field.onChange(
-														Number.isNaN(value) ? 0 : clampHours(value),
-													);
-												}}
-											/>
-											<button
-												type="button"
-												aria-label="Adicionar meia hora"
-												onClick={() =>
-													field.onChange(clampHours(field.value + 0.5))
-												}
-											>
-												+
-											</button>
-										</div>
-									)}
-								/>
+								<p>
+									{game.hoursPlayed ?? 0}h no total ·{" "}
+									<a href="#sessions-title">Registrar sessão</a>
+								</p>
+								<details>
+									<summary>Ajustar total manualmente</summary>
+									<p>
+										O ajuste altera as horas anteriores. Não pode ser menor que
+										o tempo já registrado em sessões.
+									</p>
+									<Controller
+										control={control}
+										name="hoursPlayed"
+										render={({ field }) => (
+											<div className={styles.stepper}>
+												<button
+													type="button"
+													aria-label="Diminuir meia hora"
+													onClick={() =>
+														field.onChange(clampHours(field.value - 0.5))
+													}
+												>
+													−
+												</button>
+												<input
+													aria-label="Horas jogadas"
+													inputMode="decimal"
+													value={field.value === 0 ? "0" : field.value || ""}
+													onChange={(event) => {
+														const value = Number.parseFloat(
+															event.target.value.replace(",", "."),
+														);
+														field.onChange(
+															Number.isNaN(value) ? 0 : clampHours(value),
+														);
+													}}
+												/>
+												<button
+													type="button"
+													aria-label="Adicionar meia hora"
+													onClick={() =>
+														field.onChange(clampHours(field.value + 0.5))
+													}
+												>
+													+
+												</button>
+											</div>
+										)}
+									/>
+								</details>
 							</div>
 						)}
 						{tracksProgress && (

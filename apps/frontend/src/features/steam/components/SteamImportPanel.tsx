@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import styles from "@/features/import/components/CsvImportPanel.module.css";
 import { ImportMatchResolver } from "@/features/import/components/ImportMatchResolver";
 import type { ImportPreviewRow } from "@/features/import/service/importService";
+import { useDraftRegistration } from "@/shared/components/DraftBoundary";
 import type { GameSearchResult } from "@/types/api";
 import { useSteamImport } from "../hooks/useSteamImport";
 import type { SteamGame } from "../service/steamService";
@@ -87,6 +88,10 @@ function SteamRow({
 export function SteamImportPanel() {
 	const state = useSteamImport();
 	const finished = state.batch.commit.isSuccess;
+	useDraftRegistration(
+		"steam-import",
+		state.busy || (!!state.source && !finished),
+	);
 	return (
 		<details className={styles.panel}>
 			<summary>Importar biblioteca Steam</summary>

@@ -126,11 +126,14 @@ export function OfflineBanner({ authenticated }: { authenticated: boolean }) {
 					? `${state.rows.length} sessão(ões) aguardando sincronização.`
 					: ""}
 			</p>
-			<p>
-				Sessões pendentes ainda não entram no total de horas do servidor. As
-				outras alterações precisam de conexão.
-			</p>
 			{state.error && <p role="alert">{state.error}</p>}
+			<details>
+				<summary>Sobre a sincronização</summary>
+				<p>
+					Sessões pendentes ainda não entram no total de horas do servidor. As
+					outras alterações precisam de conexão.
+				</p>
+			</details>
 			<Button
 				variant="outline"
 				disabled={state.busy}
@@ -139,8 +142,16 @@ export function OfflineBanner({ authenticated }: { authenticated: boolean }) {
 				{state.busy ? "Sincronizando…" : "Sincronizar agora"}
 			</Button>
 			{state.rows.length > 0 && (
-				<details id="offline-pending">
-					<summary>Ver registros pendentes</summary>
+				<details
+					id="offline-pending"
+					open={state.rows.some((row) => !!row.error) || undefined}
+				>
+					<summary>
+						Ver registros pendentes
+						{state.rows.some((row) => !!row.error)
+							? " · há registros que precisam de atenção"
+							: ""}
+					</summary>
 					<ul className={styles.list}>
 						{state.rows.map((row) => (
 							<PendingSession

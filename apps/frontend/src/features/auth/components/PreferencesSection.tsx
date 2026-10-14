@@ -1,10 +1,15 @@
 import { Button } from "@/components/ui/button";
+import { useDraftRegistration } from "@/shared/components/DraftBoundary";
 import { usePreferencesForm } from "../hooks/usePreferencesForm";
 import styles from "./Auth.module.css";
 
 export function PreferencesSection() {
 	const { form, catalog, mutation, value, onSubmit, selectPlatform } =
 		usePreferencesForm();
+	useDraftRegistration(
+		"preferences",
+		form.formState.isDirty || mutation.isPending,
+	);
 	return (
 		<section className={styles.accountSection}>
 			<h2>Plataforma preferida</h2>

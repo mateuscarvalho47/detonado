@@ -24,11 +24,15 @@ export class SteamOpenId {
     private readonly key?: string,
     private readonly timeoutMs = 5000,
   ) {}
-  async connect(userId: string, oldState?: string) {
+  async connect(
+    userId: string,
+    oldState?: string,
+    returnPath: '/account' | '/onboarding' = '/account',
+  ) {
     requireSteamKey(this.key);
     if (oldState) await this.cache.del(stateKey(oldState));
     const state = randomBytes(32).toString('hex');
-    const returnTo = new URL('/account', this.appUrl);
+    const returnTo = new URL(returnPath, this.appUrl);
     returnTo.searchParams.set('steamState', state);
     await this.cache.set(
       stateKey(state),

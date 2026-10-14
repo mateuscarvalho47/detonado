@@ -1,4 +1,6 @@
+import { DropdownMenu } from "radix-ui";
 import { Button } from "@/components/ui/button";
+import { CompletionPanel } from "@/features/completion/components/CompletionPanel";
 import { Cover } from "@/shared/components/Cover";
 import { HltbStat } from "@/shared/components/HltbStat";
 import { StatusBadge } from "@/shared/components/StatusBadge";
@@ -46,14 +48,37 @@ export function DetailHero({
 				</Button>
 				<div className={styles.heroActions}>
 					{saved && <span className={styles.saved}>Alterações salvas</span>}
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={onRemove}
-						className={styles.danger}
-					>
-						Remover
-					</Button>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger asChild>
+							<Button variant="ghost" size="sm">
+								Ações
+							</Button>
+						</DropdownMenu.Trigger>
+						<DropdownMenu.Portal>
+							<DropdownMenu.Content
+								className={styles.actionMenu}
+								sideOffset={8}
+							>
+								<DropdownMenu.Item
+									onSelect={() => {
+										const panel = document.getElementById(
+											"campaign-actions",
+										) as HTMLDetailsElement | null;
+										if (panel) {
+											panel.open = true;
+											panel.scrollIntoView({ block: "center" });
+											panel.querySelector("button")?.focus();
+										}
+									}}
+								>
+									Jogar novamente
+								</DropdownMenu.Item>
+								<DropdownMenu.Item onSelect={onRemove}>
+									Remover jogo
+								</DropdownMenu.Item>
+							</DropdownMenu.Content>
+						</DropdownMenu.Portal>
+					</DropdownMenu.Root>
 				</div>
 			</div>
 			<div className={styles.heroContent}>
@@ -90,6 +115,7 @@ export function DetailHero({
 						onRefresh={onRefreshHltb}
 						refreshing={refreshingHltb}
 					/>
+					<CompletionPanel game={game} />
 				</div>
 			</div>
 		</section>

@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LibrarySortField, LibraryView } from "@/store/useAppStore";
 import type { GameStatus } from "@/types/api";
+import type { LibrarySearch } from "../schema/librarySearch";
 import { useLibraryFilters } from "./useLibraryFilters";
 
 type MockStoreState = {
@@ -31,6 +32,15 @@ const mockState = vi.hoisted(
 vi.mock("@/store/useAppStore", () => ({
 	useAppStore: (selector: (s: MockStoreState) => unknown) =>
 		selector(mockState),
+}));
+
+const router = vi.hoisted(() => ({
+	search: {} as LibrarySearch,
+	navigate: vi.fn(),
+}));
+vi.mock("@tanstack/react-router", () => ({
+	useSearch: () => router.search,
+	useNavigate: () => router.navigate,
 }));
 
 const makeEntry = (
@@ -88,8 +98,15 @@ const LIBRARY = [
 ];
 
 beforeEach(() => {
+	router.search = {};
+	router.navigate.mockImplementation(
+		({ search }: { search: LibrarySearch }) => {
+			router.search = search;
+			return Promise.resolve();
+		},
+	);
 	mockState.libraryStatusFilter = null;
-	mockState.librarySearch = "";
+	router.search.search = "";
 	mockState.librarySortField = "createdAt";
 	mockState.libraryView = "grid";
 });
@@ -160,7 +177,7 @@ describe("useLibraryFilters — sorting", () => {
 
 describe("useLibraryFilters — status filter", () => {
 	it("returns only entries matching the status filter", () => {
-		mockState.libraryStatusFilter = "PLAYING";
+		router.search.statuses = ["PLAYING"];
 		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
 		expect(result.current.filtered).toHaveLength(1);
 		expect(result.current.filtered[0].name).toBe("Zelda");
@@ -175,20 +192,20 @@ describe("useLibraryFilters — status filter", () => {
 
 describe("useLibraryFilters — search", () => {
 	it("filters by name case-insensitively", () => {
-		mockState.librarySearch = "elden";
+		router.search.search = "elden";
 		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
 		expect(result.current.filtered).toHaveLength(1);
 		expect(result.current.filtered[0].name).toBe("Elden Ring");
 	});
 
 	it("ignores blank/whitespace search", () => {
-		mockState.librarySearch = "   ";
+		router.search.search = "   ";
 		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
 		expect(result.current.filtered).toHaveLength(3);
 	});
 
 	it("finds a game by a word in the notes", () => {
-		mockState.librarySearch = "castelo";
+		router.search.search = "castelo";
 		const library = [
 			makeEntry({
 				id: "1",
@@ -207,16 +224,16 @@ describe("useLibraryFilters — search", () => {
 
 describe("useLibraryFilters — combined filter and search", () => {
 	it("applies both status filter and search simultaneously", () => {
-		mockState.libraryStatusFilter = "COMPLETED";
-		mockState.librarySearch = "elden";
+		router.search.statuses = ["COMPLETED"];
+		router.search.search = "elden";
 		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
 		expect(result.current.filtered).toHaveLength(1);
 		expect(result.current.filtered[0].name).toBe("Elden Ring");
 	});
 
 	it("returns empty when no entries match combined filter", () => {
-		mockState.libraryStatusFilter = "PLAYING";
-		mockState.librarySearch = "elden";
+		router.search.statuses = ["PLAYING"];
+		router.search.search = "elden";
 		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
 		expect(result.current.filtered).toHaveLength(0);
 	});
@@ -224,8 +241,8 @@ describe("useLibraryFilters — combined filter and search", () => {
 
 describe("useLibraryFilters — returned setters", () => {
 	it("exposes store setters and current state values", () => {
-		mockState.libraryStatusFilter = "BACKLOG";
-		mockState.librarySearch = "hollow";
+		router.search.statuses = ["BACKLOG"];
+		router.search.search = "hollow";
 		mockState.librarySortField = "name";
 		mockState.libraryView = "list";
 		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
@@ -238,7 +255,7 @@ describe("useLibraryFilters — returned setters", () => {
 
 describe("saved filter restore and clear", () => {
 	it("restores advanced criteria and synchronizes search and status controls", () => {
-		const { result } = renderHook(() => useLibraryFilters(LIBRARY));
+		const { result, rerender } = renderHook(() => useLibraryFilters(LIBRARY));
 		const saved = {
 			statuses: ["BACKLOG", "PLAYING"] as GameStatus[],
 			platform: "PC",
@@ -248,12 +265,14 @@ describe("saved filter restore and clear", () => {
 			search: "zelda",
 		};
 		act(() => result.current.restore(saved));
-		expect(result.current.advanced).toEqual(saved);
+		rerender();
+		expect(result.current.criteria).toEqual(saved);
 		expect(result.current.activeStatuses).toEqual(["BACKLOG", "PLAYING"]);
-		expect(mockState.setLibraryStatusFilter).toHaveBeenCalledWith(null);
-		expect(mockState.setLibrarySearch).toHaveBeenCalledWith("zelda");
+		expect(router.search.statuses).toEqual(saved.statuses);
+		expect(router.search.search).toBe("zelda");
 		act(() => result.current.clear());
+		rerender();
 		expect(result.current.advanced).toEqual({});
-		expect(mockState.setLibrarySearch).toHaveBeenLastCalledWith("");
+		expect(router.search.search).toBeUndefined();
 	});
 });

@@ -31,6 +31,7 @@ export class AuthController {
       id: user.id,
       email: user.email,
       preferredPlatform: user.preferredPlatform,
+      onboardingCompletedAt: user.onboardingCompletedAt,
     });
   };
 

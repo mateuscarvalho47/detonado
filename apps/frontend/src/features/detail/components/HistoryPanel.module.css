@@ -1,0 +1,56 @@
+.panel {
+	margin: 1.5rem;
+	display: grid;
+	gap: 1rem;
+	min-width: 0;
+}
+.panel details {
+	border: 1px solid var(--color-line);
+	padding: 1rem;
+}
+.panel summary {
+	cursor: pointer;
+	min-height: 44px;
+	align-content: center;
+}
+.timeline {
+	list-style: none;
+	padding: 0;
+	display: grid;
+	gap: 1rem;
+}
+.timeline > li {
+	border-top: 1px solid var(--color-line);
+	padding-top: 1rem;
+	overflow-wrap: anywhere;
+}
+.timeline ul {
+	list-style: none;
+	padding: 0;
+}
+.panel {
+	grid-template-columns: minmax(0, 1fr);
+}
+.panel > *,
+.panel details,
+.panel form,
+.panel label {
+	min-width: 0;
+}
+.panel section {
+	margin: 0;
+}
+.panel input:not([type="checkbox"]),
+.panel textarea,
+.panel select {
+	min-width: 0;
+	max-width: 100%;
+}
+.panel summary {
+	overflow-wrap: anywhere;
+}
+.timeline li {
+	display: grid;
+	min-width: 0;
+	gap: 0.5rem;
+}

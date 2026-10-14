@@ -98,3 +98,10 @@ export function updatePreferences(data: PreferencesValues) {
 		preferencesSchema.parse(data),
 	);
 }
+
+export function completeOnboarding() {
+	return api.post<{ onboardingCompletedAt: string }>(
+		"/auth/onboarding/complete",
+		{},
+	);
+}

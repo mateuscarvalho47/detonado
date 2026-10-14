@@ -22,6 +22,7 @@ import {
 } from "../schema/authSchema";
 import {
 	checkPasswordReset,
+	completeOnboarding,
 	consent,
 	deleteAccount,
 	exportData,
@@ -266,6 +267,18 @@ export function usePreferences() {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: updatePreferences,
+		onSuccess: (data) => {
+			qc.setQueryData(["me"], (user: User | null) =>
+				user ? { ...user, ...data } : user,
+			);
+		},
+	});
+}
+
+export function useCompleteOnboarding() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: completeOnboarding,
 		onSuccess: (data) => {
 			qc.setQueryData(["me"], (user: User | null) =>
 				user ? { ...user, ...data } : user,
