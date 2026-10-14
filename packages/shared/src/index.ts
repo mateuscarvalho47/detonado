@@ -1,4 +1,5 @@
 export * from "./auth.js";
+export * from "./checklist-item.js";
 export * from "./game.js";
 export * from "./library.js";
 export * from "./organization.js";

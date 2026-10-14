@@ -10,6 +10,9 @@ export const LibraryStatusEnum = z.enum([
 	"DROPPED",
 ]);
 
+export const completionGoalSchema = z.enum(["MAIN", "EXTRAS", "COMPLETIONIST"]);
+export type CompletionGoal = z.infer<typeof completionGoalSchema>;
+
 export type LibraryStatus = z.infer<typeof LibraryStatusEnum>;
 
 // Hours and a rating belong to these statuses. Queue rows may still store both;
@@ -56,6 +59,7 @@ function roundRating(value: unknown): unknown {
 }
 
 export const createLibraryEntryInput = z.object({
+	completionGoal: completionGoalSchema.optional(),
 	igdbId: z.number().int().positive(),
 	status: LibraryStatusEnum,
 	userPlatform: z.string().trim().max(100).optional(),
@@ -63,6 +67,7 @@ export const createLibraryEntryInput = z.object({
 
 export const updateLibraryEntryInput = z
 	.object({
+		completionGoal: completionGoalSchema,
 		status: LibraryStatusEnum,
 		userPlatform: z.string().trim().max(100).nullable(),
 		rating: z.preprocess(

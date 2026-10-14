@@ -7,6 +7,9 @@ import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { PrismaClient } from '@/generated/prisma/client.js';
 import { PreferencesService } from '@/modules/auth/preferences.service.js';
+import { ChecklistItemRepository } from '@/modules/checklist-item/checklist-item.repository.js';
+import { checklistItemRoutes } from '@/modules/checklist-item/checklist-item.routes.js';
+import { ChecklistItemService } from '@/modules/checklist-item/checklist-item.service.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
 import { LibraryService } from '@/modules/library/library.service.js';
 import { OrganizationRepository } from '@/modules/organization/organization.repository.js';
@@ -476,6 +479,135 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
     } finally {
       await app.close();
       await library().remove(entry.id, ownerId);
+    }
+  });
+
+  it('changes completion goal without changing progress and protects checklist HTTP CRUD', async () => {
+    const libraries = library();
+    const entry = await libraries.create(ownerId, { igdbId: 99995, status: 'PLAYING' });
+    expect(entry.completionGoal).toBe('MAIN');
+    await libraries.update(entry.id, ownerId, {
+      hoursPlayed: 12.5,
+      rating: 8,
+      notes: 'Onde parei',
+    });
+    const before = await libraries.getById(entry.id, ownerId);
+    const changed = await libraries.update(entry.id, ownerId, { completionGoal: 'COMPLETIONIST' });
+    expect(changed).toMatchObject({
+      completionGoal: 'COMPLETIONIST',
+      status: before.status,
+      notes: before.notes,
+      hltbMain: before.hltbMain,
+      hltbMainExtra: before.hltbMainExtra,
+      hltbCompletionist: before.hltbCompletionist,
+    });
+    expect(changed.hoursPlayed?.toNumber()).toBe(12.5);
+    const checklist = new ChecklistItemService(new ChecklistItemRepository(database));
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    await app.register(csrf);
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id;
+      req.session.sessionVersion = 0;
+      req.session.csrfToken = 'test-csrf';
+      return {};
+    });
+    await app.register(checklistItemRoutes, { prefix: '/api' });
+    try {
+      const base = `/api/library/${entry.id}/checklist`;
+      expect((await app.inject({ url: base })).statusCode).toBe(401);
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const cookie = String(login.headers['set-cookie']).split(';')[0];
+      const headers = { cookie, 'x-csrf-token': 'test-csrf' };
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers: { cookie },
+            payload: { text: 'Test' },
+          })
+        ).statusCode,
+      ).toBe(403);
+      for (const payload of [
+        { text: '' },
+        { text: 'x'.repeat(501) },
+        { text: 'Test', completed: true },
+      ]) {
+        expect((await app.inject({ method: 'POST', url: base, headers, payload })).statusCode).toBe(
+          400,
+        );
+      }
+      const created = await app.inject({
+        method: 'POST',
+        url: base,
+        headers,
+        payload: { text: '  Finalizar missão  ' },
+      });
+      expect(created.statusCode).toBe(201);
+      expect(created.json().text).toBe('Finalizar missão');
+      expect(created.json().completed).toBe(false);
+      expect(created.json()).not.toHaveProperty('userId');
+      const path = `${base}/${created.json().id}`;
+      expect(
+        (await app.inject({ method: 'PATCH', url: path, headers, payload: {} })).statusCode,
+      ).toBe(400);
+      expect(
+        (await app.inject({ method: 'PATCH', url: path, headers, payload: { completed: 'yes' } }))
+          .statusCode,
+      ).toBe(400);
+      const otherLogin = await app.inject({ url: `/test-session/${anotherUserId}` });
+      const otherHeaders = {
+        cookie: String(otherLogin.headers['set-cookie']).split(';')[0],
+        'x-csrf-token': 'test-csrf',
+      };
+      expect((await app.inject({ url: base, headers: otherHeaders })).statusCode).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: path,
+            headers: otherHeaders,
+            payload: { completed: true },
+          })
+        ).statusCode,
+      ).toBe(404);
+      expect(
+        (await app.inject({ method: 'DELETE', url: path, headers: otherHeaders })).statusCode,
+      ).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: path,
+            headers,
+            payload: { completed: true, text: 'Concluído' },
+          })
+        ).json(),
+      ).toMatchObject({ completed: true, text: 'Concluído' });
+      expect((await libraries.getById(entry.id, ownerId)).status).toBe('PLAYING');
+      const exported = await new UserRepository(database).findByIdWithLibrary(ownerId);
+      expect(exported?.libraryEntries.find((row) => row.igdbId === entry.igdbId)).toMatchObject({
+        completionGoal: 'COMPLETIONIST',
+        checklist: [{ text: 'Concluído', completed: true }],
+      });
+      expect((await app.inject({ method: 'DELETE', url: path, headers })).statusCode).toBe(204);
+      expect((await app.inject({ url: base, headers })).json()).toEqual({ items: [] });
+      await checklist.create(entry.id, ownerId, { text: 'Cascade' });
+      await libraries.remove(entry.id, ownerId);
+      expect(await database.checklistItem.count({ where: { entryId: entry.id } })).toBe(0);
+    } finally {
+      await app.close();
+      await database.libraryEntry.deleteMany({ where: { id: entry.id, userId: ownerId } });
     }
   });
 

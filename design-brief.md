@@ -118,3 +118,7 @@ A Agora inclui O que jogar agora?, com até três jogos da Fila ou Pausados e mo
 ## Coleções e tags
 
 A biblioteca permite criar, renomear e excluir coleções e tags pessoais. Cada jogo pode pertencer a vários agrupamentos, selecionados na ficha. Filtros e buscas salvas aceitam coleção/tag. Excluir agrupamento preserva todos os jogos. Buscas antigas com agrupamento removido indicam indisponibilidade em vez de trocar o critério silenciosamente.
+
+## Objetivo de conclusão
+
+A ficha permite escolher Principal, + Extras ou Completista como objetivo pessoal e mostra a estimativa correspondente. Não converte horas jogadas em percentual real. Checklist pessoal pode ser criado, editado, marcado/desmarcado e excluído. Completar tarefas não altera automaticamente o status do jogo.

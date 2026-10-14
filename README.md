@@ -347,3 +347,5 @@ Filtros salvos requerem `20261013210000_add_saved_filters`. CRUD autenticado em 
 Sessões requerem `20261013220000_add_play_sessions`. CRUD em `/api/library/:id/sessions` e `/:sessionId`; UUID `clientId` garante idempotência por usuário. A migração preserva horas anteriores em `baseHours`, soma sessões ao total e mantém `lastSessionAt`.
 
 Coleções e tags requerem `20261013230000_add_collections_and_tags`. CRUD em `/api/library/collections` e `/tags`; vínculos múltiplos em `PATCH /api/library/:id/organization`. Agrupamentos não substituem status e sua exclusão preserva jogos.
+
+Objetivo/checklist requerem `20261013233000_add_completion_goals`. A entrada aceita `completionGoal` e o checklist possui CRUD em `/api/library/:id/checklist` e `/:itemId`, sem modificar o status automaticamente.

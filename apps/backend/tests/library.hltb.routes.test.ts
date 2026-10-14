@@ -15,6 +15,7 @@ describe('POST /library/:id/hltb', () => {
       genres: [],
       platforms: [],
       status: 'BACKLOG',
+      completionGoal: 'MAIN',
       userPlatform: null,
       rating: null,
       hoursPlayed: null,

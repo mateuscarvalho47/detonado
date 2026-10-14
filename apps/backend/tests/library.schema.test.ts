@@ -2,6 +2,12 @@ import { updateLibraryEntryInput } from '@detonado/shared';
 import { describe, expect, it } from 'vitest';
 
 describe('updateLibraryEntryInput', () => {
+  it('validates completion goals independently of progress fields', () => {
+    expect(updateLibraryEntryInput.parse({ completionGoal: 'EXTRAS' })).toEqual({
+      completionGoal: 'EXTRAS',
+    });
+    expect(updateLibraryEntryInput.safeParse({ completionGoal: 'UNKNOWN' }).success).toBe(false);
+  });
   it.each([true, false, [], {}, ''])('rejects nonnumeric rating and hours: %j', (value) => {
     expect(updateLibraryEntryInput.safeParse({ rating: value }).success).toBe(false);
     expect(updateLibraryEntryInput.safeParse({ hoursPlayed: value }).success).toBe(false);

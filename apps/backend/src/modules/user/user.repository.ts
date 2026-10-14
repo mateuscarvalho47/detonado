@@ -133,6 +133,11 @@ export class UserRepository {
             genres: true,
             platforms: true,
             status: true,
+            completionGoal: true,
+            checklist: {
+              select: { id: true, text: true, completed: true, createdAt: true, updatedAt: true },
+              orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+            },
             userPlatform: true,
             rating: true,
             hoursPlayed: true,
