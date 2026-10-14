@@ -46,17 +46,32 @@ export function useDetailForm(game: LibraryEntry) {
 		);
 	}, [game.completedAt, form]);
 
+	useEffect(() => {
+		const serverHours = game.hoursPlayed ?? 0;
+		if (
+			!form.getFieldState("hoursPlayed").isDirty ||
+			form.getValues("hoursPlayed") === serverHours
+		) {
+			form.resetField("hoursPlayed", { defaultValue: serverHours });
+		}
+	}, [game.hoursPlayed, form]);
+
 	const save = useCallback(async () => {
-		await updateRef.current.mutateAsync(
-			detailPatch({
-				status: debouncedStatus,
-				userPlatform: debouncedPlatform,
-				rating: debouncedRating,
-				hoursPlayed: debouncedHours,
-				notes: debouncedNotes,
-				completedAt: debouncedCompletedAt,
-			}),
-		);
+		const patch = detailPatch({
+			status: debouncedStatus,
+			userPlatform: debouncedPlatform,
+			rating: debouncedRating,
+			hoursPlayed: debouncedHours,
+			notes: debouncedNotes,
+			completedAt: debouncedCompletedAt,
+		});
+		if (!form.getFieldState("hoursPlayed").isDirty) delete patch.hoursPlayed;
+		try {
+			await updateRef.current.mutateAsync(patch);
+		} catch {
+			setSaved(false);
+			return;
+		}
 		setSaved(true);
 		setTimeout(() => setSaved(false), 2000);
 	}, [
@@ -66,6 +81,7 @@ export function useDetailForm(game: LibraryEntry) {
 		debouncedHours,
 		debouncedNotes,
 		debouncedCompletedAt,
+		form,
 	]);
 
 	useEffect(() => {
@@ -73,7 +89,8 @@ export function useDetailForm(game: LibraryEntry) {
 			debouncedStatus !== game.status ||
 			debouncedPlatform.trim() !== (game.userPlatform ?? "").trim() ||
 			debouncedRating !== (game.rating ?? 0) ||
-			debouncedHours !== (game.hoursPlayed ?? 0) ||
+			(form.getFieldState("hoursPlayed").isDirty &&
+				debouncedHours !== (game.hoursPlayed ?? 0)) ||
 			debouncedNotes !== (game.notes ?? "") ||
 			debouncedCompletedAt !==
 				(game.completedAt ? game.completedAt.slice(0, 10) : "")
@@ -94,7 +111,8 @@ export function useDetailForm(game: LibraryEntry) {
 		game.rating,
 		game.notes,
 		game.completedAt,
+		form,
 	]);
 
-	return { form, saved, isSaving: update.isPending };
+	return { form, saved, isSaving: update.isPending, error: update.error };
 }

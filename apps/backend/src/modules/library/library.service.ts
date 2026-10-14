@@ -1,3 +1,4 @@
+import { ValidationError } from '@/lib/errors.js';
 import type { IgdbGame } from '@/lib/igdb/schemas.js';
 import type { GameService } from '@/modules/game/game.service.js';
 import { calendarToday, parseCalendarDate } from './library.dates.js';
@@ -115,6 +116,17 @@ export class LibraryService {
 
       const { completedAt: requestedDate, userPlatform, ...editableFields } = input;
       const changes: LibraryEntryChanges = { ...editableFields };
+      if (input.hoursPlayed !== undefined) {
+        const minutes = await repository.sessionMinutes(id, userId);
+        const sessionHours = Math.round(minutes / 6) / 10;
+        if (minutes > 0 && (input.hoursPlayed === null || input.hoursPlayed < sessionHours)) {
+          throw new ValidationError('Total de horas não pode ser menor que as sessões registradas');
+        }
+        changes.baseHours =
+          input.hoursPlayed === null
+            ? null
+            : Math.round((input.hoursPlayed - sessionHours) * 10) / 10;
+      }
       const nextStatus = input.status ?? entry.status;
       const completedAt = resolveCompletedAt(nextStatus, requestedDate, entry.completedAt);
 

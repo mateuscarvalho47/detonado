@@ -1,14 +1,23 @@
 import { randomUUID } from 'node:crypto';
+import fastifyCookie from '@fastify/cookie';
+import fastifySession from '@fastify/session';
 import { PrismaPg } from '@prisma/adapter-pg';
+import Fastify from 'fastify';
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { PrismaClient } from '@/generated/prisma/client.js';
 import { PreferencesService } from '@/modules/auth/preferences.service.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
 import { LibraryService } from '@/modules/library/library.service.js';
 import { PasswordResetRepository } from '@/modules/password-reset/password-reset.repository.js';
+import { PlaySessionRepository } from '@/modules/play-session/play-session.repository.js';
+import { playSessionRoutes } from '@/modules/play-session/play-session.routes.js';
+import { PlaySessionService } from '@/modules/play-session/play-session.service.js';
 import { SavedFilterRepository } from '@/modules/saved-filter/saved-filter.repository.js';
 import { SavedFilterService } from '@/modules/saved-filter/saved-filter.service.js';
 import { UserRepository } from '@/modules/user/user.repository.js';
+import csrf from '@/plugins/csrf.js';
+import errorHandler from '@/plugins/errorHandler.js';
 
 // Explicit opt-in; this suite never reads the application's DATABASE_URL.
 const testDatabaseUrl = process.env.BACKEND_TEST_DATABASE_URL;
@@ -105,6 +114,180 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
     expect(updated.filters).toEqual({});
     await service.remove(created.id, ownerId);
     expect(await service.list(ownerId)).toEqual([]);
+  });
+
+  it('keeps legacy hours, concurrent sessions, manual totals, edits and deletes consistent', async () => {
+    const libraries = library();
+    const entry = await libraries.create(ownerId, { igdbId: 99999, status: 'PLAYING' });
+    await libraries.update(entry.id, ownerId, { hoursPlayed: 2 });
+    const sessions = new PlaySessionService(new PlaySessionRepository(database));
+    const input = {
+      clientId: randomUUID(),
+      playedAt: '2026-10-13T12:00:00Z',
+      durationMinutes: 20,
+      notes: ' Test ',
+    };
+    const repeated = await Promise.all([
+      sessions.create(entry.id, ownerId, input),
+      sessions.create(entry.id, ownerId, {
+        ...input,
+        playedAt: '2026-10-13T09:00:00-03:00',
+        notes: 'Test',
+      }),
+    ]);
+    expect(repeated[0].id).toBe(repeated[1].id);
+    const five = await sessions.create(entry.id, ownerId, {
+      clientId: randomUUID(),
+      playedAt: '2026-10-14T12:00:00Z',
+      durationMinutes: 5,
+    });
+    expect((await libraries.getById(entry.id, ownerId)).hoursPlayed?.toNumber()).toBe(2.4);
+    await expect(
+      sessions.create(entry.id, ownerId, { ...input, durationMinutes: 30 }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    await expect(sessions.list(entry.id, anotherUserId)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(
+      sessions.update(five.id, entry.id, anotherUserId, { durationMinutes: 10 }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    await expect(sessions.remove(five.id, entry.id, anotherUserId)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+    await libraries.update(entry.id, ownerId, { hoursPlayed: 1 });
+    expect((await libraries.getById(entry.id, ownerId)).baseHours?.toNumber()).toBe(0.6);
+    await expect(libraries.update(entry.id, ownerId, { hoursPlayed: 0.3 })).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    await expect(libraries.update(entry.id, ownerId, { hoursPlayed: null })).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    await sessions.update(five.id, entry.id, ownerId, { durationMinutes: 40, notes: null });
+    expect((await libraries.getById(entry.id, ownerId)).hoursPlayed?.toNumber()).toBe(1.6);
+    const exported = await new UserRepository(database).findByIdWithLibrary(ownerId);
+    expect(
+      exported?.libraryEntries.find((row) => row.igdbId === entry.igdbId)?.sessions,
+    ).toHaveLength(2);
+    await sessions.remove(five.id, entry.id, ownerId);
+    const remaining = await libraries.getById(entry.id, ownerId);
+    expect(remaining.hoursPlayed?.toNumber()).toBe(0.9);
+    expect(remaining.lastSessionAt?.toISOString()).toBe('2026-10-13T12:00:00.000Z');
+    await sessions.remove(repeated[0].id, entry.id, ownerId);
+    expect((await libraries.getById(entry.id, ownerId)).hoursPlayed?.toNumber()).toBe(0.6);
+    expect((await libraries.getById(entry.id, ownerId)).lastSessionAt).toBeNull();
+    await libraries.update(entry.id, ownerId, { hoursPlayed: 99999.9 });
+    await expect(
+      sessions.create(entry.id, ownerId, {
+        clientId: randomUUID(),
+        playedAt: '2026-10-14T12:00:00Z',
+        durationMinutes: 60,
+      }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(await sessions.list(entry.id, ownerId)).toEqual([]);
+    expect((await libraries.getById(entry.id, ownerId)).hoursPlayed?.toNumber()).toBe(99999.9);
+    await libraries.remove(entry.id, ownerId);
+  });
+
+  it('protects session HTTP writes with auth, CSRF and owner checks', async () => {
+    const entry = await library().create(ownerId, { igdbId: 99998, status: 'PLAYING' });
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    await app.register(csrf);
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id;
+      req.session.sessionVersion = 0;
+      req.session.csrfToken = 'test-csrf';
+      return {};
+    });
+    await app.register(playSessionRoutes, { prefix: '/api' });
+    try {
+      const base = `/api/library/${entry.id}/sessions`;
+      expect((await app.inject({ url: base })).statusCode).toBe(401);
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const cookie = String(login.headers['set-cookie']).split(';')[0];
+      const headers = { cookie, 'x-csrf-token': 'test-csrf' };
+      const payload = {
+        clientId: randomUUID(),
+        playedAt: '2026-10-13T12:00:00Z',
+        durationMinutes: 20,
+      };
+      expect(
+        (await app.inject({ method: 'POST', url: base, headers: { cookie }, payload })).statusCode,
+      ).toBe(403);
+      for (const invalid of [
+        { ...payload, durationMinutes: 0 },
+        { ...payload, durationMinutes: 1441 },
+        { ...payload, playedAt: 'invalid' },
+        { ...payload, clientId: 'invalid' },
+        { ...payload, extra: true },
+      ]) {
+        expect(
+          (await app.inject({ method: 'POST', url: base, headers, payload: invalid })).statusCode,
+        ).toBe(400);
+      }
+      const created = await app.inject({ method: 'POST', url: base, headers, payload });
+      expect(created.statusCode).toBe(201);
+      expect(created.json()).not.toHaveProperty('userId');
+      const repeated = await app.inject({ method: 'POST', url: base, headers, payload });
+      expect(repeated.json().id).toBe(created.json().id);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers,
+            payload: { ...payload, durationMinutes: 5 },
+          })
+        ).statusCode,
+      ).toBe(409);
+      const sessionUrl = `${base}/${created.json().id}`;
+      expect(
+        (await app.inject({ method: 'PATCH', url: sessionUrl, headers, payload: {} })).statusCode,
+      ).toBe(400);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: sessionUrl,
+            headers,
+            payload: { durationMinutes: 5 },
+          })
+        ).statusCode,
+      ).toBe(200);
+      const otherLogin = await app.inject({ url: `/test-session/${anotherUserId}` });
+      const otherHeaders = {
+        cookie: String(otherLogin.headers['set-cookie']).split(';')[0],
+        'x-csrf-token': 'test-csrf',
+      };
+      expect((await app.inject({ url: base, headers: otherHeaders })).statusCode).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: sessionUrl,
+            headers: otherHeaders,
+            payload: { notes: 'Wrong owner' },
+          })
+        ).statusCode,
+      ).toBe(404);
+      expect(
+        (await app.inject({ method: 'DELETE', url: sessionUrl, headers: otherHeaders })).statusCode,
+      ).toBe(404);
+      expect((await app.inject({ method: 'DELETE', url: sessionUrl, headers })).statusCode).toBe(
+        204,
+      );
+      expect((await app.inject({ url: base, headers })).json()).toEqual({ sessions: [] });
+    } finally {
+      await app.close();
+      await library().remove(entry.id, ownerId);
+    }
   });
 
   it('serializes concurrent inserts and moves without duplicate queue positions', async () => {

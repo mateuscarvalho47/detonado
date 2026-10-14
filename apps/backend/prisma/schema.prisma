@@ -24,6 +24,7 @@ model User {
   sessionVersion             Int                  @default(0)
   createdAt                  DateTime             @default(now())
   updatedAt                  DateTime             @updatedAt
+  playSessions               PlaySession[]
   savedFilters               SavedFilter[]
   libraryEntries             LibraryEntry[]
   passwordResetTokens        PasswordResetToken[]
@@ -70,6 +71,9 @@ model LibraryEntry {
   status            LibraryStatus
   userPlatform      String?
   rating            Int?
+  baseHours         Decimal?      @db.Decimal(6, 1)
+  lastSessionAt     DateTime?
+  sessions          PlaySession[]
   hoursPlayed       Decimal?      @db.Decimal(6, 1)
   notes             String?
   completedAt       DateTime?
@@ -97,4 +101,21 @@ model SavedFilter {
   updatedAt DateTime @updatedAt
 
   @@index([userId, createdAt])
+}
+
+model PlaySession {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entryId         String
+  entry           LibraryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  clientId        String
+  playedAt        DateTime
+  durationMinutes Int
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, clientId])
+  @@index([entryId, playedAt])
 }

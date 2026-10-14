@@ -24,6 +24,8 @@ export const libraryEntrySchema = z.object({
   status: LibraryStatusEnum,
   userPlatform: z.string().nullable(),
   rating: z.number().nullable(),
+  lastSessionAt: z.date().nullable(),
+  baseHours: z.preprocess((v) => (v != null ? Number(v) : null), z.number().nullable()),
   hoursPlayed: z.preprocess((v) => (v != null ? Number(v) : null), z.number().nullable()),
   notes: z.string().nullable(),
   completedAt: z.date().nullable(),
@@ -42,6 +44,7 @@ export interface LibraryEntryChanges {
   status?: LibraryStatus;
   userPlatform?: string | null;
   rating?: number | null;
+  baseHours?: number | null;
   hoursPlayed?: number | null;
   notes?: string | null;
   completedAt?: Date | null;
