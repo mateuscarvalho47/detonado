@@ -27,7 +27,11 @@ export class AuthController {
     await req.session.regenerate();
     req.session.userId = user.id;
     req.session.sessionVersion = user.sessionVersion;
-    return reply.send({ id: user.id, email: user.email });
+    return reply.send({
+      id: user.id,
+      email: user.email,
+      preferredPlatform: user.preferredPlatform,
+    });
   };
 
   logout = async (req: FastifyRequest, reply: FastifyReply) => {

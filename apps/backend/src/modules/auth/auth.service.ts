@@ -94,7 +94,12 @@ export class AuthService {
 
     if (!user.emailVerified) throw new EmailNotVerifiedError();
 
-    return { id: user.id, email: user.email, sessionVersion: user.sessionVersion ?? 0 };
+    return {
+      id: user.id,
+      email: user.email,
+      preferredPlatform: user.preferredPlatform,
+      sessionVersion: user.sessionVersion ?? 0,
+    };
   }
 
   async verifyEmail(token: string) {

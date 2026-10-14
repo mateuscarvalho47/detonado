@@ -1,5 +1,9 @@
 import { ApiError, api, clearCsrfToken } from "@/lib/api";
 import type { User } from "@/types/api";
+import {
+	type PreferencesValues,
+	preferencesSchema,
+} from "../schema/preferencesSchema";
 
 export async function fetchMe(): Promise<User | null> {
 	try {
@@ -83,4 +87,14 @@ export function verifyPasswordReset(data: {
 	confirmPassword: string;
 }) {
 	return api.post<{ message: string }>("/password-reset/verify", data);
+}
+
+export function fetchPlatforms() {
+	return api.get<{ platforms: string[] }>("/games/platforms");
+}
+export function updatePreferences(data: PreferencesValues) {
+	return api.patch<{ preferredPlatform: string | null }>(
+		"/auth/preferences",
+		preferencesSchema.parse(data),
+	);
 }

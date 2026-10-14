@@ -22,7 +22,7 @@ const RAW_GAME = {
 
 function makeRedis(overrides: Record<string, unknown> = {}) {
   return {
-    get: vi.fn<() => Promise<string | null>>().mockResolvedValue(null),
+    get: vi.fn<(key: string) => Promise<string | null>>().mockResolvedValue(null),
     set: vi.fn().mockResolvedValue('OK'),
     del: vi.fn().mockResolvedValue(1),
     ...overrides,
@@ -310,5 +310,46 @@ describe('IgdbClient — error mapping', () => {
 
     expect(err).toBeInstanceOf(IgdbError);
     expect(err.statusCode).toBe(502);
+  });
+});
+
+describe('IgdbClient — platform catalog', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('paginates, deduplicates, sorts canonical names and caches the catalog', async () => {
+    const redis = makeRedis({ get: vi.fn().mockResolvedValue(TOKEN) });
+    // Platform cache is distinct from the OAuth token.
+    redis.get.mockImplementation(async (key: string) => (key === 'igdb:token' ? TOKEN : null));
+    const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
+    const fetchMock = setupFetch(
+      mockResponse(Array.from({ length: 500 }, () => ({ name: 'Zeta' }))),
+      mockResponse([{ name: 'Alpha' }]),
+    );
+    await expect(client.getPlatforms()).resolves.toEqual(['Alpha', 'Zeta']);
+    expect(fetchMock.mock.calls[1][1].body).toContain('offset 500');
+    expect(redis.set).toHaveBeenCalledWith('igdb:v1:platforms', '["Alpha","Zeta"]', { EX: 86400 });
+  });
+  it('shares concurrent catalog calls and bounds pagination without caching partial results', async () => {
+    const redis = makeRedis({
+      get: vi.fn().mockImplementation(async (key: string) => (key === 'igdb:token' ? TOKEN : null)),
+    });
+    const client = new IgdbClient(redis, CLIENT_ID, CLIENT_SECRET);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(mockResponse(Array.from({ length: 500 }, () => ({ name: 'Alpha' }))));
+    vi.stubGlobal('fetch', fetchMock);
+    const results = await Promise.allSettled([client.getPlatforms(), client.getPlatforms()]);
+    expect(results.map((result) => result.status)).toEqual(['rejected', 'rejected']);
+    expect(fetchMock).toHaveBeenCalledTimes(20);
+    expect(redis.set).not.toHaveBeenCalled();
+  });
+  it('uses a validated catalog cache without network', async () => {
+    const client = new IgdbClient(
+      makeRedis({ get: vi.fn().mockResolvedValue('["Alpha"]') }),
+      CLIENT_ID,
+      CLIENT_SECRET,
+    );
+    const fetchMock = setupFetch();
+    await expect(client.getPlatforms()).resolves.toEqual(['Alpha']);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

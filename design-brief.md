@@ -58,13 +58,13 @@ Nota é inteiro de 0 a 10, também com status Jogando. O zero da nota é enviado
 | `/library` | autenticado | lista (padrão) ou grade, filtro e ordenação |
 | `/library/:igdbId` | autenticado | ficha; a tela baixa a biblioteca inteira e acha o jogo pelo `igdbId` |
 | `/stats` | autenticado | totais, status, gêneros, plataformas, notas, conclusões |
-| `/account` | autenticado | e-mail, senha, exportação, exclusão |
+| `/account` | autenticado | e-mail, senha, plataforma preferida, exportação, exclusão |
 
 Busca é modal global (atalho Ctrl/Cmd+K na área logada), não uma rota `/search`.
 
 ## Dados que a interface usa
 
-Usuário autenticado: `id`, `email`, `emailVerified`.
+Usuário autenticado: `id`, `email`, `preferredPlatform`, `consentedAt`, `createdAt` (a resposta de login contém id, e-mail e preferência).
 
 Jogo IGDB: `igdbId`, `name`, `coverUrl`, `releaseYear`, `platforms`, `genres`.
 
@@ -77,6 +77,8 @@ Hora `0` e plataforma vazia são gravadas. A data de conclusão só permanece co
 Estatísticas (`GET /api/library/stats`): totais, contagem por status, gêneros, plataformas, distribuição de nota, linha do tempo de conclusões. A home não chama essa rota.
 
 ## Conta
+
+- Plataforma preferida opcional, salva por usuário em `/account`; Sem preferência remove a configuração. O catálogo usa nomes canônicos do IGDB. Ao adicionar, uma preferência compatível é selecionada; incompatível deixa a escolha vazia. Sem preferência, mantém a primeira plataforma disponível. Escolha manual não é sobrescrita por carregamento tardio. Entradas anteriores não mudam.
 
 - Registro exige consentimento e dispara e-mail de verificação. Se o envio falha, a conta é apagada e a API responde erro.
 - O link de verificação vale 24 horas. O banco guarda o SHA-256 do token; o e-mail leva o valor cru. Token ausente, expirado, sem prazo ou ainda em texto puro responde o mesmo erro. Essas contas pedem um reenvio.

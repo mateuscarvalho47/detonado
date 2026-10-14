@@ -83,7 +83,7 @@ Controllers separados ficam nos fluxos de conta e recuperação; games e bibliot
 
 ```
 User
-  id, email, passwordHash
+  id, email, passwordHash, preferredPlatform?
   emailVerified, emailVerificationToken (SHA-256 do token do e-mail), emailVerificationExpiresAt
   consentedAt, sessionVersion
   createdAt, updatedAt
@@ -220,6 +220,7 @@ Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
 | GET    | `/api/auth/csrf`                | token da sessão para o header `x-csrf-token`   | não  |
 | POST   | `/api/auth/logout`              | encerra sessão                                 | sim  |
 | GET    | `/api/auth/me`                  | usuário atual                                  | sim  |
+| PATCH  | `/api/auth/preferences` | salva ou remove plataforma preferida | sim |
 | PATCH  | `/api/auth/account`             | troca e-mail ou senha                          | sim  |
 | DELETE | `/api/auth/account`             | exclui a conta, com senha                      | sim  |
 | POST   | `/api/auth/consent`             | grava consentimento                            | sim  |
@@ -238,6 +239,7 @@ Tudo o que é API fica sob `/api`, exceto `/health` e `/docs`.
 | Método | Rota                         | Descrição              | Auth |
 | ------ | ---------------------------- | ---------------------- | ---- |
 | GET    | `/api/games/search?q=<nome>` | busca jogos por nome   | sim  |
+| GET    | `/api/games/platforms` | catálogo de plataformas IGDB | sim |
 | GET    | `/api/games/:igdbId`         | busca jogo por ID IGDB | sim  |
 
 ### Library
@@ -335,3 +337,7 @@ de `userId`, `id`, `createdAt` e `updatedAt`; complete os schemas de entrada e r
 ## Licença
 
 MIT
+
+## Roadmap de produto
+
+Prioridades, critérios de aceite e andamento das novas funcionalidades estão em [docs/product-roadmap.md](docs/product-roadmap.md). A preferência de plataforma requer a migration `20261013200000_add_preferred_platform`; a produção aplica migrations antes de iniciar o backend.

@@ -8,5 +8,7 @@ export {
   registerSchema,
   resendVerificationSchema,
   type UpdateAccountInput,
+  type UpdatePreferencesInput,
   updateAccountSchema,
+  updatePreferencesSchema,
 } from '@detonado/shared';

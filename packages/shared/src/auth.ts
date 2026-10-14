@@ -74,3 +74,8 @@ export type CheckPasswordResetInput = z.infer<typeof checkPasswordResetSchema>;
 export type VerifyPasswordResetInput = z.infer<
 	typeof verifyPasswordResetSchema
 >;
+
+export const updatePreferencesSchema = z.object({
+	preferredPlatform: z.string().trim().min(1).max(200).nullable(),
+});
+export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;

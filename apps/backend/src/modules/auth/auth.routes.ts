@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { sendVerificationEmail } from '@/lib/email.js';
 import { requireAuth } from '@/lib/requireAuth.js';
@@ -12,12 +13,15 @@ import {
   registerSchema,
   resendVerificationSchema,
   updateAccountSchema,
+  updatePreferencesSchema,
 } from './auth.schema.js';
 import { AuthService } from './auth.service.js';
+import { PreferencesService } from './preferences.service.js';
 
 const userResponse = z.object({
   id: z.string(),
   email: z.email(),
+  preferredPlatform: z.string().nullable(),
   consentedAt: z.date().nullable(),
   createdAt: z.date(),
 });
@@ -33,6 +37,7 @@ export async function authRoutes(app: FastifyInstance) {
     app.log,
   );
   const controller = new AuthController(authService, userService);
+  const preferences = new PreferencesService(userRepo, app.igdb);
 
   app.post('/auth/register', {
     config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
@@ -73,7 +78,11 @@ export async function authRoutes(app: FastifyInstance) {
       summary: 'Login',
       body: loginSchema,
       response: {
-        200: z.object({ id: z.string(), email: z.string() }),
+        200: z.object({
+          id: z.string(),
+          email: z.string(),
+          preferredPlatform: z.string().nullable(),
+        }),
       },
     },
     handler: controller.login,
@@ -107,6 +116,26 @@ export async function authRoutes(app: FastifyInstance) {
     },
     preHandler: requireAuth,
     handler: controller.me,
+  });
+
+  app.withTypeProvider<ZodTypeProvider>().patch('/auth/preferences', {
+    config: {
+      rateLimit: {
+        hook: 'preHandler',
+        max: 20,
+        timeWindow: '1 minute',
+        keyGenerator: (req) => req.session.userId ?? req.ip,
+      },
+    },
+    schema: {
+      tags: ['auth'],
+      summary: 'Atualizar preferências',
+      security: [{ sessionCookie: [] }],
+      body: updatePreferencesSchema,
+      response: { 200: z.object({ preferredPlatform: z.string().nullable() }) },
+    },
+    preHandler: requireAuth,
+    handler: async (req) => preferences.update(req.userId, req.body),
   });
 
   app.patch('/auth/account', {
