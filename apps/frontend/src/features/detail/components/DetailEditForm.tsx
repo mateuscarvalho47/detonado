@@ -102,6 +102,7 @@ export function DetailEditForm({
 												}}
 												className={styles.statusButton}
 												data-active={field.value === item.key}
+												aria-pressed={field.value === item.key}
 												style={
 													{
 														"--status-color": item.color,

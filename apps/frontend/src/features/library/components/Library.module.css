@@ -41,7 +41,7 @@
 	border-color: var(--pill-color, var(--color-accent));
 	background: color-mix(
 		in oklab,
-		var(--pill-color, var(--color-accent)) 12%,
+		var(--pill-color, var(--color-accent)) 16%,
 		var(--color-surface)
 	);
 	color: var(--color-ink);
@@ -53,6 +53,14 @@
 	color: var(--color-ink-faint);
 	font-family: var(--font-mono);
 	font-size: 0.68rem;
+}
+.pill[data-active="true"] .pillCount {
+	border-color: color-mix(
+		in oklab,
+		var(--pill-color, var(--color-accent)) 42%,
+		var(--color-line)
+	);
+	color: var(--color-ink-muted);
 }
 .controls {
 	display: flex;

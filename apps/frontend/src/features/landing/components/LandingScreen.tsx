@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Clock3, EyeOff, ListOrdered, MapPin } from "lucide-react";
 import { Cover } from "@/shared/components/Cover";
+import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import styles from "./LandingScreen.module.css";
 
@@ -102,7 +103,11 @@ export function LandingScreen() {
 									game={{
 										name: GAMES[0].name,
 										coverUrl: GAMES[0].coverUrl,
-										cover: { hue: 150, scheme: "duotone", glyph: "H" },
+										cover: {
+											hue: STATUS_BY_KEY.PLAYING.hue,
+											scheme: "duotone",
+											glyph: "H",
+										},
 									}}
 									size="lg"
 									withTitle={false}
@@ -127,7 +132,7 @@ export function LandingScreen() {
 												name: game.name,
 												coverUrl: game.coverUrl,
 												cover: {
-													hue: 255,
+													hue: STATUS_BY_KEY.BACKLOG.hue,
 													scheme: "duotone",
 													glyph: game.name[0],
 												},

@@ -22,6 +22,12 @@
 	--color-lime: #d8f06a;
 	--color-danger: #ff766d;
 	--color-success: #9bdd8d;
+	--color-status-wishlist: #c6a5ff;
+	--color-status-backlog: #82adff;
+	--color-status-playing: #72e6d1;
+	--color-status-paused: #f2c45e;
+	--color-status-completed: #9bdd8d;
+	--color-status-dropped: #ff7f78;
 	--shadow-float: 0 24px 70px rgb(0 0 0 / 0.42);
 	--radius-xs: 2px;
 	--radius-sm: 5px;
