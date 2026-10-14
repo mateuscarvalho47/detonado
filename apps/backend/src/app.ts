@@ -11,6 +11,7 @@ import { campaignRoutes } from '@/modules/campaign/campaign.routes.js';
 import { checklistItemRoutes } from '@/modules/checklist-item/checklist-item.routes.js';
 import { gameRoutes } from '@/modules/game/game.routes.js';
 import { libraryRoutes } from '@/modules/library/library.routes.js';
+import { libraryImportRoutes } from '@/modules/library-import/library-import.routes.js';
 import { organizationRoutes } from '@/modules/organization/organization.routes.js';
 import { passwordResetRoutes } from '@/modules/password-reset/password-reset.routes.js';
 import { playSessionRoutes } from '@/modules/play-session/play-session.routes.js';
@@ -59,6 +60,7 @@ export async function buildApp() {
     await app.register(organizationRoutes, { prefix: '/api' });
     await app.register(checklistItemRoutes, { prefix: '/api' });
     await app.register(campaignRoutes, { prefix: '/api' });
+    await app.register(libraryImportRoutes, { prefix: '/api' });
 
     app.get('/health', async (_req, reply) => {
       try {

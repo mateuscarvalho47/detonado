@@ -2,6 +2,7 @@ import { LayoutGrid, List, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CsvImportPanel } from "@/features/import/components/CsvImportPanel";
 import { GroupManager } from "@/features/organization/components/GroupManager";
 import { ArchiveEmpty } from "@/shared/components/ArchiveEmpty";
 import { EmptyState } from "@/shared/components/EmptyState";
@@ -117,6 +118,7 @@ export function LibraryScreen() {
 			</div>
 			<LibraryFiltersPanel library={library} filters={filters} />
 			<GroupManager />
+			<CsvImportPanel />
 			{library.length === 0 ? (
 				<ArchiveEmpty onAdd={() => setOpen(true)} />
 			) : filters.filtered.length === 0 ? (

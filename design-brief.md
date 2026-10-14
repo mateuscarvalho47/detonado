@@ -126,3 +126,7 @@ A ficha permite escolher Principal, + Extras ou Completista como objetivo pessoa
 ## Campanhas e rejogadas
 
 A ficha preserva campanhas anteriores com datas, status, horas, nota, notas e objetivo. Iniciar nova campanha exige confirmação, inicia Jogando com horas zeradas e desmarca tarefas; tempos HLTB e agrupamentos permanecem. Sessões pertencem à campanha original e podem ser consultadas no histórico. O formulário da ficha reinicia para impedir autosave de valores da campanha anterior. Estatísticas somam horas de todas as campanhas e mostram Campanhas concluídas por mês; distribuição por status continua por jogo atual.
+
+## Importação CSV
+
+A biblioteca recebe CSV até100 registros com modelo para download, prévia e resolução manual de jogos por nome no IGDB. Duplicatas são ignoradas por padrão; atualizar exige escolha por registro e só altera campos preenchidos. Campos vazios preservam dados existentes. Processamento em lotes com progresso e resultado por registro, incluindo falhas parciais.
