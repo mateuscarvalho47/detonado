@@ -135,3 +135,26 @@ production exports back to src: Node does not resolve .js specifiers to .ts.
 `pnpm check:runtime` checks shared and a compiled backend module with plain Node;
 it runs at the end of build and in CI. Rebuild shared after editing its schemas
 while the dev server is already running.
+
+## Steam import
+
+`STEAM_WEB_API_KEY` is optional and server-only. Missing or empty configuration
+keeps startup working; authenticated status reports configured=false and provider
+operations answer 503. Never log this key or put it in URLs; Steam accepts the
+x-webapi-key header. APP_URL supplies the fixed OpenID return URL at /account.
+
+Every Steam preview requires a SteamID verified through Steam OpenID in the
+current Detonado session. Never accept an arbitrary profile/SteamID for provider
+queries: a personal key can have visibility beyond public game details. State is
+bound to the current session/user for ten minutes; the pinned Steam OP validates
+signatures, signed fields, discovery, return URL, nonce freshness and one-time
+consumption. Logout/disconnect clears the verified identity. OpenID does not
+replace Detonado authentication.
+
+Owned-games cache lasts five minutes and validates payloads. Missing game_count
+means unavailable access, not an empty library; mismatched counts are upstream
+errors and are not cached. IGDB matches external_game_source + Steam app uid,
+discovering the Steam source ID rather than using deprecated category=1. Ambiguous
+matches require explicit selection. Preview fetches no HLTB. Commit reuses the CSV
+pipeline in batches of at most ten, skipping duplicates; Steam lifetime hours
+become base hours only for new entries and must not overwrite existing campaigns.

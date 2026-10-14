@@ -6,6 +6,7 @@ import { BulkEditPanel } from "@/features/bulk/components/BulkEditPanel";
 import { useBulkSelection } from "@/features/bulk/hooks/useBulkSelection";
 import { CsvImportPanel } from "@/features/import/components/CsvImportPanel";
 import { GroupManager } from "@/features/organization/components/GroupManager";
+import { SteamImportPanel } from "@/features/steam/components/SteamImportPanel";
 import { ArchiveEmpty } from "@/shared/components/ArchiveEmpty";
 import { EmptyState } from "@/shared/components/EmptyState";
 import { LoadFailure } from "@/shared/components/LoadFailure";
@@ -122,6 +123,7 @@ export function LibraryScreen() {
 			<LibraryFiltersPanel library={library} filters={filters} />
 			<GroupManager />
 			<CsvImportPanel />
+			<SteamImportPanel />
 			{selection.active ? (
 				<BulkEditPanel
 					selection={selection}

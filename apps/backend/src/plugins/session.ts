@@ -10,6 +10,8 @@ declare module 'fastify' {
     userId?: string;
     sessionVersion?: number;
     csrfToken?: string;
+    steamOpenIdState?: string;
+    steamVerifiedId?: string;
   }
 }
 
