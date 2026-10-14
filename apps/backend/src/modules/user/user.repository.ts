@@ -26,6 +26,7 @@ export class UserRepository {
         id: true,
         email: true,
         preferredPlatform: true,
+        onboardingCompletedAt: true,
         passwordHash: true,
         emailVerified: true,
         sessionVersion: true,
@@ -40,9 +41,18 @@ export class UserRepository {
         id: true,
         email: true,
         preferredPlatform: true,
+        onboardingCompletedAt: true,
         consentedAt: true,
         createdAt: true,
       },
+    });
+  }
+
+  completeOnboarding(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompletedAt: new Date() },
+      select: { onboardingCompletedAt: true },
     });
   }
 
@@ -90,6 +100,7 @@ export class UserRepository {
         id: true,
         email: true,
         preferredPlatform: true,
+        onboardingCompletedAt: true,
         passwordHash: true,
         emailVerified: true,
         sessionVersion: true,
@@ -109,6 +120,7 @@ export class UserRepository {
         email: true,
         emailVerified: true,
         preferredPlatform: true,
+        onboardingCompletedAt: true,
         consentedAt: true,
         createdAt: true,
         collections: {

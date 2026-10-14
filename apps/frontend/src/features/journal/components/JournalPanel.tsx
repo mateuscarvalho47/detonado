@@ -27,6 +27,17 @@ function JournalText({ entry }: { entry: JournalEntry }) {
 }
 export function JournalPanel({ game }: { game: LibraryEntry }) {
 	const state = useJournal(game);
+	return <JournalEditor game={game} state={state} />;
+}
+export function JournalEditor({
+	game,
+	state,
+	hideHistory = false,
+}: {
+	game: LibraryEntry;
+	state: ReturnType<typeof useJournal>;
+	hideHistory?: boolean;
+}) {
 	const entries = state.query.data?.entries ?? [];
 	return (
 		<section className={styles.panel} aria-labelledby="journal-title">
@@ -99,26 +110,28 @@ export function JournalPanel({ game }: { game: LibraryEntry }) {
 				<p role="alert">{state.mutation.error.message}</p>
 			)}
 			{state.mutation.isSuccess && <p role="status">Diário atualizado.</p>}
-			<label>
-				Mostrar registros de
-				<select
-					value={state.campaignFilter}
-					disabled={state.mutation.isPending}
-					onChange={(event) => state.setCampaignFilter(event.target.value)}
-				>
-					<option value="ALL">Todas as campanhas</option>
-					{game.activeCampaignId && (
-						<option value={game.activeCampaignId}>Campanha atual</option>
-					)}
-					{state.campaigns.data?.campaigns
-						.filter((campaign) => campaign.id !== game.activeCampaignId)
-						.map((campaign) => (
-							<option key={campaign.id} value={campaign.id}>
-								Campanha de {formatSessionDate(campaign.startedAt)}
-							</option>
-						))}
-				</select>
-			</label>
+			{!hideHistory && (
+				<label>
+					Mostrar registros de
+					<select
+						value={state.campaignFilter}
+						disabled={state.mutation.isPending}
+						onChange={(event) => state.setCampaignFilter(event.target.value)}
+					>
+						<option value="ALL">Todas as campanhas</option>
+						{game.activeCampaignId && (
+							<option value={game.activeCampaignId}>Campanha atual</option>
+						)}
+						{state.campaigns.data?.campaigns
+							.filter((campaign) => campaign.id !== game.activeCampaignId)
+							.map((campaign) => (
+								<option key={campaign.id} value={campaign.id}>
+									Campanha de {formatSessionDate(campaign.startedAt)}
+								</option>
+							))}
+					</select>
+				</label>
+			)}
 			{state.campaigns.isLoading && <p role="status">Carregando campanhas…</p>}
 			{state.campaigns.isError && (
 				<p role="alert">
@@ -143,47 +156,18 @@ export function JournalPanel({ game }: { game: LibraryEntry }) {
 			{state.query.isSuccess && entries.length === 0 && (
 				<p>Nenhuma anotação neste filtro.</p>
 			)}
-			<ul className={styles.list}>
-				{entries.map((entry) => (
-					<li key={entry.id}>
-						<div>
-							<strong>
-								{entry.legacy
-									? "Anotação anterior preservada"
-									: formatSessionDate(entry.occurredAt)}
-							</strong>
-							<p>
-								{entry.campaignId === game.activeCampaignId
-									? "Campanha atual"
-									: "Campanha anterior"}
-								{entry.legacy ? " · Data original desconhecida" : ""}
-							</p>
-						</div>
-						<JournalText
-							key={`${entry.id}:${entry.updatedAt}:${entry.spoiler}`}
+			{!hideHistory && (
+				<ul className={styles.list}>
+					{entries.map((entry) => (
+						<JournalRecord
+							key={entry.id}
 							entry={entry}
+							state={state}
+							game={game}
 						/>
-						<div className={styles.actions}>
-							<Button
-								variant="ghost"
-								disabled={state.mutation.isPending}
-								aria-label={`Editar anotação ${entry.legacy ? "anterior preservada" : formatSessionDate(entry.occurredAt)}`}
-								onClick={() => state.edit(entry)}
-							>
-								Editar
-							</Button>
-							<Button
-								variant="ghost"
-								disabled={state.mutation.isPending}
-								aria-label={`Excluir anotação ${entry.legacy ? "anterior preservada" : formatSessionDate(entry.occurredAt)}`}
-								onClick={() => state.setDeleting(entry)}
-							>
-								Excluir
-							</Button>
-						</div>
-					</li>
-				))}
-			</ul>
+					))}
+				</ul>
+			)}
 			{state.deleting && (
 				<div className={styles.confirm}>
 					<p>
@@ -203,5 +187,55 @@ export function JournalPanel({ game }: { game: LibraryEntry }) {
 				</div>
 			)}
 		</section>
+	);
+}
+
+export function JournalRecord({
+	entry,
+	game,
+	state,
+}: {
+	entry: JournalEntry;
+	game: LibraryEntry;
+	state: ReturnType<typeof useJournal>;
+}) {
+	return (
+		<li key={entry.id}>
+			<div>
+				<strong>
+					{entry.legacy
+						? "Anotação anterior preservada"
+						: formatSessionDate(entry.occurredAt)}
+				</strong>
+				<p>
+					{entry.campaignId === game.activeCampaignId
+						? "Campanha atual"
+						: "Campanha anterior"}
+					{entry.legacy ? " · Data original desconhecida" : ""}
+				</p>
+			</div>
+			<JournalText
+				key={`${entry.id}:${entry.updatedAt}:${entry.spoiler}`}
+				entry={entry}
+			/>
+			<div className={styles.actions}>
+				<Button
+					variant="ghost"
+					disabled={state.mutation.isPending}
+					aria-label={`Editar anotação ${entry.legacy ? "anterior preservada" : formatSessionDate(entry.occurredAt)}`}
+					onClick={() => state.edit(entry)}
+				>
+					Editar
+				</Button>
+				<Button
+					variant="ghost"
+					disabled={state.mutation.isPending}
+					aria-label={`Excluir anotação ${entry.legacy ? "anterior preservada" : formatSessionDate(entry.occurredAt)}`}
+					onClick={() => state.setDeleting(entry)}
+				>
+					Excluir
+				</Button>
+			</div>
+		</li>
 	);
 }

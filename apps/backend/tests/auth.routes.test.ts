@@ -36,6 +36,7 @@ describe('authentication HTTP flow', () => {
             ...data,
             id: 'user-1',
             preferredPlatform: null,
+            onboardingCompletedAt: null,
             libraryEntries: [],
             emailVerified: false,
             sessionVersion: 0,
@@ -45,7 +46,7 @@ describe('authentication HTTP flow', () => {
         }),
         update: vi.fn(async ({ data }) => {
           Object.assign(user ?? {}, data);
-          return { preferredPlatform: user?.preferredPlatform };
+          return user;
         }),
         updateMany: vi.fn(async ({ where, data }) => {
           if (
@@ -122,7 +123,28 @@ describe('authentication HTTP flow', () => {
         cookie: loggedInCookie,
         'x-csrf-token': nextCsrf.json().token,
       };
+      expect(login.json().onboardingCompletedAt).toBeNull();
       expect(login.json().preferredPlatform).toBeNull();
+      const onboard = await app.inject({
+        method: 'POST',
+        url: '/api/auth/onboarding/complete',
+        headers: authenticatedHeaders,
+        payload: {},
+      });
+      expect(onboard.statusCode).toBe(200);
+      expect(onboard.json().onboardingCompletedAt).toEqual(expect.any(String));
+      const afterOnboard = await app.inject({ url: '/api/auth/me', headers: authenticatedHeaders });
+      expect(afterOnboard.json().onboardingCompletedAt).toBe(onboard.json().onboardingCompletedAt);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: '/api/auth/onboarding/complete',
+            headers: { cookie: loggedInCookie },
+            payload: {},
+          })
+        ).statusCode,
+      ).toBe(403);
       const catalog = await app.inject({
         method: 'GET',
         url: '/api/games/platforms',

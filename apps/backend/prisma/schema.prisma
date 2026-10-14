@@ -20,6 +20,7 @@ model User {
   emailVerificationToken     String?              @unique
   emailVerificationExpiresAt DateTime?
   preferredPlatform          String?
+  onboardingCompletedAt      DateTime?
   consentedAt                DateTime?
   sessionVersion             Int                  @default(0)
   createdAt                  DateTime             @default(now())

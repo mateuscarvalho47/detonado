@@ -1,8 +1,13 @@
 import { Button } from "@/components/ui/button";
+import { useDraftRegistration } from "@/shared/components/DraftBoundary";
 import { useGroupManager } from "../hooks/useOrganization";
 import styles from "./Organization.module.css";
 export function GroupManager() {
 	const state = useGroupManager();
+	useDraftRegistration(
+		"organization",
+		state.form.formState.isDirty || state.mutation.isPending,
+	);
 	return (
 		<details className={styles.panel}>
 			<summary>Coleções e tags pessoais</summary>

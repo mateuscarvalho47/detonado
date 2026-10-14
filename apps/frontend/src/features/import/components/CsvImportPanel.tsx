@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { COMPLETION_GOALS } from "@/features/completion/lib/completionEstimate";
+import { useDraftRegistration } from "@/shared/components/DraftBoundary";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import { useCsvImport } from "../hooks/useCsvImport";
 import type { ImportPreviewRow, ImportRow } from "../service/importService";
@@ -131,6 +132,7 @@ export function CsvImportPanel() {
 	const busy =
 		state.reading || state.preview.isPending || state.commit.isPending;
 	const finished = state.commit.isSuccess;
+	useDraftRegistration("csv", busy || (state.rows.length > 0 && !finished));
 	const counts = { added: 0, updated: 0, skipped: 0, failed: 0 };
 	for (const result of state.results) {
 		if (result.state === "ADDED") counts.added++;

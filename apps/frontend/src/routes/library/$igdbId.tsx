@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DetailScreen } from "@/features/detail/components/DetailScreen";
 import { useLibraryEntry } from "@/features/detail/hooks/useLibraryEntry";
+import { validateLibrarySearch } from "@/features/library/schema/librarySearch";
 import styles from "@/styles/Routes.module.css";
 
 export const Route = createFileRoute("/library/$igdbId")({
+	validateSearch: validateLibrarySearch,
 	component: DetailPage,
 });
 

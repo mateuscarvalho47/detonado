@@ -4,6 +4,8 @@ Biblioteca pessoal de jogos. Monorepo com backend Fastify e frontend React: busc
 
 O plano de melhorias, os critérios de legibilidade e o registro de execução do backend estão em [docs/backend-improvements.md](docs/backend-improvements.md).
 
+A reorganização da interface está registrada em [docs/interface-and-navigation-plan.md](docs/interface-and-navigation-plan.md): navegação compartilhada, Coleções, Importar jogos, filtros na URL, histórico integrado e personalização opcional. Antes de disponibilizar esta versão, aplicar a migration aditiva `20261014120000_onboarding` no ambiente de destino. A integração Steam passa a exigir autorização explícita por sessão; vínculos anteriores precisam ser autorizados novamente.
+
 ## Stack
 
 ### Monorepo

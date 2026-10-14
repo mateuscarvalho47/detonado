@@ -1,22 +1,51 @@
-import { useMemo, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { type SetStateAction, useMemo } from "react";
 import { useExpiryClock } from "@/shared/hooks/useExpiryClock";
 import { compareQueue } from "@/shared/lib/queueOrder";
 import { useAppStore } from "@/store/useAppStore";
 import type { LibraryEntry } from "@/types/api";
 import { matchesFilters } from "../lib/matchesFilters";
+import type { LibrarySearch } from "../schema/librarySearch";
 import type { LibraryFilterValues } from "../schema/savedFilterSchema";
 
 export function useLibraryFilters(library: LibraryEntry[]) {
-	const statusFilter = useAppStore((s) => s.libraryStatusFilter);
-	const storeStatusFilter = useAppStore((s) => s.setLibraryStatusFilter);
-	const search = useAppStore((s) => s.librarySearch);
-	const setSearch = useAppStore((s) => s.setLibrarySearch);
-	const sort = useAppStore((s) => s.librarySortField);
-	const setSort = useAppStore((s) => s.setLibrarySortField);
-	const view = useAppStore((s) => s.libraryView);
-	const setView = useAppStore((s) => s.setLibraryView);
-
-	const [advanced, setAdvanced] = useState<LibraryFilterValues>({});
+	const location = useSearch({ from: "/library/" });
+	const navigate = useNavigate({ from: "/library/" });
+	const storedSort = useAppStore((s) => s.librarySortField);
+	const storeSort = useAppStore((s) => s.setLibrarySortField);
+	const storedView = useAppStore((s) => s.libraryView);
+	const storeView = useAppStore((s) => s.setLibraryView);
+	const { sort: urlSort, view: urlView, search = "" } = location;
+	const advanced = useMemo(() => {
+		const { sort: _sort, view: _view, search: _search, ...values } = location;
+		return values;
+	}, [location]);
+	const sort = urlSort ?? storedSort;
+	const view = urlView ?? storedView;
+	const statusFilter =
+		advanced.statuses?.length === 1 ? advanced.statuses[0] : null;
+	function update(next: LibrarySearch, replace = false) {
+		void navigate({
+			to: "/library",
+			search: { ...next, sort: next.sort ?? sort, view: next.view ?? view },
+			replace,
+		});
+	}
+	function setAdvanced(action: SetStateAction<LibraryFilterValues>) {
+		const next = typeof action === "function" ? action(advanced) : action;
+		update({ ...next, search, sort, view });
+	}
+	function setSearch(value: string) {
+		update({ ...location, search: value || undefined }, true);
+	}
+	function setSort(value: typeof sort) {
+		storeSort(value);
+		update({ ...location, sort: value });
+	}
+	function setView(value: typeof view) {
+		storeView(value);
+		update({ ...location, view: value });
+	}
 	const expirations = useMemo(
 		() =>
 			library.flatMap((entry) =>
@@ -38,13 +67,10 @@ export function useLibraryFilters(library: LibraryEntry[]) {
 		search,
 	};
 	function setStatusFilter(status: typeof statusFilter) {
-		storeStatusFilter(status);
-		setAdvanced((current) => ({ ...current, statuses: undefined }));
+		update({ ...location, statuses: status ? [status] : undefined });
 	}
 	function restore(next: LibraryFilterValues) {
-		setAdvanced(next);
-		storeStatusFilter(null);
-		setSearch(next.search ?? "");
+		update({ ...next, sort, view });
 	}
 	const filtered = useMemo(() => {
 		const result = library.filter((entry) =>

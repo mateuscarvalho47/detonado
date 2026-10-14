@@ -79,6 +79,7 @@ export interface LibraryStats {
 }
 
 export interface User {
+	onboardingCompletedAt?: string | null;
 	preferredPlatform?: string | null;
 	id: string;
 	email: string;

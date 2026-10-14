@@ -6,6 +6,17 @@ import styles from "./SessionsPanel.module.css";
 
 export function SessionsPanel({ game }: { game: LibraryEntry }) {
 	const state = useSessions(game);
+	return <SessionsEditor game={game} state={state} />;
+}
+export function SessionsEditor({
+	game,
+	state,
+	hideHistory = false,
+}: {
+	game: LibraryEntry;
+	state: ReturnType<typeof useSessions>;
+	hideHistory?: boolean;
+}) {
 	const {
 		register,
 		formState: { errors },
@@ -113,60 +124,70 @@ export function SessionsPanel({ game }: { game: LibraryEntry }) {
 			{state.query.isSuccess && state.query.data.sessions.length === 0 && (
 				<p>Nenhuma sessão registrada. As horas anteriores foram preservadas.</p>
 			)}
-			<ul className={styles.list}>
-				{state.query.data?.sessions.map((session) => (
-					<li key={session.id}>
-						<div>
-							<strong>
-								{formatSessionDate(session.playedAt)} ·{" "}
-								{session.durationMinutes} min
-							</strong>
-							{session.notes && <p className={styles.notes}>{session.notes}</p>}
-						</div>
-						{session.pending && (
-							<p>
-								Aguardando sincronização · gerencie a pendência no aviso
-								offline.
-							</p>
-						)}
-						{!session.pending && (
-							<div className={styles.actions}>
-								<Button
-									variant="ghost"
-									aria-label={`Editar sessão de ${formatSessionDate(session.playedAt)}`}
-									disabled={state.mutation.isPending}
-									onClick={() => state.edit(session)}
-								>
-									Editar
-								</Button>
-								<Button
-									variant="ghost"
-									aria-label={`Excluir sessão de ${formatSessionDate(session.playedAt)}`}
-									disabled={state.mutation.isPending}
-									onClick={() => state.setDeleteId(session.id)}
-								>
-									Excluir
-								</Button>
-							</div>
-						)}
-						{state.deleteId === session.id && (
-							<div className={styles.confirm}>
-								<p>Excluir esta sessão? As horas serão descontadas do total.</p>
-								<Button
-									variant="outline"
-									disabled={state.mutation.isPending}
-									onClick={state.confirmDelete}
-								>
-									Confirmar exclusão
-								</Button>
-								<Button variant="ghost" onClick={() => state.setDeleteId(null)}>
-									Cancelar
-								</Button>
-							</div>
-						)}
-					</li>
-				))}
-			</ul>
+			{!hideHistory && (
+				<ul className={styles.list}>
+					{state.query.data?.sessions.map((session) => (
+						<SessionRecord key={session.id} session={session} state={state} />
+					))}
+				</ul>
+			)}
 		</section>
+	);
+}
+
+export function SessionRecord({
+	session,
+	state,
+}: {
+	session: import("../service/sessionService").PlaySession;
+	state: ReturnType<typeof useSessions>;
+}) {
+	return (
+		<li key={session.id}>
+			<div>
+				<strong>
+					{formatSessionDate(session.playedAt)} · {session.durationMinutes} min
+				</strong>
+				{session.notes && <p className={styles.notes}>{session.notes}</p>}
+			</div>
+			{session.pending && (
+				<p>Aguardando sincronização · gerencie a pendência no aviso offline.</p>
+			)}
+			{!session.pending && (
+				<div className={styles.actions}>
+					<Button
+						variant="ghost"
+						aria-label={`Editar sessão de ${formatSessionDate(session.playedAt)}`}
+						disabled={state.mutation.isPending}
+						onClick={() => state.edit(session)}
+					>
+						Editar
+					</Button>
+					<Button
+						variant="ghost"
+						aria-label={`Excluir sessão de ${formatSessionDate(session.playedAt)}`}
+						disabled={state.mutation.isPending}
+						onClick={() => state.setDeleteId(session.id)}
+					>
+						Excluir
+					</Button>
+				</div>
+			)}
+			{state.deleteId === session.id && (
+				<div className={styles.confirm}>
+					<p>Excluir esta sessão? As horas serão descontadas do total.</p>
+					<Button
+						variant="outline"
+						disabled={state.mutation.isPending}
+						onClick={state.confirmDelete}
+					>
+						Confirmar exclusão
+					</Button>
+					<Button variant="ghost" onClick={() => state.setDeleteId(null)}>
+						Cancelar
+					</Button>
+				</div>
+			)}
+		</li>
 	);
 }

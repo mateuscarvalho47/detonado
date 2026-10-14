@@ -22,53 +22,7 @@ export function SuggestionsPanel({ library }: { library: LibraryEntry[] }) {
 					podem aparecer.
 				</p>
 			)}
-			<form onSubmit={state.onSubmit} className={styles.form}>
-				<label>
-					Plataforma registrada
-					<select {...register("platform")}>
-						<option value="">Todas as plataformas</option>
-						{state.platforms.map((platform) => (
-							<option key={platform}>{platform}</option>
-						))}
-					</select>
-				</label>
-				<label>
-					Gênero
-					<select {...register("genre")}>
-						<option value="">Todos os gêneros</option>
-						{state.genres.map((genre) => (
-							<option key={genre}>{genre}</option>
-						))}
-					</select>
-				</label>
-				<label>
-					Duração total: até (horas)
-					<input
-						type="number"
-						min="0.1"
-						max="99999.9"
-						step="0.1"
-						placeholder="Sem limite"
-						{...register("maxHours", {
-							setValueAs: (value: string) =>
-								value === "" ? "" : Number(value),
-						})}
-					/>
-				</label>
-				<div className={styles.actions}>
-					<Button variant="outline" type="submit">
-						Encontrar jogos
-					</Button>
-					<Button variant="ghost" type="button" onClick={state.clear}>
-						Limpar
-					</Button>
-				</div>
-				{Object.entries(errors).map(([field, error]) => (
-					<p key={field} role="alert">
-						{error.message}
-					</p>
-				))}
-			</form>
+
 			{state.unknownCount > 0 && (
 				<p>
 					{state.unknownCount} jogo(s) sem estimativa ficaram de fora por causa
@@ -97,6 +51,56 @@ export function SuggestionsPanel({ library }: { library: LibraryEntry[] }) {
 					</ul>
 				)}
 			</div>
+			<details>
+				<summary>Ajustar sugestões</summary>{" "}
+				<form onSubmit={state.onSubmit} className={styles.form}>
+					<label>
+						Plataforma registrada
+						<select {...register("platform")}>
+							<option value="">Todas as plataformas</option>
+							{state.platforms.map((platform) => (
+								<option key={platform}>{platform}</option>
+							))}
+						</select>
+					</label>
+					<label>
+						Gênero
+						<select {...register("genre")}>
+							<option value="">Todos os gêneros</option>
+							{state.genres.map((genre) => (
+								<option key={genre}>{genre}</option>
+							))}
+						</select>
+					</label>
+					<label>
+						Duração total: até (horas)
+						<input
+							type="number"
+							min="0.1"
+							max="99999.9"
+							step="0.1"
+							placeholder="Sem limite"
+							{...register("maxHours", {
+								setValueAs: (value: string) =>
+									value === "" ? "" : Number(value),
+							})}
+						/>
+					</label>
+					<div className={styles.actions}>
+						<Button variant="outline" type="submit">
+							Encontrar jogos
+						</Button>
+						<Button variant="ghost" type="button" onClick={state.clear}>
+							Limpar
+						</Button>
+					</div>
+					{Object.entries(errors).map(([field, error]) => (
+						<p key={field} role="alert">
+							{error.message}
+						</p>
+					))}
+				</form>
+			</details>
 		</section>
 	);
 }

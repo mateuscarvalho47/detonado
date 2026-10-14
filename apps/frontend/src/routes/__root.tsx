@@ -5,7 +5,7 @@ import {
 	useLocation,
 	useNavigate,
 } from "@tanstack/react-router";
-import { Menu } from "lucide-react";
+import { ArrowLeft, Menu } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ConsentModal } from "@/features/auth/components/ConsentModal";
@@ -14,7 +14,9 @@ import { useLibrary } from "@/features/library/hooks/useLibrary";
 import { OfflineBanner } from "@/features/offline/components/OfflineBanner";
 import { SearchModal } from "@/features/search/components/SearchModal";
 import { BottomNav } from "@/shared/components/BottomNav";
+import { DraftBoundary } from "@/shared/components/DraftBoundary";
 import { Sidebar } from "@/shared/components/Sidebar";
+import { pageTitle } from "@/shared/lib/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import styles from "@/styles/Shell.module.css";
 
@@ -71,6 +73,11 @@ function RootLayout() {
 	}, [me, isLoading, location.pathname, navigate]);
 
 	useEffect(() => {
+		if (me?.onboardingCompletedAt === null && location.pathname === "/")
+			void navigate({ to: "/onboarding", replace: true });
+	}, [me?.onboardingCompletedAt, location.pathname, navigate]);
+
+	useEffect(() => {
 		const onKey = (event: KeyboardEvent) => {
 			if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
 				event.preventDefault();
@@ -81,7 +88,7 @@ function RootLayout() {
 		return () => window.removeEventListener("keydown", onKey);
 	}, [setSearchOpen]);
 
-	if (isLoading && !PUBLIC_ROUTES.includes(location.pathname)) {
+	if ((isLoading || !me) && !PUBLIC_ROUTES.includes(location.pathname)) {
 		return <div className={styles.loading}>organizando sua biblioteca…</div>;
 	}
 
@@ -96,10 +103,19 @@ function RootLayout() {
 					</div>
 					<main className={styles.main}>
 						<div className={styles.mobileBar}>
-							<div className={styles.wordmark}>
-								<img src="/logo.svg" alt="" />
-								<span>Detonado</span>
-							</div>
+							{location.pathname.startsWith("/library/") && (
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Voltar à biblioteca"
+									onClick={() =>
+										void navigate({ to: "/library", search: true })
+									}
+								>
+									<ArrowLeft />
+								</Button>
+							)}
+							<strong>{pageTitle(location.pathname)}</strong>
 						</div>
 						<div className={styles.desktopBar}>
 							<Button
@@ -119,7 +135,9 @@ function RootLayout() {
 						</div>
 						<div className={styles.content}>
 							<OfflineBanner authenticated />
-							<Outlet />
+							<DraftBoundary key={me.id}>
+								<Outlet />
+							</DraftBoundary>
 						</div>
 					</main>
 					<BottomNav libraryCount={library.length} />

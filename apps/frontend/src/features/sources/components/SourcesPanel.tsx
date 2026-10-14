@@ -1,11 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { formatSessionDate } from "@/features/sessions/lib/sessionTime";
+import { useDraftRegistration } from "@/shared/components/DraftBoundary";
 import type { LibraryEntry } from "@/types/api";
 import { useSources } from "../hooks/useSources";
 import { SOURCE_KINDS } from "../lib/sourceKinds";
 import styles from "./SourcesPanel.module.css";
 export function SourcesPanel({ game }: { game: LibraryEntry }) {
 	const state = useSources(game);
+	useDraftRegistration(
+		"sources",
+		state.form.formState.isDirty || state.mutation.isPending,
+	);
 	return (
 		<section className={styles.panel} aria-labelledby="sources-title">
 			<h2 id="sources-title">Origem e disponibilidade</h2>

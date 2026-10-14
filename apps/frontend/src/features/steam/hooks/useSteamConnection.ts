@@ -19,13 +19,15 @@ export function useSteamStatus() {
 		staleTime: 60000,
 	});
 }
-export function useSteamConnection() {
+export function useSteamConnection(
+	returnTo: "/account" | "/onboarding" = "/account",
+) {
 	const query = useSteamStatus();
 	const qc = useQueryClient();
 	const started = useRef(false);
 	const [callbackError, setCallbackError] = useState<string | null>(null);
 	const connect = useMutation({
-		mutationFn: connectSteam,
+		mutationFn: () => connectSteam(returnTo),
 		onSuccess: ({ url }) => window.location.assign(officialSteamUrl(url)),
 		retry: false,
 	});

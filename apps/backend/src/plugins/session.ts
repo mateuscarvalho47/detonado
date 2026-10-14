@@ -12,6 +12,7 @@ declare module 'fastify' {
     csrfToken?: string;
     steamOpenIdState?: string;
     steamVerifiedId?: string;
+    steamAuthorizationToken?: string;
   }
 }
 

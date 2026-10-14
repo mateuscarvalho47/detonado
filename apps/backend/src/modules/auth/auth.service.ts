@@ -99,6 +99,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       preferredPlatform: user.preferredPlatform,
+      onboardingCompletedAt: user.onboardingCompletedAt,
       sessionVersion: user.sessionVersion ?? 0,
     };
   }

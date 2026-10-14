@@ -23,7 +23,7 @@ Registro seco. Palavras de jogador em português. Inglês só em nome próprio: 
 | `COMPLETED` | Zerado |
 | `DROPPED` | Abandonado |
 
-Navegação: **Agora**, **Biblioteca**, **Estatísticas**. Título da área logada: Biblioteca.
+Navegação desktop: **Agora**, **Biblioteca**, **Coleções**, **Retrospecto** e **Importar jogos**. Configurações fica no rodapé. No celular: **Agora**, **Biblioteca**, **Buscar**, **Retrospecto** e **Mais**; Mais reúne os destinos secundários e os links legais.
 
 Tempos do HowLongToBeat na ficha e no modal de adicionar: **Principal**, **+ Extras**, **Completista**.
 
@@ -57,7 +57,10 @@ Nota é inteiro de 0 a 10, também com status Jogando. O zero da nota é enviado
 | `/forgot-password`, `/reset-password` | anônimo | código de 6 dígitos |
 | `/library` | autenticado | lista (padrão) ou grade, filtros combináveis e salvos, ordenação |
 | `/library/:igdbId` | autenticado | ficha; a tela baixa a biblioteca inteira e acha o jogo pelo `igdbId` |
-| `/stats` | autenticado | totais, status, gêneros, plataformas, notas, conclusões |
+| `/collections` | autenticado | coleções, gerenciamento de agrupamentos e tags avançadas |
+| `/imports` | autenticado | prévia e importação Steam/CSV |
+| `/onboarding` | primeiro acesso autenticado | plataforma e Steam opcionais; continuar sem integração |
+| `/stats` | autenticado | período primeiro; gráficos gerais em Biblioteca completa |
 | `/account` | autenticado | e-mail, senha, plataforma preferida, exportação, exclusão |
 
 Busca é modal global (atalho Ctrl/Cmd+K na área logada), não uma rota `/search`.
@@ -117,7 +120,7 @@ A Agora inclui O que jogar agora?, com até três jogos da Fila ou Pausados e mo
 
 ## Coleções e tags
 
-A biblioteca permite criar, renomear e excluir coleções e tags pessoais. Cada jogo pode pertencer a vários agrupamentos, selecionados na ficha. Filtros e buscas salvas aceitam coleção/tag. Excluir agrupamento preserva todos os jogos. Buscas antigas com agrupamento removido indicam indisponibilidade em vez de trocar o critério silenciosamente.
+Coleções permite criar, renomear e excluir coleções e tags pessoais. Cada jogo pode pertencer a vários agrupamentos, selecionados na ficha. Filtros e buscas salvas aceitam coleção/tag. Excluir agrupamento preserva todos os jogos. Buscas antigas com agrupamento removido indicam indisponibilidade em vez de trocar o critério silenciosamente.
 
 ## Objetivo de conclusão
 
@@ -129,7 +132,7 @@ A ficha preserva campanhas anteriores com datas, status, horas, nota, notas e ob
 
 ## Importação CSV
 
-A biblioteca recebe CSV até100 registros com modelo para download, prévia e resolução manual de jogos por nome no IGDB. Duplicatas são ignoradas por padrão; atualizar exige escolha por registro e só altera campos preenchidos. Campos vazios preservam dados existentes. Processamento em lotes com progresso e resultado por registro, incluindo falhas parciais.
+Importar jogos recebe CSV até100 registros com modelo para download, prévia e resolução manual de jogos por nome no IGDB. Duplicatas são ignoradas por padrão; atualizar exige escolha por registro e só altera campos preenchidos. Campos vazios preservam dados existentes. Processamento em lotes com progresso e resultado por registro, incluindo falhas parciais.
 
 ## Origem e disponibilidade
 
@@ -149,8 +152,20 @@ Modo de seleção explícito, até100 jogos visíveis. Painel escolhe quais camp
 
 ### Importação Steam
 
-Configurações oferece conexão pelo login oficial Steam; apenas a conta verificada pode ter sua biblioteca consultada. Importação na biblioteca tem prévia paginada, resolução manual IGDB e confirmação. Duplicatas sempre preservadas; horas acumuladas só entram como horas anteriores de jogos novos. Sem chave configurada no servidor, mostrar indisponibilidade sem bloquear outras funcionalidades.
+Configurações oferece conexão pelo login oficial Steam; apenas a conta verificada pode ter sua biblioteca consultada. Importação em `/imports` tem prévia paginada, resolução manual IGDB e confirmação. Duplicatas sempre preservadas; horas acumuladas só entram como horas anteriores de jogos novos. Sem chave configurada no servidor, mostrar indisponibilidade sem bloquear outras funcionalidades.
 
 ### Modo offline
 
 Aviso contextual mostra quando a tela usa dados salvos e quantas sessões aguardam sincronização. Totais do servidor não incluem pendências. A fila permite consultar os registros, tentar novamente ou confirmar descarte; conflitos de campanha exigem conferir o histórico antes de registrar uma nova sessão. Sair informa sobre sessões não sincronizadas e limpa dados locais. Conteúdo previamente consultado fica disponível por até sete dias; outras alterações precisam de conexão.
+
+## Organização da interface — 14/10/2026
+
+Filtros relevantes da biblioteca ficam na URL, validados com os limites existentes. URL e seleção explícita de uma coleção têm precedência; a plataforma preferida só é aplicada ao escolher o atalho. Ordenação e formato usam preferências locais quando não aparecem na URL. Abrir uma ficha e voltar mantém os critérios, sem persistir seleções temporárias. Agrupamentos removidos continuam identificados como indisponíveis.
+
+A ficha destaca o registro principal. Sessões e diário compartilham um histórico cronológico com tipo e campanha, sem unir modelos, somar horas novamente ou atribuir datas originais às notas legadas. Spoilers continuam protegidos. Registrar sessão fica perto do total; ajuste manual, checklist, tags e origens são secundários. Jogar novamente está no menu Ações e abre a confirmação existente, bloqueada por alterações não salvas nos editores. Recolher painéis mantém seus formulários montados; sair com rascunhos pede confirmação.
+
+Agora mostra jogos em andamento e próximos da fila antes das sugestões; Ajustar sugestões recolhe os critérios. Retrospecto mantém Biblioteca completa recolhida. O menu Mais usa Radix, restaura foco e fecha com Escape, voltar ou toque fora. A barra inferior usa o mesmo limite de 1024 px da sidebar; teclado virtual é detectado pela redução da área visível, sem ocultar navegação apenas por foco.
+
+Steam exige autorização explícita da versão `2026-10-14`, separada do cadastro, antes de conectar. A autorização fica no Redis por sessão, com versão/data e limite de sete dias, e é exigida no servidor para verificar e consultar. Desconectar revoga o registro no servidor; respostas tardias não reativam a autorização. Outras sessões são independentes. Cache de consulta: cinco minutos. Jogos só entram após revisão/confirmação e permanecem após desconectar.
+
+O primeiro acesso usa `User.onboardingCompletedAt` e `POST /api/auth/onboarding/complete`; preferência é salva ao continuar e Steam continua opcional. A migration `20261014120000_onboarding` adiciona o campo e marca contas existentes como concluídas. Foi validada apenas em PostgreSQL descartável; aplicar no banco da aplicação antes de disponibilizar esta versão.

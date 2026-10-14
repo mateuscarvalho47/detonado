@@ -166,3 +166,8 @@ Revisão final do offline: eventos explícitos de logout/troca de conta limpam o
 As 14 entregas foram implementadas e documentadas, cada uma com branch própria. A importação Steam aguarda apenas a configuração de `STEAM_WEB_API_KEY` no Railway pelo usuário; sem uma chave real, o acesso autenticado ao provedor não foi exercitado. O modo offline depende de uma primeira visita com conexão e armazenamento disponível no navegador. Consulte os registros acima para migrações, contratos e limites de cada entrega.
 
 O ensaio final conjunto também confirmou a tela de integração Steam sem chave e a remoção de identidade/dados exibidos após logout em outra aba.
+
+
+## Reorganização da interface — 14/10/2026
+
+Implementação local conforme [interface-and-navigation-plan.md](interface-and-navigation-plan.md): navegação desktop/mobile compartilhada, páginas Coleções e Importar jogos, filtros validados na URL, ficha com histórico cronológico integrado, opções avançadas recolhidas, Agora/Retrospecto reorganizados, autorização Steam por sessão no servidor e onboarding opcional persistido. Regras de horas, campanhas, importação e offline preservadas. Inclui migration aditiva de onboarding, testada em banco descartável. Alterações registradas na branch `feature/interface-and-navigation` e integradas localmente à `main` com commit de merge, preservando o histórico. A aplicação da migration no banco de destino e a publicação permanecem pendentes.

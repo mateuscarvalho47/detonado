@@ -249,3 +249,47 @@
 		color: var(--color-accent);
 	}
 }
+
+.sidebar {
+	overflow-y: auto;
+}
+.navButton,
+.bottomButton {
+	text-decoration: none;
+}
+.bottomSlot {
+	display: contents;
+}
+.bottomButton[data-open="true"] {
+	background: var(--color-surface-raised);
+}
+.moreSheet[data-slot="dialog-content"] {
+	top: auto;
+	bottom: 0;
+	left: 0;
+	transform: none;
+	width: 100%;
+	max-width: none;
+	max-height: 85dvh;
+	overflow-y: auto;
+	padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+	.moreSheet[data-slot="dialog-content"] {
+		display: none;
+	}
+}
+@media (max-width: 1023px) {
+	.main {
+		padding-bottom: calc(80px + env(safe-area-inset-bottom));
+	}
+	.bottomButton {
+		min-height: 48px;
+	}
+	.mobileBar {
+		gap: 0.75rem;
+	}
+	.bottomNav[data-keyboard-open="true"] {
+		display: none;
+	}
+}

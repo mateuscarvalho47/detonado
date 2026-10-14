@@ -22,6 +22,7 @@ const userResponse = z.object({
   id: z.string(),
   email: z.email(),
   preferredPlatform: z.string().nullable(),
+  onboardingCompletedAt: z.date().nullable(),
   consentedAt: z.date().nullable(),
   createdAt: z.date(),
 });
@@ -82,6 +83,7 @@ export async function authRoutes(app: FastifyInstance) {
           id: z.string(),
           email: z.string(),
           preferredPlatform: z.string().nullable(),
+          onboardingCompletedAt: z.date().nullable(),
         }),
       },
     },
@@ -136,6 +138,18 @@ export async function authRoutes(app: FastifyInstance) {
     },
     preHandler: requireAuth,
     handler: async (req) => preferences.update(req.userId, req.body),
+  });
+
+  app.post('/auth/onboarding/complete', {
+    schema: {
+      tags: ['auth'],
+      summary: 'Concluir personalização opcional',
+      security: [{ sessionCookie: [] }],
+      body: z.strictObject({}),
+      response: { 200: z.object({ onboardingCompletedAt: z.date() }) },
+    },
+    preHandler: requireAuth,
+    handler: async (req) => userRepo.completeOnboarding(req.userId),
   });
 
   app.patch('/auth/account', {

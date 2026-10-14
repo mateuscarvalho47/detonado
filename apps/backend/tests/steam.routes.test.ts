@@ -122,11 +122,23 @@ describe('Steam HTTP', () => {
         (await app.inject({ method: 'POST', url: `${base}/preview`, headers, payload: {} }))
           .statusCode,
       ).toBe(403);
+      for (const authorizationVersion of [undefined, 'outdated']) {
+        expect(
+          (
+            await app.inject({
+              method: 'POST',
+              url: `${base}/connect`,
+              headers,
+              payload: { authorizationVersion },
+            })
+          ).statusCode,
+        ).toBe(403);
+      }
       const connect = await app.inject({
         method: 'POST',
         url: `${base}/connect`,
         headers,
-        payload: {},
+        payload: { authorizationVersion: '2026-10-14' },
       });
       expect(connect.statusCode).toBe(200);
       expect(connect.json().url).not.toContain(STEAM_TEST_KEY);

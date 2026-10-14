@@ -103,52 +103,56 @@ export function StatsScreen() {
 			</div>
 			<div className={styles.stack}>
 				<PeriodRetrospective />
-				<h2>Biblioteca completa</h2>
-				<div className={styles.metrics}>
-					{metrics.map((metric) => (
-						<div key={metric.label} className={styles.metric}>
-							<div className={styles.label}>{metric.label}</div>
-							<div className={styles.value}>
-								{metric.value}
-								{metric.unit && <small>{metric.unit}</small>}
-							</div>
+				<details>
+					<summary>Biblioteca completa</summary>
+					<div className={styles.stack}>
+						<div className={styles.metrics}>
+							{metrics.map((metric) => (
+								<div key={metric.label} className={styles.metric}>
+									<div className={styles.label}>{metric.label}</div>
+									<div className={styles.value}>
+										{metric.value}
+										{metric.unit && <small>{metric.unit}</small>}
+									</div>
+								</div>
+							))}
 						</div>
-					))}
-				</div>
-				<p className={styles.label}>
-					As horas incluem todas as campanhas. Status e avaliações mostram o
-					registro atual de cada jogo.
-				</p>
-				<div className={styles.columns}>
-					<Card title="Jogos por status atual">
-						<DonutChart stats={stats} />
-					</Card>
-					<Card title="Gêneros mais presentes">
-						<HBars
-							items={stats.topGenres.map((item) => ({
-								label: item.genre,
-								count: item.count,
-							}))}
-						/>
-					</Card>
-				</div>
-				<div className={styles.columns}>
-					<Card title="Plataformas">
-						<HBars
-							items={stats.topPlatforms.map((item) => ({
-								label: item.platform,
-								count: item.count,
-							}))}
-							color="var(--color-lime)"
-						/>
-					</Card>
-					<Card title="Suas avaliações" sub="nota 0–10">
-						<Histogram distribution={stats.ratingDistribution} />
-					</Card>
-				</div>
-				<Card title="Campanhas concluídas por mês">
-					<TimelineChart timeline={stats.completedTimeline} />
-				</Card>
+						<p className={styles.label}>
+							As horas incluem todas as campanhas. Status e avaliações mostram o
+							registro atual de cada jogo.
+						</p>
+						<div className={styles.columns}>
+							<Card title="Jogos por status atual">
+								<DonutChart stats={stats} />
+							</Card>
+							<Card title="Gêneros mais presentes">
+								<HBars
+									items={stats.topGenres.map((item) => ({
+										label: item.genre,
+										count: item.count,
+									}))}
+								/>
+							</Card>
+						</div>
+						<div className={styles.columns}>
+							<Card title="Plataformas">
+								<HBars
+									items={stats.topPlatforms.map((item) => ({
+										label: item.platform,
+										count: item.count,
+									}))}
+									color="var(--color-lime)"
+								/>
+							</Card>
+							<Card title="Suas avaliações" sub="nota 0–10">
+								<Histogram distribution={stats.ratingDistribution} />
+							</Card>
+						</div>
+						<Card title="Campanhas concluídas por mês">
+							<TimelineChart timeline={stats.completedTimeline} />
+						</Card>
+					</div>
+				</details>
 			</div>
 		</div>
 	);

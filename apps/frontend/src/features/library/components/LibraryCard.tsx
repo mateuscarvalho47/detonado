@@ -20,6 +20,7 @@ export function LibraryCard({ game }: { game: LibraryEntry }) {
 			onClick={() =>
 				navigate({
 					to: "/library/$igdbId",
+					search: true,
 					params: { igdbId: String(game.igdbId) },
 				})
 			}

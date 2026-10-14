@@ -3,21 +3,17 @@ import { QueueMoveButtons } from "@/features/library/components/QueueMoveButtons
 import { Cover } from "@/shared/components/Cover";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import { queueCaption } from "@/shared/lib/queueOrder";
-import { useAppStore } from "@/store/useAppStore";
 import type { LibraryEntry } from "@/types/api";
 import styles from "./Dashboard.module.css";
 
 export function BacklogList({ games }: { games: LibraryEntry[] }) {
 	const navigate = useNavigate();
-	const setStatusFilter = useAppStore((state) => state.setLibraryStatusFilter);
-	const setSort = useAppStore((state) => state.setLibrarySortField);
-	const setSearch = useAppStore((state) => state.setLibrarySearch);
 	const shown = games.slice(0, 5);
 	function openQueue() {
-		setStatusFilter("BACKLOG");
-		setSort("queue");
-		setSearch("");
-		void navigate({ to: "/library" });
+		void navigate({
+			to: "/library",
+			search: { statuses: ["BACKLOG"], sort: "queue" },
+		});
 	}
 	const openGame = (igdbId: number) =>
 		void navigate({

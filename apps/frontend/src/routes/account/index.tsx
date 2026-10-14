@@ -17,11 +17,13 @@ function AccountPage() {
 				<p className={styles.eyebrow}>Conta</p>
 				<h1 className={styles.accountTitle}>Configurações</h1>
 			</header>
-			<AccountEditSection />
-			<div className={styles.divider} />
 			<p className={styles.eyebrow}>Preferências</p>
 			<PreferencesSection />
+			<p className={styles.eyebrow}>Integrações</p>
 			<AccountSteamSection />
+			<div className={styles.divider} />
+			<AccountEditSection />
+			<div className={styles.divider} />
 			<div className={styles.menu}>
 				<button
 					type="button"

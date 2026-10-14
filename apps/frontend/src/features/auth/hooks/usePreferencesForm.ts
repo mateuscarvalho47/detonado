@@ -17,7 +17,7 @@ export function usePreferencesForm() {
 	});
 	const value = form.watch("preferredPlatform") ?? "";
 	const onSubmit = form.handleSubmit((values) => {
-		mutation.mutate(values);
+		mutation.mutate(values, { onSuccess: () => form.reset(values) });
 	});
 	function selectPlatform(value: string) {
 		form.setValue("preferredPlatform", value || null, { shouldDirty: true });

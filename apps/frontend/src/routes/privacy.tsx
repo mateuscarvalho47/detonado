@@ -12,7 +12,7 @@ function PrivacyPage() {
 		<div className={styles.legal}>
 			<p>Legal</p>
 			<h1>Política de Privacidade</h1>
-			<p>Última atualização: setembro de 2026</p>
+			<p>Última atualização: 14 de outubro de 2026</p>
 
 			<div>
 				<section>
@@ -43,6 +43,18 @@ function PrivacyPage() {
 							jogadas, notas pessoais, data de conclusão e tempos do
 							HowLongToBeat.
 						</li>
+						<li>
+							<strong>Preferências e progresso</strong> — plataforma preferida,
+							conclusão da personalização inicial, coleções, tags, buscas
+							salvas, campanhas, sessões datadas, checklist, origens e diário,
+							inclusive indicações de spoiler.
+						</li>
+						<li>
+							<strong>Steam, quando autorizada</strong> — SteamID verificado,
+							jogos e horas acumuladas para preparar uma prévia de importação. A
+							autorização é opcional e separada do cadastro.
+						</li>
+
 						<li>
 							<strong>Dados de sessão</strong> — identificador de sessão
 							armazenado em cookie seguro (httpOnly, válido por 7 dias).
@@ -151,6 +163,38 @@ function PrivacyPage() {
 						Argon2, cookie de sessão httpOnly (em produção, Secure e
 						SameSite=None), token de sessão em cada alteração, comunicação via
 						HTTPS e armazenamento de sessão em Redis com TTL de 7 dias.
+					</p>
+				</section>
+				<section>
+					<h2>Steam e armazenamento neste navegador</h2>
+					<p>
+						Ao autorizar a Steam, registramos a versão da explicação e a data da
+						autorização no servidor para esta sessão, por até sete dias. O login
+						oficial é feito na Steam; não recebemos sua senha Steam. A Steam
+						recebe a solicitação de autenticação e consulta. IGDB/Twitch recebe
+						identificadores de jogos para correspondência; HowLongToBeat recebe
+						nomes de jogos para estimativas.
+					</p>
+					<p>
+						A consulta dos jogos e horas Steam fica em cache no servidor por até
+						cinco minutos. Só os jogos revisados e confirmados entram na
+						biblioteca; duplicatas são preservadas. Horas importadas são horas
+						anteriores, sem data de sessão.
+					</p>
+					<p>
+						Desconectar Steam em Configurações revoga a autorização desta sessão
+						no servidor e impede novas consultas, inclusive por abas da mesma
+						sessão. Outras sessões têm autorizações independentes. O cache
+						expira em até cinco minutos; desconectar não apaga os jogos
+						importados. Para removê-los, use a ficha de cada jogo ou exclua sua
+						conta em Gerenciar meus dados.
+					</p>
+					<p>
+						Para leitura offline, dados já consultados ficam neste navegador,
+						separados por conta, por até sete dias. Sessões pendentes ficam no
+						navegador até sincronização ou descarte. Sair ou excluir a conta
+						limpa os dados locais; o descarte de pendências exige confirmação.
+						As demais alterações precisam de conexão.
 					</p>
 				</section>
 
