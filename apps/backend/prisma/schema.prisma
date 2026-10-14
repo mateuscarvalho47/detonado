@@ -24,6 +24,8 @@ model User {
   sessionVersion             Int                  @default(0)
   createdAt                  DateTime             @default(now())
   updatedAt                  DateTime             @updatedAt
+  collections                Collection[]
+  tags                       Tag[]
   playSessions               PlaySession[]
   savedFilters               SavedFilter[]
   libraryEntries             LibraryEntry[]
@@ -60,9 +62,9 @@ enum HltbStatus {
 }
 
 model LibraryEntry {
-  id                String        @id @default(cuid())
+  id                String            @id @default(cuid())
   userId            String
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   igdbId            Int
   name              String
   coverUrl          String?
@@ -71,10 +73,12 @@ model LibraryEntry {
   status            LibraryStatus
   userPlatform      String?
   rating            Int?
-  baseHours         Decimal?      @db.Decimal(6, 1)
+  baseHours         Decimal?          @db.Decimal(6, 1)
   lastSessionAt     DateTime?
+  collections       CollectionEntry[]
+  tags              TagEntry[]
   sessions          PlaySession[]
-  hoursPlayed       Decimal?      @db.Decimal(6, 1)
+  hoursPlayed       Decimal?          @db.Decimal(6, 1)
   notes             String?
   completedAt       DateTime?
   hltbMain          Float?
@@ -83,9 +87,10 @@ model LibraryEntry {
   hltbStatus        HltbStatus?
   // Lower comes first. Set only while status is BACKLOG.
   queuePosition     Int?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
+  @@unique([id, userId])
   @@unique([userId, igdbId])
   @@index([userId, status])
   @@index([userId, status, queuePosition])
@@ -113,9 +118,57 @@ model PlaySession {
   playedAt        DateTime
   durationMinutes Int
   notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@unique([userId, clientId])
   @@index([entryId, playedAt])
+}
+
+model Collection {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  entries   CollectionEntry[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([userId, name])
+  @@unique([id, userId])
+}
+
+model Tag {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  entries   TagEntry[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId, name])
+  @@unique([id, userId])
+}
+
+model CollectionEntry {
+  entryId      String
+  collectionId String
+  userId       String
+  entry        LibraryEntry @relation(fields: [entryId, userId], references: [id, userId], onDelete: Cascade)
+  collection   Collection   @relation(fields: [collectionId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@id([entryId, collectionId])
+  @@index([collectionId])
+}
+
+model TagEntry {
+  entryId String
+  tagId   String
+  userId  String
+  entry   LibraryEntry @relation(fields: [entryId, userId], references: [id, userId], onDelete: Cascade)
+  tag     Tag          @relation(fields: [tagId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@id([entryId, tagId])
+  @@index([tagId])
 }

@@ -6,6 +6,12 @@ export function matchesFilters(
 ) {
 	if (filters.statuses?.length && !filters.statuses.includes(entry.status))
 		return false;
+	if (
+		filters.collectionId &&
+		!entry.collectionIds?.includes(filters.collectionId)
+	)
+		return false;
+	if (filters.tagId && !entry.tagIds?.includes(filters.tagId)) return false;
 	if (filters.platform && entry.userPlatform !== filters.platform) return false;
 	if (filters.genre && !entry.genres.includes(filters.genre)) return false;
 	if (filters.maxHours !== undefined) {

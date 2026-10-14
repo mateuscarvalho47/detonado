@@ -9,6 +9,7 @@ import { serializeRequest } from '@/lib/requestLog.js';
 import { authRoutes } from '@/modules/auth/auth.routes.js';
 import { gameRoutes } from '@/modules/game/game.routes.js';
 import { libraryRoutes } from '@/modules/library/library.routes.js';
+import { organizationRoutes } from '@/modules/organization/organization.routes.js';
 import { passwordResetRoutes } from '@/modules/password-reset/password-reset.routes.js';
 import { playSessionRoutes } from '@/modules/play-session/play-session.routes.js';
 import { savedFilterRoutes } from '@/modules/saved-filter/saved-filter.routes.js';
@@ -53,6 +54,7 @@ export async function buildApp() {
     await app.register(libraryRoutes, { prefix: '/api' });
     await app.register(savedFilterRoutes, { prefix: '/api' });
     await app.register(playSessionRoutes, { prefix: '/api' });
+    await app.register(organizationRoutes, { prefix: '/api' });
 
     app.get('/health', async (_req, reply) => {
       try {

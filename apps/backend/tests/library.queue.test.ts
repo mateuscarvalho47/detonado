@@ -21,7 +21,7 @@ type Row = {
 };
 
 function fakeDb(rows: Row[]) {
-  const table = rows.map((row) => ({ ...row }));
+  const table = rows.map((row) => ({ ...row, collections: [], tags: [] }));
   const libraryEntry = {
     findMany: async ({ where }: { where: { userId: string; status: string } }) =>
       table

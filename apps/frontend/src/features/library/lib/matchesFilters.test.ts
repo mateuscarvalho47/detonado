@@ -44,3 +44,23 @@ describe("combined library filters", () => {
 		).toBe(true);
 	});
 });
+
+it("combines collection and tag membership, preserving empty-array behavior", () => {
+	const grouped = {
+		...game,
+		collectionIds: ["collection"],
+		tagIds: ["tag", "second"],
+	};
+	expect(
+		matchesFilters(grouped, {
+			collectionId: "collection",
+			tagId: "tag",
+			platform: "PC",
+		}),
+	).toBe(true);
+	expect(
+		matchesFilters(grouped, { collectionId: "missing", tagId: "tag" }),
+	).toBe(false);
+	expect(matchesFilters(game, { tagId: "tag" })).toBe(false);
+	expect(matchesFilters(grouped, { tagId: "missing" })).toBe(false);
+});

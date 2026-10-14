@@ -111,12 +111,22 @@ export class UserRepository {
         preferredPlatform: true,
         consentedAt: true,
         createdAt: true,
+        collections: {
+          select: { id: true, name: true, createdAt: true, updatedAt: true },
+          orderBy: { name: 'asc' },
+        },
+        tags: {
+          select: { id: true, name: true, createdAt: true, updatedAt: true },
+          orderBy: { name: 'asc' },
+        },
         savedFilters: {
           select: { id: true, name: true, filters: true, createdAt: true, updatedAt: true },
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         },
         libraryEntries: {
           select: {
+            collections: { select: { collectionId: true } },
+            tags: { select: { tagId: true } },
             igdbId: true,
             name: true,
             coverUrl: true,
