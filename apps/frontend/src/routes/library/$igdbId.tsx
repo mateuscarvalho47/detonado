@@ -30,5 +30,10 @@ function DetailPage() {
 		);
 	}
 
-	return <DetailScreen game={game} />;
+	return (
+		<DetailScreen
+			key={`${game.id}:${game.activeCampaignId ?? "legacy"}`}
+			game={game}
+		/>
+	);
 }

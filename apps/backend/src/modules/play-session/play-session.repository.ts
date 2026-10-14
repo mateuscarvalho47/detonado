@@ -16,9 +16,9 @@ export class PlaySessionRepository {
   findEntry(entryId: string, userId: string) {
     return this.db.libraryEntry.findFirst({ where: { id: entryId, userId } });
   }
-  list(entryId: string, userId: string) {
+  list(entryId: string, userId: string, campaignId: string) {
     return this.db.playSession.findMany({
-      where: { entryId, userId },
+      where: { entryId, userId, campaignId },
       orderBy: [{ playedAt: 'desc' }, { id: 'desc' }],
     });
   }
@@ -28,11 +28,12 @@ export class PlaySessionRepository {
   find(id: string, entryId: string, userId: string) {
     return this.db.playSession.findFirst({ where: { id, entryId, userId } });
   }
-  create(entryId: string, userId: string, input: CreatePlaySessionInput) {
+  create(entryId: string, userId: string, campaignId: string, input: CreatePlaySessionInput) {
     return this.db.playSession.create({
       data: {
         entryId,
         userId,
+        campaignId,
         clientId: input.clientId.toLowerCase(),
         playedAt: new Date(input.playedAt),
         durationMinutes: input.durationMinutes,
@@ -54,13 +55,19 @@ export class PlaySessionRepository {
   async remove(id: string, entryId: string, userId: string) {
     return (await this.db.playSession.deleteMany({ where: { id, entryId, userId } })).count;
   }
-  async progress(entryId: string, userId: string) {
+  async progress(entryId: string, userId: string, campaignId: string) {
     const result = await this.db.playSession.aggregate({
-      where: { entryId, userId },
+      where: { entryId, userId, campaignId },
       _sum: { durationMinutes: true },
       _max: { playedAt: true },
     });
     return { minutes: result._sum.durationMinutes ?? 0, lastSessionAt: result._max.playedAt };
+  }
+  findCampaign(id: string, entryId: string, userId: string) {
+    return this.db.campaign.findFirst({ where: { id, entryId, userId } });
+  }
+  saveCampaignProgress(id: string, entryId: string, userId: string, hoursPlayed: number) {
+    return this.db.campaign.update({ where: { id, entryId, userId }, data: { hoursPlayed } });
   }
   saveProgress(entryId: string, userId: string, hoursPlayed: number, lastSessionAt: Date | null) {
     return this.db.libraryEntry.update({

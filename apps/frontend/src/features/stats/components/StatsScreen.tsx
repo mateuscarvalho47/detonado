@@ -81,8 +81,8 @@ export function StatsScreen() {
 			unit: "h",
 		},
 		{
-			label: "Concluídos",
-			value: stats.countByStatus.COMPLETED ?? 0,
+			label: "Campanhas concluídas",
+			value: stats.completedCampaigns ?? stats.countByStatus.COMPLETED ?? 0,
 			unit: "",
 		},
 		{
@@ -112,8 +112,12 @@ export function StatsScreen() {
 						</div>
 					))}
 				</div>
+				<p className={styles.label}>
+					As horas incluem todas as campanhas. Status e avaliações mostram o
+					registro atual de cada jogo.
+				</p>
 				<div className={styles.columns}>
-					<Card title="Por status">
+					<Card title="Jogos por status atual">
 						<DonutChart stats={stats} />
 					</Card>
 					<Card title="Gêneros mais presentes">
@@ -139,7 +143,7 @@ export function StatsScreen() {
 						<Histogram distribution={stats.ratingDistribution} />
 					</Card>
 				</div>
-				<Card title="Jogos concluídos por mês">
+				<Card title="Campanhas concluídas por mês">
 					<TimelineChart timeline={stats.completedTimeline} />
 				</Card>
 			</div>

@@ -114,5 +114,20 @@ export function useDetailForm(game: LibraryEntry) {
 		form,
 	]);
 
-	return { form, saved, isSaving: update.isPending, error: update.error };
+	const hasPendingChanges =
+		watched.status !== game.status ||
+		(watched.userPlatform ?? "").trim() !== (game.userPlatform ?? "").trim() ||
+		watched.rating !== (game.rating ?? 0) ||
+		(form.getFieldState("hoursPlayed").isDirty &&
+			watched.hoursPlayed !== (game.hoursPlayed ?? 0)) ||
+		watched.notes !== (game.notes ?? "") ||
+		watched.completedAt !==
+			(game.completedAt ? game.completedAt.slice(0, 10) : "");
+	return {
+		form,
+		saved,
+		isSaving: update.isPending,
+		hasPendingChanges,
+		error: update.error,
+	};
 }

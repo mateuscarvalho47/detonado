@@ -3,6 +3,7 @@ export interface PlaySession {
 	id: string;
 	entryId: string;
 	clientId: string;
+	campaignId?: string;
 	playedAt: string;
 	durationMinutes: number;
 	notes: string | null;
@@ -14,12 +15,14 @@ export interface SessionPayload {
 	durationMinutes: number;
 	notes: string | null;
 }
-export function fetchSessions(entryId: string) {
-	return api.get<{ sessions: PlaySession[] }>(`/library/${entryId}/sessions`);
+export function fetchSessions(entryId: string, campaignId?: string) {
+	return api.get<{ sessions: PlaySession[] }>(
+		`/library/${entryId}/sessions${campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : ""}`,
+	);
 }
 export function createSession(
 	entryId: string,
-	payload: SessionPayload & { clientId: string },
+	payload: SessionPayload & { clientId: string; campaignId?: string | null },
 ) {
 	return api.post<PlaySession>(`/library/${entryId}/sessions`, payload);
 }

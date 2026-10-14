@@ -134,6 +134,8 @@ export class UserRepository {
             platforms: true,
             status: true,
             completionGoal: true,
+            activeCampaignId: true,
+            campaigns: { orderBy: { startedAt: 'desc' } },
             checklist: {
               select: { id: true, text: true, completed: true, createdAt: true, updatedAt: true },
               orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
@@ -147,6 +149,7 @@ export class UserRepository {
               select: {
                 id: true,
                 clientId: true,
+                campaignId: true,
                 playedAt: true,
                 durationMinutes: true,
                 notes: true,

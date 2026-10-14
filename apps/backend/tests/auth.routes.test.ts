@@ -36,6 +36,7 @@ describe('authentication HTTP flow', () => {
             ...data,
             id: 'user-1',
             preferredPlatform: null,
+            libraryEntries: [],
             emailVerified: false,
             sessionVersion: 0,
             createdAt: new Date(),

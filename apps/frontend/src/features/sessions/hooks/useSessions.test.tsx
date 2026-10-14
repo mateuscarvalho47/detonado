@@ -112,4 +112,37 @@ describe("sessions", () => {
 		await waitFor(() => expect(result.current.deleteId).toBeNull());
 		expect(deleteSession).toHaveBeenCalledWith("game", "session");
 	});
+	it("binds a new session attempt to its active campaign", async () => {
+		const qc = new QueryClient({
+			defaultOptions: {
+				queries: { retry: false },
+				mutations: { retry: false },
+			},
+		});
+		const wrapper = ({ children }: PropsWithChildren) => (
+			<QueryClientProvider client={qc}>{children}</QueryClientProvider>
+		);
+		const { result, rerender } = renderHook(
+			({ campaignId }) =>
+				useSessions({ ...game, activeCampaignId: campaignId }),
+			{ wrapper, initialProps: { campaignId: "old" } },
+		);
+		vi.mocked(createSession).mockRejectedValue(new Error("Campanha mudou"));
+		await act(async () => {
+			await result.current.onSubmit();
+		});
+		await waitFor(() => expect(result.current.mutation.isError).toBe(true));
+		const first = vi.mocked(createSession).mock.calls[0]?.[1];
+		expect(first?.campaignId).toBe("old");
+		rerender({ campaignId: "new" });
+		await act(async () => {
+			await result.current.onSubmit();
+		});
+		await waitFor(() =>
+			expect(vi.mocked(createSession).mock.calls).toHaveLength(2),
+		);
+		const second = vi.mocked(createSession).mock.calls[1]?.[1];
+		expect(second?.campaignId).toBe("new");
+		expect(second?.clientId).not.toBe(first?.clientId);
+	});
 });

@@ -46,6 +46,10 @@ function readStats(raw: typeof EMPTY_STATS | typeof FULL_STATS) {
         .mockResolvedValueOnce(raw.statusGroups)
         .mockResolvedValueOnce(raw.ratingGroups),
     },
+    campaign: {
+      aggregate: vi.fn().mockResolvedValue({ _sum: { hoursPlayed: null } }),
+      count: vi.fn().mockResolvedValue(0),
+    },
     $queryRaw: vi
       .fn()
       .mockResolvedValueOnce(raw.topGenres)

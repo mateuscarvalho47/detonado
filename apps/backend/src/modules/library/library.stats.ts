@@ -16,10 +16,13 @@ export async function readLibraryStats(
     topGenres,
     topPlatforms,
     completedTimeline,
+    archivedHours,
+    archivedCompleted,
+    activeCompleted,
   ] = await Promise.all([
     db.libraryEntry.count({ where: { userId } }),
     db.libraryEntry.aggregate({
-      where: { userId, status: progressStatuses },
+      where: { userId },
       _sum: { hoursPlayed: true },
     }),
     db.libraryEntry.groupBy({
@@ -52,13 +55,20 @@ export async function readLibraryStats(
         `,
     db.$queryRaw<Array<{ month: string; count: bigint }>>`
           SELECT TO_CHAR(DATE_TRUNC('month', "completedAt"), 'YYYY-MM') AS month, COUNT(*) AS count
-          FROM "LibraryEntry"
-          WHERE "userId" = ${userId}
-            AND "completedAt" IS NOT NULL
-            AND "completedAt" >= NOW() - INTERVAL '12 months'
-          GROUP BY month
-          ORDER BY month ASC
+          FROM (
+            SELECT "completedAt" FROM "LibraryEntry" WHERE "userId" = ${userId} AND status = 'COMPLETED'
+            UNION ALL
+            SELECT "completedAt" FROM "Campaign" WHERE "userId" = ${userId} AND "archivedAt" IS NOT NULL AND status = 'COMPLETED'
+          ) AS completions
+          WHERE "completedAt" IS NOT NULL AND "completedAt" >= NOW() - INTERVAL '12 months'
+          GROUP BY month ORDER BY month ASC
         `,
+    db.campaign.aggregate({
+      where: { userId, archivedAt: { not: null } },
+      _sum: { hoursPlayed: true },
+    }),
+    db.campaign.count({ where: { userId, archivedAt: { not: null }, status: 'COMPLETED' } }),
+    db.libraryEntry.count({ where: { userId, status: 'COMPLETED' } }),
   ]);
 
   const countByStatus: LibraryStats['countByStatus'] = {
@@ -75,7 +85,13 @@ export async function readLibraryStats(
 
   return {
     totalGames,
-    totalHours: totalHoursAgg._sum.hoursPlayed ? Number(totalHoursAgg._sum.hoursPlayed) : 0,
+    completedCampaigns: archivedCompleted + activeCompleted,
+    totalHours:
+      Math.round(
+        (Number(totalHoursAgg._sum.hoursPlayed ?? 0) +
+          Number(archivedHours._sum.hoursPlayed ?? 0)) *
+          10,
+      ) / 10,
     countByStatus,
     topGenres: topGenres.map((row) => ({ genre: row.genre, count: Number(row.count) })),
     topPlatforms: topPlatforms.map((row) => ({ platform: row.platform, count: Number(row.count) })),

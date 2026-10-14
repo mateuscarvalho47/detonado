@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { CampaignsPanel } from "@/features/campaigns/components/CampaignsPanel";
 import { CompletionPanel } from "@/features/completion/components/CompletionPanel";
 import { MembershipPanel } from "@/features/organization/components/MembershipPanel";
 import { SessionsPanel } from "@/features/sessions/components/SessionsPanel";
@@ -23,7 +24,8 @@ export function DetailScreen({ game }: DetailScreenProps) {
 	const [confirmRemove, setConfirmRemove] = useState(false);
 
 	const refreshHltb = useRefreshLibraryHltb(game.id, game.igdbId);
-	const { form, saved, error } = useDetailForm(game);
+	const { form, saved, error, isSaving, hasPendingChanges } =
+		useDetailForm(game);
 	const { control, register, setValue, getValues, watch } = form;
 
 	const status = watch("status");
@@ -51,6 +53,7 @@ export function DetailScreen({ game }: DetailScreenProps) {
 					status={status}
 					rating={rating}
 				/>
+				<CampaignsPanel game={game} disabled={isSaving || hasPendingChanges} />
 				<CompletionPanel game={game} />
 				<MembershipPanel game={game} />
 				<SessionsPanel game={game} />

@@ -122,3 +122,7 @@ A biblioteca permite criar, renomear e excluir coleções e tags pessoais. Cada 
 ## Objetivo de conclusão
 
 A ficha permite escolher Principal, + Extras ou Completista como objetivo pessoal e mostra a estimativa correspondente. Não converte horas jogadas em percentual real. Checklist pessoal pode ser criado, editado, marcado/desmarcado e excluído. Completar tarefas não altera automaticamente o status do jogo.
+
+## Campanhas e rejogadas
+
+A ficha preserva campanhas anteriores com datas, status, horas, nota, notas e objetivo. Iniciar nova campanha exige confirmação, inicia Jogando com horas zeradas e desmarca tarefas; tempos HLTB e agrupamentos permanecem. Sessões pertencem à campanha original e podem ser consultadas no histórico. O formulário da ficha reinicia para impedir autosave de valores da campanha anterior. Estatísticas somam horas de todas as campanhas e mostram Campanhas concluídas por mês; distribuição por status continua por jogo atual.

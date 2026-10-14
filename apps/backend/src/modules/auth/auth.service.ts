@@ -3,6 +3,7 @@ import type { FastifyBaseLogger } from 'fastify';
 import type { sendVerificationEmail } from '@/lib/email.js';
 import { EmailDeliveryError, UnauthorizedError } from '@/lib/errors.js';
 import { hashPassword, verifyPassword } from '@/lib/hash.js';
+import { presentCampaign } from '@/modules/campaign/campaign.service.js';
 import type { AccountChanges, UserRepository } from '@/modules/user/user.repository.js';
 import {
   EmailAlreadyTakenError,
@@ -183,6 +184,12 @@ export class AuthService {
   async exportData(userId: string) {
     const data = await this.users.findByIdWithLibrary(userId);
     if (!data) throw new UnauthorizedError('Sessão inválida');
-    return data;
+    return {
+      ...data,
+      libraryEntries: data.libraryEntries.map((entry) => ({
+        ...entry,
+        campaigns: entry.campaigns.map((campaign) => presentCampaign(campaign, entry)),
+      })),
+    };
   }
 }

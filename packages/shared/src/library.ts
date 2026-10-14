@@ -90,6 +90,7 @@ export type CreateLibraryEntryInput = z.infer<typeof createLibraryEntryInput>;
 export type UpdateLibraryEntryInput = z.infer<typeof updateLibraryEntryInput>;
 
 export const libraryStatsSchema = z.object({
+	completedCampaigns: z.number(),
 	totalGames: z.number(),
 	totalHours: z.number(),
 	countByStatus: z.record(LibraryStatusEnum, z.number()),

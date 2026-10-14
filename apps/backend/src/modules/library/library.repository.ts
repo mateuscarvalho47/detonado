@@ -61,12 +61,21 @@ export class LibraryRepository {
   }
 
   async create(data: Prisma.LibraryEntryCreateInput) {
-    return withMemberships(await this.db.libraryEntry.create({ data, include: membershipInclude }));
+    const entry = await this.db.libraryEntry.create({ data });
+    const campaign = await this.db.campaign.create({
+      data: { entryId: entry.id, userId: entry.userId, startedAt: entry.createdAt },
+    });
+    const current = await this.db.libraryEntry.update({
+      where: { id: entry.id, userId: entry.userId },
+      data: { activeCampaignId: campaign.id },
+      include: membershipInclude,
+    });
+    return withMemberships(current);
   }
 
   async sessionMinutes(entryId: string, userId: string) {
     const result = await this.db.playSession.aggregate({
-      where: { entryId, userId },
+      where: { entryId, userId, campaign: { activeFor: { some: { id: entryId, userId } } } },
       _sum: { durationMinutes: true },
     });
     return result._sum.durationMinutes ?? 0;

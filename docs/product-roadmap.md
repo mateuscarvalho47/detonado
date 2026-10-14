@@ -106,3 +106,15 @@ Validação backend entrega5:198 testes incluindo12 PostgreSQL, build/runtime, l
 `completionGoal` enum MAIN/EXTRAS/COMPLETIONIST defaultMAIN em entradas novas/antigas e PATCH existente. Escolha exibe estimativa HLTB correspondente sem inferir progresso. Checklist CRUD `/api/library/:id/checklist` e `/:itemId`, `{text}` até500, PATCH `{text?,completed?}`, listas `{items:[]}`. Item e entrada pertencem ao mesmo usuário; marcar tarefas não muda status do jogo. Export inclui objetivo/checklist. Migration `20261013233000_add_completion_goals`. UI separa salvamento do objetivo do autosave e mantém horas/status. Frontend108 testes, lint/build. Branch `feature/completion-goals`.
 
 Validação backend entrega6:200 testes (13 PostgreSQL, incluindo HTTP checklist), build/runtime, lint backend/shared e TypeScript aprovados. Migração aplicada somente no descartável.
+
+## Retomada em 14/10/2026
+
+Entregas1–6 publicadas por branches individuais e integradas à main; retomada na branch limpa `feature/campaign-history`, base80cb62a. Recriado PostgreSQL17 descartável para testes, sem usar o banco da aplicação. Restam entregas7–14.
+
+### Contrato aprovado — campanhas e rejogadas
+
+Campanha relacional por entrada/usuário com snapshot de status, horas anteriores/total, nota, notas, conclusão, objetivo e datas. A campanha ativa lê os valores atuais da entrada; campanhas arquivadas preservam snapshots. Nova campanha arquiva a anterior, inicia Jogando com zero horas, limpa nota/data de conclusão e desmarca tarefas; preserva HLTB e agrupamentos. Sessões mantêm campanha original. POST de sessão pode informar campaignId esperado: UUID novo em campanha divergente responde409; replay existente compara a campanha original antes de verificar a ativa. Histórico tem consulta por campaignId. Estatísticas somam horas arquivadas+ativas; linha do tempo conta campanhas concluídas sem duplicar snapshot ativo. Contagem por status continua por jogo. Exportação inclui histórico.
+
+### Entrega 7 — campanhas e rejogadas
+
+Implementada com migration `20261014003000_add_campaigns`, backfill de entradas/sessões existentes e FK composta adicional de campanha ativa para conferir entrada e proprietário. Campanha ativa usa a entrada como fonte; histórico armazena snapshots ao arquivar. Rejogada confirmada reinicia registro atual sem perder sessões/datas/notas/nota/objetivo anterior. Sessões históricas têm consulta por campaignId; edição/exclusão recalcula apenas campanha correspondente. Replay idempotente continua válido após trocar campanha; novo UUID em campanha desatualizada responde409. Estatísticas somam todas horas registradas em qualquer status, incluindo campanhas arquivadas, e contam conclusões sem duplicação. Exportação completa. Checks:202 testes backend (15 PostgreSQL/HTTP),113frontend, lint/build/TypeScript. Ensaio de migration com dados legados preservou horas/base/nota/notas/objetivo/status e vínculo de sessão. Branch `feature/campaign-history`.
