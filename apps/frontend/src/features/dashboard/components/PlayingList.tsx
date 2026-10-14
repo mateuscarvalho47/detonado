@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Play } from "lucide-react";
+import { formatSessionDate } from "@/features/sessions/lib/sessionTime";
 import { Cover } from "@/shared/components/Cover";
 import { STATUS_BY_KEY } from "@/shared/constants/statuses";
 import { useSearchModal } from "@/shared/hooks/useSearchModal";
@@ -85,6 +86,11 @@ export function PlayingList({ games }: { games: LibraryEntry[] }) {
 									"PLATAFORMA LIVRE"}
 							</span>
 							<strong className={styles.featuredName}>{featured.name}</strong>
+							{featured.lastSessionAt && (
+								<span className={styles.gameMeta}>
+									Última sessão: {formatSessionDate(featured.lastSessionAt)}
+								</span>
+							)}
 							{firstSentence(featured.notes) ? (
 								<span className={styles.checkpoint}>
 									Checkpoint · {firstSentence(featured.notes)}
@@ -115,6 +121,11 @@ export function PlayingList({ games }: { games: LibraryEntry[] }) {
 									{game.userPlatform ?? game.platforms[0]}
 									{game.hoursPlayed ? ` · ${game.hoursPlayed}h` : ""}
 								</span>
+								{game.lastSessionAt && (
+									<span className={styles.gameMeta}>
+										Última sessão: {formatSessionDate(game.lastSessionAt)}
+									</span>
+								)}
 								{firstSentence(game.notes) && (
 									<span className={styles.note}>
 										{firstSentence(game.notes)}

@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { SessionsPanel } from "@/features/sessions/components/SessionsPanel";
 import type { LibraryEntry } from "@/types/api";
 import { useDetailForm } from "../hooks/useDetailForm";
 import {
@@ -20,7 +21,7 @@ export function DetailScreen({ game }: DetailScreenProps) {
 	const [confirmRemove, setConfirmRemove] = useState(false);
 
 	const refreshHltb = useRefreshLibraryHltb(game.id, game.igdbId);
-	const { form, saved } = useDetailForm(game);
+	const { form, saved, error } = useDetailForm(game);
 	const { control, register, setValue, getValues, watch } = form;
 
 	const status = watch("status");
@@ -38,6 +39,7 @@ export function DetailScreen({ game }: DetailScreenProps) {
 					onRefreshHltb={() => void refreshHltb.mutate()}
 					refreshingHltb={refreshHltb.isPending}
 				/>
+				{error && <p role="alert">{error.message}</p>}
 				<DetailEditForm
 					game={game}
 					control={control}
@@ -47,6 +49,7 @@ export function DetailScreen({ game }: DetailScreenProps) {
 					status={status}
 					rating={rating}
 				/>
+				<SessionsPanel game={game} />
 			</div>
 
 			{confirmRemove && (

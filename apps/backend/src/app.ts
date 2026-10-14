@@ -10,6 +10,7 @@ import { authRoutes } from '@/modules/auth/auth.routes.js';
 import { gameRoutes } from '@/modules/game/game.routes.js';
 import { libraryRoutes } from '@/modules/library/library.routes.js';
 import { passwordResetRoutes } from '@/modules/password-reset/password-reset.routes.js';
+import { playSessionRoutes } from '@/modules/play-session/play-session.routes.js';
 import { savedFilterRoutes } from '@/modules/saved-filter/saved-filter.routes.js';
 import corsPlugin from '@/plugins/cors.js';
 import csrfPlugin from '@/plugins/csrf.js';
@@ -51,6 +52,7 @@ export async function buildApp() {
     await app.register(gameRoutes, { prefix: '/api' });
     await app.register(libraryRoutes, { prefix: '/api' });
     await app.register(savedFilterRoutes, { prefix: '/api' });
+    await app.register(playSessionRoutes, { prefix: '/api' });
 
     app.get('/health', async (_req, reply) => {
       try {

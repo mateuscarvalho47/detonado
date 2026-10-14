@@ -106,3 +106,7 @@ Feed, amigos, perfil público, listas além dos seis status, importação Steam,
 ## Filtros da biblioteca
 
 Status combináveis, plataforma registrada, gênero, duração Principal máxima e busca por nome/notas se combinam. Jogos sem estimativa entram em filtro de duração apenas por escolha explícita. Buscas podem ser salvas, restauradas, renomeadas, atualizadas e excluídas por conta. Há atalho da plataforma preferida. A exportação de conta inclui buscas salvas.
+
+## Sessões de jogo
+
+A ficha registra sessões com data/hora local, duração em minutos e comentário opcional. Permite editar e excluir com confirmação. Exibe total, horas anteriores e horas em sessões, sem duplicar o histórico manual anterior. O total manual ajusta o saldo anterior e não pode ficar abaixo do registrado em sessões. A última sessão aparece também em Jogando na Agora. A exportação inclui as sessões.

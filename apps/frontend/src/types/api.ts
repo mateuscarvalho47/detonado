@@ -25,6 +25,8 @@ export interface LibraryEntry {
 	userPlatform?: string;
 	rating?: number;
 	hoursPlayed?: number;
+	baseHours?: number | null;
+	lastSessionAt?: string | null;
 	notes?: string;
 	completedAt?: string;
 	hltbMain: number | null;

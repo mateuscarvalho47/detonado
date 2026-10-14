@@ -44,6 +44,14 @@ export class LibraryRepository {
     return this.db.libraryEntry.create({ data });
   }
 
+  async sessionMinutes(entryId: string, userId: string) {
+    const result = await this.db.playSession.aggregate({
+      where: { entryId, userId },
+      _sum: { durationMinutes: true },
+    });
+    return result._sum.durationMinutes ?? 0;
+  }
+
   async nextQueuePosition(userId: string) {
     const positions = await this.db.libraryEntry.aggregate({
       where: { userId, status: 'BACKLOG' },

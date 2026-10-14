@@ -18,6 +18,8 @@ describe('POST /library/:id/hltb', () => {
       userPlatform: null,
       rating: null,
       hoursPlayed: null,
+      baseHours: null,
+      lastSessionAt: null,
       notes: null,
       completedAt: null,
       hltbMain: 27,

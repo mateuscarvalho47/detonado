@@ -1,0 +1,80 @@
+.panel {
+	margin: 1rem var(--space-page) 2rem;
+	padding: 1.5rem;
+	border: 1px solid var(--color-line);
+	display: grid;
+	gap: 1rem;
+}
+.panel h2,
+.panel h3,
+.panel p {
+	margin: 0;
+}
+.panel p {
+	color: var(--color-ink-muted);
+}
+.panel p[role="alert"] {
+	color: var(--color-danger);
+}
+.form {
+	display: grid;
+	gap: 1rem;
+}
+.fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+}
+.form label {
+	display: grid;
+	gap: 0.4rem;
+}
+.form input,
+.form textarea {
+	width: 100%;
+	padding: 0.6rem;
+	border: 1px solid var(--color-line-strong);
+	background: var(--color-surface);
+	color: var(--color-ink);
+	font: inherit;
+}
+.panel :focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+.list {
+	display: grid;
+	gap: 1rem;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.list li {
+	display: grid;
+	gap: 0.7rem;
+	border-top: 1px solid var(--color-line);
+	padding-top: 1rem;
+}
+.notes {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.confirm {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+@media (max-width: 640px) {
+	.fields {
+		grid-template-columns: 1fr;
+	}
+	.panel {
+		padding: 1rem;
+	}
+}

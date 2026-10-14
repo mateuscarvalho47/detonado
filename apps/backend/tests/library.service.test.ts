@@ -44,6 +44,7 @@ function makeRepo(overrides: Record<string, unknown> = {}) {
     findByUserAndIgdbId: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    sessionMinutes: vi.fn().mockResolvedValue(0),
     updateHltb: vi.fn(),
     delete: vi.fn(),
     nextQueuePosition: vi.fn().mockResolvedValue(1),
@@ -331,6 +332,7 @@ describe('LibraryService.update', () => {
     const repo = makeRepo({
       findByIdAndUser: vi.fn().mockResolvedValue(ENTRY),
       update: vi.fn(),
+      sessionMinutes: vi.fn().mockResolvedValue(0),
     });
     const service = new LibraryService(repo, makeGames());
 
