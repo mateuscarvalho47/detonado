@@ -1,0 +1,87 @@
+.panel {
+	border-block: 1px solid var(--color-line);
+	margin-bottom: 1.5rem;
+}
+.panel summary {
+	padding-block: 0.8rem;
+	cursor: pointer;
+	color: var(--color-ink-muted);
+}
+.content {
+	display: grid;
+	gap: 1rem;
+	padding-block: 0.5rem 1rem;
+}
+.statuses {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem 1rem;
+	border: 0;
+	padding: 0;
+}
+.statuses legend {
+	margin-bottom: 0.5rem;
+}
+.statuses label,
+.check {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+.fields {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+}
+.fields label,
+.saved > label,
+.saveForm > label {
+	display: grid;
+	gap: 0.4rem;
+}
+.panel select,
+.panel input:not([type="checkbox"]) {
+	width: 100%;
+	min-height: 40px;
+	padding: 0.5rem;
+	border: 1px solid var(--color-line-strong);
+	color: var(--color-ink);
+	background: var(--color-surface);
+	font: inherit;
+}
+.panel input[type="checkbox"] {
+	accent-color: var(--color-accent);
+}
+.panel :focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+.saved,
+.saveForm {
+	display: grid;
+	gap: 0.8rem;
+}
+.saved {
+	padding-top: 1rem;
+	border-top: 1px solid var(--color-line);
+}
+.panel p {
+	color: var(--color-ink-muted);
+	margin: 0;
+}
+.panel p[role="alert"] {
+	color: var(--color-danger);
+}
+@media (max-width: 640px) {
+	.fields {
+		grid-template-columns: 1fr;
+	}
+	.check {
+		align-items: start;
+	}
+}

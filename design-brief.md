@@ -55,7 +55,7 @@ Nota é inteiro de 0 a 10, também com status Jogando. O zero da nota é enviado
 | `/login`, `/register` | anônimo | cartão simples; registro pede consentimento |
 | `/verify-email` | link do e-mail | confirma o token ou pede reenvio |
 | `/forgot-password`, `/reset-password` | anônimo | código de 6 dígitos |
-| `/library` | autenticado | lista (padrão) ou grade, filtro e ordenação |
+| `/library` | autenticado | lista (padrão) ou grade, filtros combináveis e salvos, ordenação |
 | `/library/:igdbId` | autenticado | ficha; a tela baixa a biblioteca inteira e acha o jogo pelo `igdbId` |
 | `/stats` | autenticado | totais, status, gêneros, plataformas, notas, conclusões |
 | `/account` | autenticado | e-mail, senha, plataforma preferida, exportação, exclusão |
@@ -102,3 +102,7 @@ Feed, amigos, perfil público, listas além dos seis status, importação Steam,
 - `REFACTOR_PLAN.md` é histórico de tokens visuais. O título aponta para o Detonado e avisa que o restante não descreve a interface atual.
 - O Swagger em `/docs` descreve a API. Um POST feito pelo “try it out” falha sem o header `x-csrf-token`.
 - `TRUST_PROXY` nasce `false`. Atrás de um proxy, o limite de taxa vê o IP do proxy até `TRUST_PROXY=1`.
+
+## Filtros da biblioteca
+
+Status combináveis, plataforma registrada, gênero, duração Principal máxima e busca por nome/notas se combinam. Jogos sem estimativa entram em filtro de duração apenas por escolha explícita. Buscas podem ser salvas, restauradas, renomeadas, atualizadas e excluídas por conta. Há atalho da plataforma preferida. A exportação de conta inclui buscas salvas.

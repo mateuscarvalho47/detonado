@@ -74,3 +74,11 @@ O usuário confirmou que frontend e backend acompanham `main` e que Railway exec
 ### Entrega 1 — plataforma preferida
 
 Implementada no frontend/backend, com migration aditiva `20261013200000_add_preferred_platform`. Catálogo IGDB paginado, validado, limitado a 20 páginas e cacheado por um dia, com consultas simultâneas compartilhadas. Regras de validação em PreferencesService; endpoints autenticados e limitados. UI preserva seleção manual e estado por jogo. Checks: backend lint/build/TypeScript e 192 testes com PostgreSQL17 descartável; frontend lint/build e 86 testes. Nenhum banco de aplicação foi usado nos testes. Branch `feature/preferred-platform`; promoção via merge em main após push.
+
+### Contrato da entrega 2 — filtros combináveis e salvos
+
+CRUD autenticado em `/api/library/filters` e `/:id`, registros `{id,name,filters,createdAt,updatedAt}`. Filtros strict: statuses sem duplicatas (até seis), platform/genre até200, search até100, maxHours positivo até99999.9, includeUnknownDuration boolean opcional. Plataforma é a registrada na entrada, não qualquer plataforma suportada pelo jogo. Os critérios se combinam por AND; múltiplos status por OR. Com maxHours, jogos sem HLTB só entram por inclusão explícita. Sem limite, ausência de HLTB não exclui. Aplicação client-side; persistência user-owned relacional com filtros JSON validado. Exportação inclui filtros. Migration `20261013210000_add_saved_filters`.
+
+### Entrega 2 — filtros combináveis e salvos
+
+Implementados CRUD, filtros por status/plataforma registrada/gênero/Principal/busca, inclusão explícita de duração desconhecida e atalho da plataforma preferida. Restaurar busca e limpar filtros preservam critérios coerentes; movimentação da fila fica oculta quando filtros escondem vizinhos. Validação: 194 testes backend com PostgreSQL17 descartável, lint/build/TypeScript; 91 testes frontend, lint/build. Branch `feature/library-filters`. Entrega1 confirmada: main `2929d4a`, checks GitHub e deploys Vercel/Railway success; smoke `/health`200 e `/api/games/platforms`401 sem sessão.
