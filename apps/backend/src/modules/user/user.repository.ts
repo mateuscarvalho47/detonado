@@ -134,6 +134,17 @@ export class UserRepository {
             platforms: true,
             status: true,
             completionGoal: true,
+            sources: {
+              select: {
+                id: true,
+                kind: true,
+                label: true,
+                expiresAt: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+              orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+            },
             activeCampaignId: true,
             campaigns: { orderBy: { startedAt: 'desc' } },
             checklist: {

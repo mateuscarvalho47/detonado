@@ -13,6 +13,7 @@ import { CampaignService } from '@/modules/campaign/campaign.service.js';
 import { ChecklistItemRepository } from '@/modules/checklist-item/checklist-item.repository.js';
 import { checklistItemRoutes } from '@/modules/checklist-item/checklist-item.routes.js';
 import { ChecklistItemService } from '@/modules/checklist-item/checklist-item.service.js';
+import { gameSourceRoutes } from '@/modules/game-source/game-source.routes.js';
 import { LibraryRepository } from '@/modules/library/library.repository.js';
 import { LibraryService } from '@/modules/library/library.service.js';
 import { libraryImportRoutes } from '@/modules/library-import/library-import.routes.js';
@@ -1046,6 +1047,150 @@ describe.runIf(Boolean(testDatabaseUrl))('backend with PostgreSQL', () => {
       await database.libraryEntry.deleteMany({
         where: { userId: { in: [ownerId, anotherUserId] }, igdbId: { in: [99901, 99903] } },
       });
+    }
+  });
+
+  it('supports multiple sources and protects source HTTP ownership without changing games', async () => {
+    const entry = await library().create(ownerId, { igdbId: 99801, status: 'PLAYING' });
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    app.decorate('prisma', database);
+    await app.register(errorHandler);
+    await app.register(fastifyCookie);
+    await app.register(fastifySession, {
+      secret: 'test-secret-with-at-least-32-characters',
+      saveUninitialized: false,
+      cookie: { secure: false },
+    });
+    await app.register(csrf);
+    app.get<{ Params: { id: string } }>('/test-session/:id', async (req) => {
+      req.session.userId = req.params.id;
+      req.session.sessionVersion = 0;
+      req.session.csrfToken = 'test-csrf';
+      return {};
+    });
+    await app.register(gameSourceRoutes, { prefix: '/api' });
+    try {
+      const base = `/api/library/${entry.id}/sources`;
+      expect((await app.inject({ url: base })).statusCode).toBe(401);
+      const login = await app.inject({ url: `/test-session/${ownerId}` });
+      const cookie = String(login.headers['set-cookie']).split(';')[0];
+      const headers = { cookie, 'x-csrf-token': 'test-csrf' };
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers: { cookie },
+            payload: { kind: 'STORE', label: 'Steam' },
+          })
+        ).statusCode,
+      ).toBe(403);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers,
+            payload: { kind: 'STORE', label: 'Steam', expiresAt: 'invalid' },
+          })
+        ).statusCode,
+      ).toBe(400);
+      const permanent = await app.inject({
+        method: 'POST',
+        url: base,
+        headers,
+        payload: { kind: 'STORE', label: '  Steam  ' },
+      });
+      expect(permanent.statusCode).toBe(201);
+      expect(permanent.json()).toMatchObject({ kind: 'STORE', label: 'Steam', expiresAt: null });
+      expect(permanent.json()).not.toHaveProperty('userId');
+      const expired = await app.inject({
+        method: 'POST',
+        url: base,
+        headers,
+        payload: {
+          kind: 'SUBSCRIPTION',
+          label: 'Assinatura antiga',
+          expiresAt: '2020-01-01T10:00:00-03:00',
+        },
+      });
+      expect(expired.json().expiresAt).toBe('2020-01-01T13:00:00.000Z');
+      expect((await app.inject({ url: base, headers })).json().sources).toHaveLength(2);
+      const libraryRow = await library().getById(entry.id, ownerId);
+      expect(libraryRow.sources).toHaveLength(2);
+      expect(libraryRow.activeCampaignId).toBe(entry.activeCampaignId);
+      expect(libraryRow.status).toBe('PLAYING');
+      const exported = await new UserRepository(database).findByIdWithLibrary(ownerId);
+      expect(
+        exported?.libraryEntries.find((row) => row.igdbId === entry.igdbId)?.sources,
+      ).toHaveLength(2);
+      const path = `${base}/${expired.json().id}`;
+      expect(
+        (await app.inject({ method: 'PATCH', url: path, headers, payload: {} })).statusCode,
+      ).toBe(400);
+      expect(
+        (
+          await app.inject({ method: 'PATCH', url: path, headers, payload: { expiresAt: null } })
+        ).json().expiresAt,
+      ).toBeNull();
+      expect(
+        (
+          await app.inject({ method: 'PATCH', url: path, headers, payload: { label: 'Renovada' } })
+        ).json(),
+      ).toMatchObject({ label: 'Renovada', expiresAt: null });
+      const otherLogin = await app.inject({ url: `/test-session/${anotherUserId}` });
+      const otherHeaders = {
+        cookie: String(otherLogin.headers['set-cookie']).split(';')[0],
+        'x-csrf-token': 'test-csrf',
+      };
+      expect((await app.inject({ url: base, headers: otherHeaders })).statusCode).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: base,
+            headers: otherHeaders,
+            payload: { kind: 'LOAN', label: 'Other' },
+          })
+        ).statusCode,
+      ).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: path,
+            headers: otherHeaders,
+            payload: { label: 'Other' },
+          })
+        ).statusCode,
+      ).toBe(404);
+      expect(
+        (await app.inject({ method: 'DELETE', url: path, headers: otherHeaders })).statusCode,
+      ).toBe(404);
+      expect(
+        (
+          await app.inject({
+            method: 'PATCH',
+            url: `/api/library/missing/sources/${expired.json().id}`,
+            headers,
+            payload: { label: 'Wrong parent' },
+          })
+        ).statusCode,
+      ).toBe(404);
+      await expect(
+        database.gameSource.create({
+          data: { entryId: entry.id, userId: anotherUserId, kind: 'LOAN', label: 'Foreign owner' },
+        }),
+      ).rejects.toMatchObject({ code: 'P2003' });
+      expect((await app.inject({ method: 'DELETE', url: path, headers })).statusCode).toBe(204);
+      expect((await library().getById(entry.id, ownerId)).sources).toHaveLength(1);
+      await library().remove(entry.id, ownerId);
+      expect(await database.gameSource.count({ where: { entryId: entry.id } })).toBe(0);
+    } finally {
+      await app.close();
+      await database.libraryEntry.deleteMany({ where: { id: entry.id, userId: ownerId } });
     }
   });
 

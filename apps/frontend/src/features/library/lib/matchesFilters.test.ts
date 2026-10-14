@@ -64,3 +64,44 @@ it("combines collection and tag membership, preserving empty-array behavior", ()
 	expect(matchesFilters(game, { tagId: "tag" })).toBe(false);
 	expect(matchesFilters(grouped, { tagId: "missing" })).toBe(false);
 });
+
+it("filters source kind before availability and handles mixed sources and expiry timezone boundaries", () => {
+	const now = new Date("2026-10-14T13:00:00Z").getTime();
+	const subscription = {
+		id: "sub",
+		kind: "SUBSCRIPTION" as const,
+		label: "Pass",
+		expiresAt: "2026-10-14T10:00:00-03:00",
+		createdAt: "",
+		updatedAt: "",
+	};
+	const store = {
+		...subscription,
+		id: "store",
+		kind: "STORE" as const,
+		label: "Steam",
+		expiresAt: null,
+	};
+	const mixed = { ...game, sources: [subscription, store] };
+	expect(matchesFilters(mixed, { availability: "AVAILABLE" }, now)).toBe(true);
+	expect(
+		matchesFilters(
+			mixed,
+			{ sourceKind: "SUBSCRIPTION", availability: "EXPIRED" },
+			now,
+		),
+	).toBe(true);
+	expect(
+		matchesFilters(
+			mixed,
+			{ sourceKind: "SUBSCRIPTION", availability: "AVAILABLE" },
+			now - 1,
+		),
+	).toBe(true);
+	expect(matchesFilters(mixed, { availability: "EXPIRED" }, now)).toBe(false);
+	expect(matchesFilters(game, { availability: "UNKNOWN" }, now)).toBe(true);
+	expect(
+		matchesFilters(game, { sourceKind: "STORE", availability: "UNKNOWN" }, now),
+	).toBe(false);
+	expect(matchesFilters(mixed, { sourceKind: "LOAN" }, now)).toBe(false);
+});

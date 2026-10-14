@@ -130,3 +130,7 @@ A ficha preserva campanhas anteriores com datas, status, horas, nota, notas e ob
 ## Importação CSV
 
 A biblioteca recebe CSV até100 registros com modelo para download, prévia e resolução manual de jogos por nome no IGDB. Duplicatas são ignoradas por padrão; atualizar exige escolha por registro e só altera campos preenchidos. Campos vazios preservam dados existentes. Processamento em lotes com progresso e resultado por registro, incluindo falhas parciais.
+
+## Origem e disponibilidade
+
+A ficha registra múltiplas origens: loja, mídia física, assinatura ou empréstimo. Rótulo e vencimento são independentes da plataforma. Sem vencimento indica acesso permanente/indeterminado; filtro Disponível aceita origem sem vencimento ou futura, Vencido exige todas vencidas e Origem não informada exige ausência. Ao filtrar tipo, disponibilidade considera apenas esse tipo. Vencimentos atualizam a interface automaticamente.

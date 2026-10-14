@@ -79,6 +79,7 @@ model LibraryEntry {
   activeCampaign    Campaign?         @relation("ActiveCampaign", fields: [activeCampaignId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   campaigns         Campaign[]        @relation("EntryCampaigns")
   completionGoal    CompletionGoal    @default(MAIN)
+  sources           GameSource[]
   checklist         ChecklistItem[]
   collections       CollectionEntry[]
   tags              TagEntry[]
@@ -221,4 +222,25 @@ model Campaign {
   @@unique([id, entryId, userId])
   @@index([userId, archivedAt])
   @@index([entryId, startedAt])
+}
+
+enum SourceKind {
+  STORE
+  PHYSICAL
+  SUBSCRIPTION
+  LOAN
+}
+
+model GameSource {
+  id        String       @id @default(cuid())
+  entryId   String
+  userId    String
+  entry     LibraryEntry @relation(fields: [entryId, userId], references: [id, userId], onDelete: Cascade)
+  kind      SourceKind
+  label     String
+  expiresAt DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([entryId, createdAt])
 }

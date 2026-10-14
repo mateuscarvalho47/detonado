@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/features/auth/hooks/useAuth";
 import { useOrganization } from "@/features/organization/hooks/useOrganization";
+import { SOURCE_KINDS } from "@/features/sources/lib/sourceKinds";
 import { STATUSES } from "@/shared/constants/statuses";
 import type { LibraryEntry } from "@/types/api";
 import type { useLibraryFilters } from "../hooks/useLibraryFilters";
@@ -161,6 +162,52 @@ export function LibraryFiltersPanel({
 						</Button>
 					</p>
 				)}
+
+				<div className={styles.fields}>
+					<label>
+						Tipo de origem
+						<select
+							value={advanced.sourceKind ?? ""}
+							onChange={(event) => {
+								const value = event.target.value as typeof advanced.sourceKind;
+								setAdvanced((current) => ({
+									...current,
+									sourceKind: value || undefined,
+								}));
+							}}
+						>
+							<option value="">Todas as origens</option>
+							{SOURCE_KINDS.map((kind) => (
+								<option key={kind.value} value={kind.value}>
+									{kind.label}
+								</option>
+							))}
+						</select>
+					</label>
+					<label>
+						Disponibilidade
+						<select
+							value={advanced.availability ?? ""}
+							onChange={(event) => {
+								const value = event.target
+									.value as typeof advanced.availability;
+								setAdvanced((current) => ({
+									...current,
+									availability: value || undefined,
+								}));
+							}}
+						>
+							<option value="">Todas</option>
+							<option value="AVAILABLE">Disponível</option>
+							<option value="EXPIRED">Acesso vencido</option>
+							<option value="UNKNOWN">Sem origem registrada</option>
+						</select>
+					</label>
+				</div>
+				<p>
+					Com tipo de origem selecionado, a disponibilidade considera apenas
+					esse tipo. Jogos sem essa origem ficam de fora.
+				</p>
 
 				<label className={styles.check}>
 					<input
