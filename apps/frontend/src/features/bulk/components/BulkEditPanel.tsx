@@ -1,9 +1,12 @@
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { useDraftRegistration } from "@/shared/components/DraftBoundary";
 import { STATUS_BY_KEY, STATUSES } from "@/shared/constants/statuses";
+import { useBulkDelete } from "../hooks/useBulkDelete";
 import { useBulkEdit } from "../hooks/useBulkEdit";
 import type { useBulkSelection } from "../hooks/useBulkSelection";
+import { BulkDeleteDialog } from "./BulkDeleteDialog";
 import styles from "./BulkEditPanel.module.css";
 export function BulkEditPanel({
 	selection,
@@ -13,16 +16,19 @@ export function BulkEditPanel({
 	visibleCount: number;
 }) {
 	const state = useBulkEdit(selection.selected);
+	const deletion = useBulkDelete(selection.selected);
+	const busy = state.mutation.isPending || deletion.mutation.isPending;
+	useDraftRegistration("bulk", busy);
 	useEffect(() => {
-		selection.setLocked(state.mutation.isPending);
+		selection.setLocked(busy);
 		return () => selection.setLocked(false);
-	}, [state.mutation.isPending, selection.setLocked]);
+	}, [busy, selection.setLocked]);
 	const platforms = [
 		...new Set(selection.selected.flatMap((game) => game.platforms)),
 	].sort();
 	return (
 		<section className={styles.panel} aria-labelledby="bulk-title">
-			<h2 id="bulk-title">Editar jogos em lote</h2>
+			<h2 id="bulk-title">Jogos selecionados</h2>
 			<p>
 				{selection.selected.length} de {visibleCount} jogos visíveis
 				selecionados. Limite de 100 por operação. Jogos que saem dos filtros são
@@ -51,6 +57,40 @@ export function BulkEditPanel({
 					Cancelar seleção
 				</Button>
 			</div>
+			<div>
+				<Button
+					variant="danger"
+					disabled={!selection.selected.length || busy}
+					onClick={() => {
+						state.cancelPreview();
+						deletion.review();
+					}}
+				>
+					Excluir selecionados
+				</Button>
+			</div>
+			<BulkDeleteDialog state={deletion} />
+			{deletion.cacheError && <p role="alert">{deletion.cacheError}</p>}
+			{deletion.mutation.data && (
+				<div aria-live="polite">
+					<h3>Resultado da exclusão</h3>
+					<p>
+						{deletion.mutation.data.filter((game) => game.removed).length}{" "}
+						jogo(s) excluído(s);{" "}
+						{deletion.mutation.data.filter((game) => !game.removed).length}{" "}
+						falha(s).
+					</p>
+					<ul>
+						{deletion.mutation.data.map((game) => (
+							<li key={game.id}>
+								{game.name}:{" "}
+								{game.removed ? "Excluído" : `Falhou — ${game.error}`}
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+			<h3>Editar em lote</h3>
 			<form className={styles.form} onSubmit={state.onSubmit}>
 				<div className={styles.fields}>
 					<fieldset>
@@ -59,7 +99,7 @@ export function BulkEditPanel({
 								<input
 									type="checkbox"
 									{...state.form.register("applyStatus")}
-									disabled={state.mutation.isPending}
+									disabled={busy}
 								/>
 								Alterar status
 							</label>
@@ -68,7 +108,7 @@ export function BulkEditPanel({
 							Novo status
 							<select
 								{...state.form.register("status")}
-								disabled={!state.values.applyStatus || state.mutation.isPending}
+								disabled={!state.values.applyStatus || busy}
 							>
 								{STATUSES.map((status) => (
 									<option key={status.key} value={status.key}>
@@ -84,7 +124,7 @@ export function BulkEditPanel({
 								<input
 									type="checkbox"
 									{...state.form.register("applyPlatform")}
-									disabled={state.mutation.isPending}
+									disabled={busy}
 								/>
 								Alterar plataforma
 							</label>
@@ -93,9 +133,7 @@ export function BulkEditPanel({
 							Nova plataforma registrada
 							<select
 								{...state.form.register("userPlatform")}
-								disabled={
-									!state.values.applyPlatform || state.mutation.isPending
-								}
+								disabled={!state.values.applyPlatform || busy}
 							>
 								<option value="">Limpar plataforma registrada</option>
 								{platforms.map((platform) => (
@@ -114,7 +152,7 @@ export function BulkEditPanel({
 								<input
 									type="checkbox"
 									{...state.form.register("applyTags")}
-									disabled={state.mutation.isPending}
+									disabled={busy}
 								/>
 								Substituir tags
 							</label>
@@ -133,9 +171,7 @@ export function BulkEditPanel({
 											<input
 												type="checkbox"
 												checked={field.value.includes(tag.id)}
-												disabled={
-													!state.values.applyTags || state.mutation.isPending
-												}
+												disabled={!state.values.applyTags || busy}
 												onChange={(event) =>
 													field.onChange(
 														event.target.checked
@@ -178,7 +214,7 @@ export function BulkEditPanel({
 						type="submit"
 						disabled={
 							!selection.selected.length ||
-							state.mutation.isPending ||
+							busy ||
 							(state.values.applyTags && !state.organization.isSuccess)
 						}
 					>
@@ -227,16 +263,12 @@ export function BulkEditPanel({
 						)}
 					</ul>
 					<div className={styles.actions}>
-						<Button
-							variant="outline"
-							disabled={state.mutation.isPending}
-							onClick={state.apply}
-						>
+						<Button variant="outline" disabled={busy} onClick={state.apply}>
 							{state.mutation.isPending ? "Aplicando…" : "Confirmar e aplicar"}
 						</Button>
 						<Button
 							variant="ghost"
-							disabled={state.mutation.isPending}
+							disabled={busy}
 							onClick={state.cancelPreview}
 						>
 							Voltar à edição

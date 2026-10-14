@@ -133,7 +133,7 @@ export function LibraryScreen() {
 						disabled={!filters.filtered.length}
 						onClick={selection.begin}
 					>
-						Selecionar jogos para editar em lote
+						Selecionar jogos
 					</Button>
 				</div>
 			)}

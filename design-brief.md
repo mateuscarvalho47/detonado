@@ -169,3 +169,8 @@ Agora mostra jogos em andamento e próximos da fila antes das sugestões; Ajusta
 Steam exige autorização explícita da versão `2026-10-14`, separada do cadastro, antes de conectar. A autorização fica no Redis por sessão, com versão/data e limite de sete dias, e é exigida no servidor para verificar e consultar. Desconectar revoga o registro no servidor; respostas tardias não reativam a autorização. Outras sessões são independentes. Cache de consulta: cinco minutos. Jogos só entram após revisão/confirmação e permanecem após desconectar.
 
 O primeiro acesso usa `User.onboardingCompletedAt` e `POST /api/auth/onboarding/complete`; preferência é salva ao continuar e Steam continua opcional. A migration `20261014120000_onboarding` adiciona o campo e marca contas existentes como concluídas. Foi validada apenas em PostgreSQL descartável; aplicar no banco da aplicação antes de disponibilizar esta versão.
+
+
+## Exclusão em lote
+
+Na Biblioteca, Selecionar jogos ativa o mesmo modo usado na edição. Excluir selecionados revisa até 100 jogos visíveis e exige confirmação explícita, com aviso sobre a exclusão permanente de campanhas, sessões, diário e checklist. A seleção fica bloqueada durante a operação; resultados mantêm o nome e o resultado de cada jogo, mesmo quando ele desaparece da lista. Falhas permanecem selecionadas quando ainda estão visíveis, permitindo revisar uma nova tentativa. A operação usa os endpoints de exclusão existentes, sem retry automático; falhas de conexão, autenticação ou limite de requisições interrompem os itens restantes. Trocar de conta interrompe o lote e impede atualizar o cache da nova conta. Exclusões confirmadas saem também do cache local da biblioteca.
