@@ -64,13 +64,18 @@ function RootLayout() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const isAuthRoute = ["/login", "/register"].includes(location.pathname);
-	const { data: me, isLoading } = useMe({ enabled: !isAuthRoute });
+	const {
+		data: me,
+		isFetching,
+		isError,
+		refetch,
+	} = useMe({ enabled: !isAuthRoute });
 	const { data: library = [] } = useLibrary({ enabled: !!me });
 
 	useEffect(() => {
-		if (!isLoading && !me && !PUBLIC_ROUTES.includes(location.pathname))
+		if (me === null && !PUBLIC_ROUTES.includes(location.pathname))
 			navigate({ to: "/" });
-	}, [me, isLoading, location.pathname, navigate]);
+	}, [me, location.pathname, navigate]);
 
 	useEffect(() => {
 		if (me?.onboardingCompletedAt === null && location.pathname === "/")
@@ -88,7 +93,27 @@ function RootLayout() {
 		return () => window.removeEventListener("keydown", onKey);
 	}, [setSearchOpen]);
 
-	if ((isLoading || !me) && !PUBLIC_ROUTES.includes(location.pathname)) {
+	const needsSession =
+		location.pathname === "/" || !PUBLIC_ROUTES.includes(location.pathname);
+
+	if (needsSession && me === undefined) {
+		return (
+			<div className={styles.loading}>
+				<div role="status" aria-live="polite">
+					{isError && !isFetching ? (
+						<>
+							<p>Não foi possível verificar sua sessão. Tente novamente.</p>
+							<Button onClick={() => void refetch()}>Tentar novamente</Button>
+						</>
+					) : (
+						<p>Conectando… aguardando o serviço ficar disponível.</p>
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	if (me === null && !PUBLIC_ROUTES.includes(location.pathname)) {
 		return <div className={styles.loading}>organizando sua biblioteca…</div>;
 	}
 
