@@ -5,6 +5,7 @@ import {
 	queuedSessions,
 	synchronizeOfflineSessions,
 } from "@/features/offline/service/offlineService";
+import { ApiError } from "@/lib/api";
 import type { User } from "@/types/api";
 import {
 	type DeleteAccountFormValues,
@@ -44,7 +45,14 @@ export function useMe(opts?: { enabled?: boolean }) {
 		queryKey: ["me"],
 		queryFn: fetchMe,
 		staleTime: 1000 * 60 * 5,
-		retry: false,
+		retry: (failureCount, error) =>
+			failureCount < 4 &&
+			(error instanceof TypeError ||
+				(error instanceof ApiError &&
+					(error.status === undefined ||
+						error.status === 408 ||
+						error.status >= 500))),
+		retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
 		retryOnMount: false,
 		refetchOnWindowFocus: false,
 		enabled: opts?.enabled !== false,
